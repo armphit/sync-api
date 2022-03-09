@@ -10,6 +10,11 @@ module.exports = function () {
     database: "pmpf_thailand_mnrh",
   });
 
+  connection.connect(function (err) {
+    if (err) throw err;
+    console.log("Connected to Pmpf_Thailand_MNRH");
+  });
+
   this.fill = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -39,6 +44,7 @@ AND dd.drugCode LIKE '` +
       `'
 GROUP BY
   dd.drugCode`;
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;

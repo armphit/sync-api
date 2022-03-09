@@ -1,13 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const moment = require("moment");
-// const { SSL_OP_NO_QUERY_MTU } = require('constants');
-// const moment = require("moment");
-const UserModel = require("../NodeJS-api/model/userModel");
+const js2xmlparser = require("js2xmlparser");
 const app = express();
-const { Promise } = require("mssql");
-// const utils = require('./utils');
-// var ut = new utils();
 
 var db_Homc = require("./DB/db_Homc");
 var homc = new db_Homc();
@@ -15,16 +10,17 @@ var db_pmpf = require("./DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_GD4Unit_101 = require("./DB/db_GD4Unit_101_sqlserver");
 var GD4Unit_101 = new db_GD4Unit_101();
-var db_mysql102 = require("./DB/db_center_102_mysql");
-var center102 = new db_mysql102();
-const {
-  registerController,
-  loginController,
-} = require("./controller/userController");
+var db_onCube = require("./DB/db_onCube");
+var onCube = new db_onCube();
+// var db_mysql102 = require("./DB/db_center_102_mysql");
+// var center102 = new db_mysql102();
+// var {
+//   registerController,
+//   loginController,
+// } = require("./controller/userController");
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(function (req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methode", "GET, POST, PUT, DELETE");
@@ -117,6 +113,7 @@ app.post("/syncOPD", async (req, res) => {
 
       let c = {
         hn: b[0].hn.trim(),
+        name: b[0].patientname.trim(),
         sex: b[0].sex.trim(),
         prescriptionno: b[0].prescriptionno.trim(),
         patientdob: b[0].patientdob.trim(),
@@ -130,9 +127,9 @@ app.post("/syncOPD", async (req, res) => {
           `'`;
         sql101 = await GD4Unit_101.dataDrug(sqlgetdrug);
         sql101 = sql101.recordset;
-        if (sql101 !== [] && Number(b[i].totalprice.trim()) > 0) {
+        if (sql101.length !== 0 && Number(b[i].totalprice.trim()) > 0) {
           let drug = {
-            Name: b[i].patientname.trim(),
+            Name: b[i].orderitemname.trim(),
             Qty: b[i].totalprice.trim(),
             alias: "",
             code: b[i].orderitemcode.trim(),
@@ -146,7 +143,7 @@ app.post("/syncOPD", async (req, res) => {
           drugarr.push(drug);
         }
       }
-      // console.log(drugarr);
+      console.log(drugarr);
       getdataHomc(drugarr, c);
     } else {
       x = {};
@@ -159,6 +156,20 @@ app.post("/syncOPD", async (req, res) => {
     x.data = "0";
     res.send(x);
   }
+});
+
+app.post("/syncOPDManual", async (req, res) => {
+  let data = req.body.data;
+
+  let c = {
+    hn: "0000",
+    name: "TEST",
+    sex: "M",
+    prescriptionno: 9999999999,
+    patientdob: "25210401",
+  };
+  res.send("1");
+  getdataHomc(data, c);
 });
 
 app.get("/", (req, res) => {
@@ -182,9 +193,9 @@ async function getdataHomc(data, etc) {
   let datePayment = moment(momentDate).format("YYYY-MM-DD");
   let dateA = moment(momentDate).format("YYMMDD");
   let dateB = moment(momentDate).add(543, "year").format("DD/MM/YYYY");
-  let hn = etc.hn;
-  let sex = etc.sex;
-  let prescriptionno = etc.prescriptionno;
+  // let hn = etc.hn;
+  // let sex = etc.sex;
+  // let prescriptionno = etc.prescriptionno;
   let m = moment(etc.patientdob, "YYYYMMDD", "th", true);
 
   let birthDate = moment(m)
@@ -192,7 +203,7 @@ async function getdataHomc(data, etc) {
     .subtract(543, "year")
     .format("YYYY-MM-DD");
 
-  let numJV = "6400" + Math.floor(Math.random() * 1000000);
+  // let numJV = "6400" + Math.floor(Math.random() * 1000000);
   let getAge = new Date().getFullYear() - 2020;
   let codeArr = new Array();
   let codeArrPush = new Array();
@@ -209,159 +220,374 @@ async function getdataHomc(data, etc) {
   let numBox = 0;
   let arrSE = new Array();
   let codeArrSE = new Array();
+  // let DataQue: any = await this.http.post('DataQ', formData);
+  let dataQ = "2C-158";
 
+  // if (getData2.connect) {
+  //   if (getData2.response.rowCount > 0) {
+  //     dataQ = getData2.response.result[0].QN;
+  //   } else {
+  //     dataQ = "";
+  //   }
+  // } else {
+  //   Swal.fire("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้!", "", "error");
+  // }
+
+  // console.log(data[0].code);
   for (let i = 0; i < data.length; i++) {
     let listDrugOPD = await pmpf.datadrug(data[i].code);
 
     if (listDrugOPD.length !== 0) {
-      console.log(listDrugOPD);
-      //   if (
-      //     listDrugOPD[0].deviceCode.includes("Xmed1") &&
-      //     listDrugOPD[0].isPrepack == "N" &&
-      //     data[i].Qty >= Number(listDrugOPD[0].HisPackageRatio)
-      //   ) {
-      //     var qtyBox = data[i].Qty / listDrugOPD[0].HisPackageRatio;
-      //     if (numBox + ~~qtyBox < 10) {
-      //       numBox = numBox + ~~qtyBox;
-      //       var se = {};
-      //       se.code = listDrugOPD[0].drugCode;
-      //       se.Name = data[i].Name;
-      //       se.alias = data[i].alias;
-      //       se.firmName = data[i].firmName;
-      //       se.method = data[i].method;
-      //       se.note = data[i].note;
-      //       se.spec = data[i].spec;
-      //       se.type = data[i].type;
-      //       se.unit = data[i].unit;
-      //       se.Qty =
-      //         Math.floor(data[i].Qty / listDrugOPD[0].HisPackageRatio) *
-      //         listDrugOPD[0].HisPackageRatio;
-      //       data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
-      //       arrSE.push(se);
-      //     } else {
-      //       do {
-      //         se = {};
-      //         se.code = listDrugOPD[0].drugCode;
-      //         se.Name = data[i].Name;
-      //         se.alias = data[i].alias;
-      //         se.firmName = data[i].firmName;
-      //         se.method = data[i].method;
-      //         se.note = data[i].note;
-      //         se.spec = data[i].spec;
-      //         se.type = data[i].type;
-      //         se.unit = data[i].unit;
-      //         se.Qty = Math.abs(numBox - 10) * listDrugOPD[0].HisPackageRatio;
-      //         arrSE.push(se);
-      //         codeArrSE.push(arrSE);
-      //         arrSE = [];
-      //         qtyBox = ~~qtyBox - Math.abs(numBox - 10);
-      //         numBox = 0;
-      //       } while (qtyBox > 9);
-      //       if (qtyBox !== 0) {
-      //         var seS = {};
-      //         seS.code = listDrugOPD[0].drugCode;
-      //         seS.Name = data[i].Name;
-      //         seS.alias = data[i].alias;
-      //         seS.firmName = data[i].firmName;
-      //         seS.method = data[i].method;
-      //         seS.note = data[i].note;
-      //         seS.spec = data[i].spec;
-      //         seS.type = data[i].type;
-      //         seS.unit = data[i].unit;
-      //         seS.Qty = qtyBox * listDrugOPD[0].HisPackageRatio;
-      //         arrSE.push(seS);
-      //         numBox = qtyBox;
-      //       }
-      //     }
-      //     data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
-      //   }
-      //   console.log(arrSE);
-      //   console.log(codeArrSE);
-      // var pre = {};
-      // if (
-      //   listDrugOPD[0].deviceCode.includes("Xmed1") &&
-      //   listDrugOPD[0].isPrepack == "Y" &&
-      //   data[i].Qty >= Number(listDrugOPD[0].HisPackageRatio) &&
-      //   data[i].Qty <= Number(seCheckOutOfStock[0].Quantity)
-      // ) {
-      //   var qtyBox = data[i].Qty / listDrugOPD[0].HisPackageRatio;
-      //   if (numBox + ~~qtyBox < 10) {
-      //     numBox = numBox + ~~qtyBox;
-      //     pre.code = listDrugOPD[0].drugCode;
-      //     pre.Name = data[i].Name;
-      //     pre.alias = data[i].alias;
-      //     pre.firmName = data[i].firmName;
-      //     pre.method = data[i].method;
-      //     pre.note = data[i].note;
-      //     pre.spec = data[i].spec;
-      //     pre.type = data[i].type;
-      //     pre.unit = data[i].unit;
-      //     pre.Qty =
-      //       Math.floor(data[i].Qty / listDrugOPD[0].HisPackageRatio) *
-      //       listDrugOPD[0].HisPackageRatio;
-      //     data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
-      //     arrSE.push(pre);
-      //   } else {
-      //     do {
-      //       pre.code = listDrugOPD[0].drugCode;
-      //       pre.Name = data[i].Name;
-      //       pre.alias = data[i].alias;
-      //       pre.firmName = data[i].firmName;
-      //       pre.method = data[i].method;
-      //       pre.note = data[i].note;
-      //       pre.spec = data[i].spec;
-      //       pre.type = data[i].type;
-      //       pre.unit = data[i].unit;
-      //       pre.Qty = Math.abs(numBox - 10) * listDrugOPD[0].HisPackageRatio;
-      //       arrSE.push(pre);
-      //       codeArrSE.push(arrSE);
-      //       arrSE = [];
-      //       qtyBox = ~~qtyBox - Math.abs(numBox - 10);
-      //       numBox = 0;
-      //     } while (qtyBox > 9);
-      //     if (qtyBox !== 0) {
-      //       var preS = {};
-      //       preS.code = listDrugOPD[0].drugCode;
-      //       preS.Name = data[i].Name;
-      //       preS.alias = data[i].alias;
-      //       preS.firmName = data[i].firmName;
-      //       preS.method = data[i].method;
-      //       preS.note = data[i].note;
-      //       preS.spec = data[i].spec;
-      //       preS.type = data[i].type;
-      //       preS.unit = data[i].unit;
-      //       preS.Qty = qtyBox * listDrugOPD[0].HisPackageRatio;
-      //       arrSE.push(preS);
-      //       numBox = qtyBox;
-      //     }
-      //   }
-      //   data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
-      // }
-      // // let listDrugLCA: any = await this.http.post('listDrugLCA', formData);
-      // listDrugOPD.forEach((listDrugOPD) => {
-      //   if (
-      //     listDrugOPD.deviceCode.includes("LCA") &&
-      //     Math.floor(data[i].Qty / listDrugOPD.HisPackageRatio) *
-      //       listDrugOPD.HisPackageRatio >
-      //       0
-      //   ) {
-      //     var lca = {};
-      //     lca.code = listDrugOPD.drugCode;
-      //     lca.Qty =
-      //       Math.floor(data[i].Qty / listDrugOPD.HisPackageRatio) *
-      //       listDrugOPD.HisPackageRatio;
-      //     lca.Name = data[i].Name;
-      //     lca.alias = data[i].alias;
-      //     lca.firmName = data[i].firmName;
-      //     lca.method = data[i].method;
-      //     lca.note = data[i].note;
-      //     lca.spec = data[i].spec;
-      //     lca.type = data[i].type;
-      //     lca.unit = data[i].unit;
-      //     codeArrPush.push(lca);
-      //     data[i].Qty = data[i].Qty % listDrugOPD.HisPackageRatio;
-      //   }
-      // });
+      if (
+        listDrugOPD[0].deviceCode.includes("Xmed1") &&
+        listDrugOPD[0].isPrepack == "N" &&
+        data[i].Qty >= Number(listDrugOPD[0].HisPackageRatio)
+      ) {
+        var qtyBox = data[i].Qty / listDrugOPD[0].HisPackageRatio;
+        if (numBox + ~~qtyBox < 10) {
+          numBox = numBox + ~~qtyBox;
+          var se = {};
+          se.code = listDrugOPD[0].drugCode;
+          se.Name = data[i].Name;
+          se.alias = data[i].alias;
+          se.firmName = data[i].firmName;
+          se.method = data[i].method;
+          se.note = data[i].note;
+          se.spec = data[i].spec;
+          se.type = data[i].type;
+          se.unit = data[i].unit;
+          se.Qty =
+            Math.floor(data[i].Qty / listDrugOPD[0].HisPackageRatio) *
+            listDrugOPD[0].HisPackageRatio;
+          data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
+          arrSE.push(se);
+        } else {
+          do {
+            se = {};
+            se.code = listDrugOPD[0].drugCode;
+            se.Name = data[i].Name;
+            se.alias = data[i].alias;
+            se.firmName = data[i].firmName;
+            se.method = data[i].method;
+            se.note = data[i].note;
+            se.spec = data[i].spec;
+            se.type = data[i].type;
+            se.unit = data[i].unit;
+            se.Qty = Math.abs(numBox - 10) * listDrugOPD[0].HisPackageRatio;
+            arrSE.push(se);
+            codeArrSE.push(arrSE);
+            arrSE = [];
+            qtyBox = ~~qtyBox - Math.abs(numBox - 10);
+            numBox = 0;
+          } while (qtyBox > 9);
+          if (qtyBox !== 0) {
+            var seS = {};
+            seS.code = listDrugOPD[0].drugCode;
+            seS.Name = data[i].Name;
+            seS.alias = data[i].alias;
+            seS.firmName = data[i].firmName;
+            seS.method = data[i].method;
+            seS.note = data[i].note;
+            seS.spec = data[i].spec;
+            seS.type = data[i].type;
+            seS.unit = data[i].unit;
+            seS.Qty = qtyBox * listDrugOPD[0].HisPackageRatio;
+            arrSE.push(seS);
+            numBox = qtyBox;
+          }
+        }
+        data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
+      }
+
+      var pre = {};
+      if (
+        listDrugOPD[0].deviceCode.includes("Xmed1") &&
+        listDrugOPD[0].isPrepack == "Y" &&
+        data[i].Qty >= Number(listDrugOPD[0].HisPackageRatio)
+      ) {
+        var qtyBox = data[i].Qty / listDrugOPD[0].HisPackageRatio;
+        if (numBox + ~~qtyBox < 10) {
+          numBox = numBox + ~~qtyBox;
+          pre.code = listDrugOPD[0].drugCode;
+          pre.Name = data[i].Name;
+          pre.alias = data[i].alias;
+          pre.firmName = data[i].firmName;
+          pre.method = data[i].method;
+          pre.note = data[i].note;
+          pre.spec = data[i].spec;
+          pre.type = data[i].type;
+          pre.unit = data[i].unit;
+          pre.Qty =
+            Math.floor(data[i].Qty / listDrugOPD[0].HisPackageRatio) *
+            listDrugOPD[0].HisPackageRatio;
+          data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
+          arrSE.push(pre);
+        } else {
+          do {
+            pre.code = listDrugOPD[0].drugCode;
+            pre.Name = data[i].Name;
+            pre.alias = data[i].alias;
+            pre.firmName = data[i].firmName;
+            pre.method = data[i].method;
+            pre.note = data[i].note;
+            pre.spec = data[i].spec;
+            pre.type = data[i].type;
+            pre.unit = data[i].unit;
+            pre.Qty = Math.abs(numBox - 10) * listDrugOPD[0].HisPackageRatio;
+            arrSE.push(pre);
+            codeArrSE.push(arrSE);
+            arrSE = [];
+            qtyBox = ~~qtyBox - Math.abs(numBox - 10);
+            numBox = 0;
+          } while (qtyBox > 9);
+          if (qtyBox !== 0) {
+            var preS = {};
+            preS.code = listDrugOPD[0].drugCode;
+            preS.Name = data[i].Name;
+            preS.alias = data[i].alias;
+            preS.firmName = data[i].firmName;
+            preS.method = data[i].method;
+            preS.note = data[i].note;
+            preS.spec = data[i].spec;
+            preS.type = data[i].type;
+            preS.unit = data[i].unit;
+            preS.Qty = qtyBox * listDrugOPD[0].HisPackageRatio;
+            arrSE.push(preS);
+            numBox = qtyBox;
+          }
+        }
+        data[i].Qty = data[i].Qty % listDrugOPD[0].HisPackageRatio;
+      }
+
+      if (listDrugOPD[0].deviceCode.includes("JV")) {
+        listDrugOPD.forEach((listDrugOPD) => {
+          if (
+            listDrugOPD.deviceCode.includes("LCA") &&
+            Math.floor(data[i].Qty / listDrugOPD.HisPackageRatio) *
+              listDrugOPD.HisPackageRatio >
+              0
+          ) {
+            var lca = {};
+            lca.code = listDrugOPD.drugCode;
+            lca.Qty =
+              Math.floor(data[i].Qty / listDrugOPD.HisPackageRatio) *
+              listDrugOPD.HisPackageRatio;
+            lca.Name = data[i].Name;
+            lca.alias = data[i].alias;
+            lca.firmName = data[i].firmName;
+            lca.method = data[i].method;
+            lca.note = data[i].note;
+            lca.spec = data[i].spec;
+            lca.type = data[i].type;
+            lca.unit = data[i].unit;
+            codeArrPush.push(lca);
+            data[i].Qty = data[i].Qty % listDrugOPD.HisPackageRatio;
+          }
+        });
+      }
+    }
+
+    let numMax = 0;
+    if (data[i].Qty > 0) {
+      if (listDrugOPD.length !== 0) {
+        if (listDrugOPD[0].deviceCode.includes("JV")) {
+          let dataonCube = await onCube.datadrug(data[i].code);
+          let dateC = null;
+          let date = new Date();
+          date.setFullYear(date.getFullYear() + 1);
+
+          if (dataonCube.length !== 0) {
+            if (dataonCube[0].ExpiredDate) {
+              dateC = moment(dataonCube[0].ExpiredDate)
+                .add(543, "year")
+                .format("DD/MM/YYYY");
+            } else {
+              dateC = moment(date).add(543, "year").format("DD/MM/YYYY");
+            }
+
+            if (Number(dataonCube[0].QuantityMaximum)) {
+              numMax = Number(dataonCube[0].QuantityMaximum);
+            } else {
+              numMax = data[i].Qty;
+            }
+          }
+
+          // let c = {
+          //   hn: "0000",
+          //   name: "TEST",
+          //   sex: "M",
+          //   prescriptionno: 9999999999,
+          //   patientdob: "25210401",
+          // };
+
+          let amount = 0;
+          let qty = data[i].Qty;
+          do {
+            j++;
+            amount = qty > 400 ? 400 : qty;
+            let dataJVM =
+              etc.name +
+              "|" +
+              etc.hn +
+              j +
+              "|" +
+              etc.prescriptionno +
+              "|" +
+              dateBirthConvert +
+              " 0:00:00|OPD|||" +
+              age +
+              "||" +
+              numDontKnow +
+              "|I|" +
+              amount +
+              "|" +
+              data[i].code +
+              "|" +
+              data[i].Name +
+              "|" +
+              dateA +
+              "|" +
+              dateA +
+              "|" +
+              "00:0" +
+              j +
+              "|||โรงพยาบาลมหาราชนครราชสีมา|||" +
+              etc.prescriptionno +
+              data[i].code +
+              "|||" +
+              dateB +
+              "|" +
+              dateC +
+              "|" +
+              etc.hn +
+              "|" +
+              dataQ +
+              "|";
+
+            codeArr.push(dataJVM);
+            qty = qty - amount;
+          } while (qty > 0);
+        }
+      }
+      codeArrPush.push(data[i]);
     }
   }
+
+  if (codeArr.length > 0) {
+    for (let i = 0; i < codeArr.length; i++) {
+      codeArr[i] = codeArr[i] + "(" + (i + 1) + "/" + codeArr.length + ")";
+    }
+
+    let DataJV = codeArr.join("\r\n");
+  }
+
+  let op = [];
+  for (let i = 0; i < codeArrSE.length; i++) {
+    op.push(codeArrSE[i]);
+  }
+
+  op.push(arrSE.concat(codeArrPush));
+
+  let getDataJV = null;
+  let getDataDIH = null;
+  let value2 = [];
+  let dih = 1;
+  let jvm = 1;
+  let numRandom = "9900" + Math.floor(Math.random() * 1000000000);
+
+  for (let i = 0; i < op.length; i++) {
+    for (let j = 0; j < op[i].length; j++) {
+      let value = {
+        drug: op[i][j],
+      };
+      value2.push(value);
+    }
+
+    let jsonDrug = {
+      patient: {
+        patID: etc.hn,
+        patName:
+          etc.name.length > 40
+            ? etc.name.substring(0, 30) +
+              "..." +
+              "(" +
+              (i + 1) +
+              "/" +
+              op.length +
+              ")"
+            : etc.name + "(" + (i + 1) + "/" + op.length + ")",
+        gender: etc.sex,
+        birthday: birthDate,
+        age: age,
+        identity: "",
+        insuranceNo: "",
+        chargeType: "",
+      },
+      prescriptions: {
+        prescription: {
+          orderNo: numRandom,
+          ordertype: "M",
+          pharmacy: "OPD",
+          windowNo: "",
+          paymentIP: "",
+          paymentDT: datePayment,
+          outpNo: "",
+          visitNo: "",
+          deptCode: "",
+          deptName: "",
+          doctCode: "",
+          doctName: "",
+          diagnosis: "",
+          drugs: value2,
+        },
+      },
+    };
+    value2 = [];
+    let xmlDrug = js2xmlparser.parse("outpOrderDispense", jsonDrug);
+
+    console.log(xmlDrug);
+    console.log("-------------------------------------------------");
+    var now = new Date();
+    var fileName = moment(now).format("YYYYMMDDHHmmssSSS") + ".xml";
+    var fullName = "DIH_OPD/" + fileName;
+
+    createFile(fullName, xmlDrug)
+      .then(() => {
+        dih = 1;
+        console.log(dih);
+      })
+      .catch((error) => {
+        console.log(dih);
+      });
+  }
+
+  // console.log(arrSE);
+  // console.log("-------------------------------------------------");
+  // console.log(codeArrSE);
+  // console.log("-------------------------------------------------");
+  // console.log(codeArrPush);
+  // console.log("-------------------------------------------------");
+  // console.log(codeArr);
+}
+
+async function createFile(filename = "DIH/file.XML", text) {
+  var now = new Date();
+  var dateString = moment(now).format("YYYY-MM-DD");
+  var timeStamp = moment(now).format("YYYY-MM-DD HH:mm:ss");
+  let fs = require("fs");
+  let pathRoot = "./DATA/";
+  let fullname = pathRoot + filename;
+  let path = require("path").dirname(fullname);
+  console.log(path);
+  //ถ้ายังไม่มี Folder log ให้สร้างขึ้นใหม่
+  if (!fs.existsSync(pathRoot)) {
+    fs.mkdirSync(pathRoot);
+  }
+
+  if (!fs.existsSync(path)) {
+    fs.mkdirSync(path);
+  }
+  fs.appendFileSync(fullname, text + "\r\n", (err) => {
+    if (err) throw err;
+  });
 }
