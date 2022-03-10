@@ -1,70 +1,35 @@
 const { Console } = require("console");
 
 module.exports = function () {
-  this.sql = require("mysql");
+  const mysql = require("mysql");
   // จริง
-  this.config = {
+  const connection = mysql.createConnection({
     user: "root",
     password: "cretem",
     host: "192.168.185.102",
     database: "center",
-  };
+  });
 
-  // Local Test
-  // this.config = {
-  //     user: 'root',
-  //     password: 'Admingd4',
-  //     host: '127.0.0.1',
-  //     database: 'pmpf_thailand_mnrh' ,
-  //     connectionLimit: 15,
-  //     queueLimit: 30
-  // };
+  connection.connect(function (err) {
+    if (err) throw err;
+    console.log("Connected to Center 102 MySQL");
+  });
 
-  this.DataReturn = null;
+  this.fill = function fill(val, DATA) {
+    var sql =
+      `SELECT QN
+      FROM hospitalq
+      WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
+      AND patientNO = '` +
+      val +
+      `'
+      ORDER BY createDT DESC`;
 
-  this.fill = function fill(CMD, DATA) {
-    // // create Request object
-    this.connection.query(CMD, function (err, recordset) {
-      if (err) console.log("ERROR: " + err);
-
-      // send records as a response
-      // res.send(recordset);
-      DATA(recordset);
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
     });
-  };
-
-  this.insert = function fill(CMD, DATA) {
-    // // create Request object
-    this.connection.query(CMD, function (err, recordset) {
-      if (err) console.log("ERROR: " + err);
-
-      // send records as a response
-      // res.send(recordset);
-      DATA(recordset);
-      // console.log("affectedRows: " + recordset.affectedRows);
-    });
-  };
-
-  this.delete = function fill(CMD, DATA) {
-    // // create Request object
-    this.connection.query(CMD, function (err, recordset) {
-      if (err) console.log("ERROR: " + err);
-      console.log("affectedRows: " + recordset.affectedRows);
-    });
-  };
-
-  this.insertAll = async (CMD_ARR) => {
-    await CMD_ARR.forEach((CMD) => {
-      // console.log(CMD);
-      try {
-        this.connection.query(CMD, function (err, recordset) {
-          if (err) console.log("ERROR: " + err);
-          console.log("affectedRows: " + recordset.affectedRows);
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    });
-    // console.log("TXT: "+ CMD ); //+ " / " + JSON.stringify(VALUE));
   };
 };

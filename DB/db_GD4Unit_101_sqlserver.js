@@ -30,10 +30,16 @@ module.exports = function () {
       console.log("Database Connection Failed! Bad Config: ", err)
     );
 
-  this.dataDrug = async function fill(CMD, DATA) {
+  this.dataDrug = async function fill(val, DATA) {
+    var sqlgetdrug =
+      `SELECT orderitemcode,Strength,firmname,pack,dosageunitcode
+      FROM ms_drug
+      WHERE orderitemcode = '` +
+      val +
+      `'`;
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
-      const result = await pool.request().query(CMD);
+      const result = await pool.request().query(sqlgetdrug);
       resolve(result);
     });
   };
