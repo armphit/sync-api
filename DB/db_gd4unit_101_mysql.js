@@ -26,14 +26,16 @@ module.exports = function () {
       VALUES
         (
           '` +
-      val.prescriptionno +
+      val.prescriptionno.trim() +
       `',
           '` +
-      val.hn +
+      val.hn.trim() +
       `',
           CURDATE(),
           CURRENT_TIMESTAMP()
-        )`;
+        )
+        ON DUPLICATE KEY UPDATE 
+        readdatetime = CURRENT_TIMESTAMP()`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -69,22 +71,22 @@ module.exports = function () {
      VALUES
        (
          '` +
-      val.prescriptionno +
+      val.prescriptionno.trim() +
       `',
          '` +
-      val.seq +
+      val.seq.trim() +
       `',
          '` +
-      val.hn +
+      val.hn.trim() +
       `',
          '` +
-      val.patientname +
+      val.patientname.trim() +
       `',
          '` +
       val.sex +
       `',
          '` +
-      val.patientdob +
+      val.patientdob.trim() +
       `',
          '` +
       val.lastmodified +
@@ -96,34 +98,58 @@ module.exports = function () {
       val.ordercreatedate +
       `',
          '` +
-      val.orderitemcode +
+      val.orderitemcode.trim() +
       `',
          '` +
-      val.orderitemname +
+      val.orderitemname.trim() +
       `',
          '` +
-      val.orderqty +
+      val.orderqty.trim() +
       `',
          '` +
       val.orderunitcode +
       `',
-         '` +
+      '` +
       val.departmentcode +
       `',
-         '` +
+      '` +
       val.departmentdesc +
       `',
-         '` +
+      '` +
       val.freetext2 +
       `',
-         '` +
+      '` +
       val.itemidentify +
       `',
-         '` +
+      '` +
       val.rightname +
       `',
-         CURRENT_TIMESTAMP()
-       )`;
+      CURRENT_TIMESTAMP
+      )`;
+
+    return new Promise(function (resolve, reject) {
+      resolve(sql);
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.checkPatient = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      hn,
+      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+   FROM
+      prescription p
+   WHERE
+      date_format(datetimestamp, '%Y-%m-%d') = CURRENT_DATE
+   AND p.hn = '` +
+      val +
+      `'
+   GROUP BY
+      date_format(p.lastmodified, '%H:%i')`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -131,5 +157,13 @@ module.exports = function () {
         resolve(result);
       });
     });
+  };
+
+  String.prototype.padL = function padL(n) {
+    var target = this;
+    while (target.length < 7) {
+      target = n + target;
+    }
+    return target;
   };
 };

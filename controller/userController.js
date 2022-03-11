@@ -95,85 +95,101 @@ exports.loginController = (req, res, next) => {
 };
 
 exports.syncOPDController = async (req, res, next) => {
-  const data = req.body;
+  let data = req.body;
   const hn = req.body.data;
-
+  let sendv = {};
+  // sendv.status = 0;
+  // res.send(sendv);
   try {
     if (parseInt(hn) != NaN) {
+      let allTimeOld = "";
+      let time = await gd4unit101.checkPatient(hn);
+
+      if (time.length != 0) {
+        for (let d of time) {
+          allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
+        }
+        allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
+      } else {
+        allTimeOld = `''`;
+      }
+      data.allTimeOld = allTimeOld;
+
       let x = {};
       x = await homc.fill(data);
       let b = x.recordset;
 
-      let drugarr = [];
-      let q = await center102.fill(b[0].hn.trim());
+      if (b.length > 0) {
+        let drugarr = [];
+        let q = await center102.fill(b[0].hn.trim());
 
-      let c = {
-        hn: b[0].hn.trim(),
-        name: b[0].patientname.trim(),
-        sex: b[0].sex.trim(),
-        prescriptionno: b[0].prescriptionno.trim(),
-        patientdob: b[0].patientdob.trim(),
-        queue: q[0].QN,
-      };
+        let c = {
+          hn: b[0].hn.trim(),
+          name: b[0].patientname.trim(),
+          sex: b[0].sex.trim(),
+          prescriptionno: b[0].prescriptionno.trim(),
+          patientdob: b[0].patientdob.trim(),
+          queue: q[0].QN,
+        };
 
-      for (let i = 0; i < b.length; i++) {
-        sql101 = await GD4Unit_101.dataDrug(b[i].orderitemcode);
-        sql101 = sql101.recordset;
+        for (let i = 0; i < b.length; i++) {
+          sql101 = await GD4Unit_101.dataDrug(b[i].orderitemcode);
+          sql101 = sql101.recordset;
 
-        if (sql101.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
-          let drug = {
-            Name: b[i].orderitemname.trim(),
-            Qty: b[i].orderqty.trim(),
-            alias: "",
-            code: b[i].orderitemcode.trim(),
-            firmName: sql101[0].firmname,
-            method: "",
-            note: "",
-            spec: sql101[0].Strength,
-            type: "",
-            unit: b[i].orderunitcode,
-          };
-          drugarr.push(drug);
+          if (sql101.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
+            let drug = {
+              Name: b[i].orderitemname.trim(),
+              Qty: b[i].orderqty.trim(),
+              alias: "",
+              code: b[i].orderitemcode.trim(),
+              firmName: sql101[0].firmname,
+              method: "",
+              note: "",
+              spec: sql101[0].Strength,
+              type: "",
+              unit: b[i].orderunitcode,
+            };
+            drugarr.push(drug);
+          }
         }
+
+        getdataHomc(drugarr, c).then((value) => {
+          if (value.dih === 1 && value.jvm === 1) {
+            let val = {
+              prescriptionno: b[0].prescriptionno,
+              hn: b[0].hn,
+            };
+            gd4unit101.fill(val).then((result) => {
+              if (result.affectedRows > 0) {
+                b.forEach(async function (b) {
+                  await gd4unit101.insertDrug(b);
+                });
+                console.log("HN : " + b[0].hn.trim() + " :success");
+                res.status(200).json({
+                  // Authorization: Bearer,
+                  status: 1,
+                });
+              } else {
+                sendv.status = 0;
+                res.send(sendv);
+              }
+            });
+          } else {
+            sendv.status = 0;
+            res.send(sendv);
+          }
+        });
+      } else {
+        sendv.status = 0;
+        res.send(sendv);
       }
-
-      getdataHomc(drugarr, c).then((value) => {
-        if (value.dih === 1 && value.jvm === 1) {
-          let val = {
-            prescriptionno: b[0].prescriptionno,
-            hn: b[0].hn,
-          };
-          gd4unit101.fill(val).then((result) => {
-            if (result.affectedRows > 0) {
-              b.forEach(function (b) {
-                gd4unit101.insertDrug(b);
-              });
-              console.log("success");
-              res.status(200).json({
-                // Authorization: Bearer,
-                status: 1,
-              });
-            } else {
-              x = {};
-              x.data = "0";
-              res.send(x);
-            }
-          });
-        } else {
-          x = {};
-          x.data = "0";
-          res.send(x);
-        }
-      });
     } else {
-      x = {};
-      x.data = "0";
-      res.send(x);
+      sendv.status = 0;
+      res.send(sendv);
     }
   } catch (error) {
-    x = {};
-    x.data = "0";
-    res.send(x);
+    sendv.status = 0;
+    res.send(sendv);
   }
 };
 
@@ -453,6 +469,13 @@ async function getdataHomc(data, etc) {
 
   op.push(arrSE.concat(codeArrPush));
 
+  var orderNo =
+    etc.prescriptionno +
+    "_" +
+    ("0" + momentDate.getHours()).slice(-2) +
+    +("0" + momentDate.getMinutes()).slice(-2) +
+    +("0" + momentDate.getSeconds()).slice(-2);
+
   let getDataJV = null;
   let getDataDIH = null;
   let value2 = [];
@@ -490,7 +513,7 @@ async function getdataHomc(data, etc) {
       },
       prescriptions: {
         prescription: {
-          orderNo: numRandom,
+          orderNo: orderNo,
           ordertype: "M",
           pharmacy: "OPD",
           windowNo: "",
