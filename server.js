@@ -5,8 +5,12 @@ const app = express();
 var {
   registerController,
   loginController,
-  syncOPDController,
 } = require("./controller/userController");
+var {
+  syncOPDController,
+  syncOPDManualController,
+  testSOAPController,
+} = require("./controller/syncController");
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,7 +25,14 @@ app.use(function (req, res, next) {
 app.post("/register", registerController);
 app.post("/login", loginController);
 app.post("/syncOPD", syncOPDController);
-app.post("/syncOPD", syncOPDController);
+app.post("/syncOPDManual", syncOPDManualController);
+app.get("/testSOAP", testSOAPController);
+// app.post("/syncOPDManual", function (req, res) {
+//   syncOPDManualController;
+// });
+// app.post("/test", function (req, res) {
+//   test;
+// });
 
 module.exports = app;
 
