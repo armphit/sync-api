@@ -21,7 +21,8 @@ module.exports = function () {
         prescriptionno,
         hn,
         createdate,
-        readdatetime
+        readdatetime,
+        status
       )
       VALUES
         (
@@ -32,7 +33,8 @@ module.exports = function () {
       val.hn.trim() +
       `',
           CURDATE(),
-          CURRENT_TIMESTAMP()
+          CURRENT_TIMESTAMP(),
+          'Y'
         )
         ON DUPLICATE KEY UPDATE 
         readdatetime = CURRENT_TIMESTAMP()`;

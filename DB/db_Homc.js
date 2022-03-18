@@ -41,125 +41,89 @@ module.exports = function () {
   this.fill = async function fill(val, DATA) {
     var sqlCommand =
       `SELECT
-      NULL As itemindex,
-      m.batch_no As prescriptionno,
-      m.detail_no As seq,
-      NULL As seqmax,
-      o.hn As hn,
-      o.VisitNo As an,
-      Rtrim(ti.titleName) + ' ' +Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) As patientname,
-      CASE When pt.sex='ช' then 'M' else 'F' END as sex,
-      pt.birthDay as patientdob,
-      pt.marital as  maritalstatus,
-      'H' As prioritycode,
-      FORMAT(p.lastIssDate,'yyyy-MM-dd HH:mm:ss') As takedate,
-      FORMAT(mh.lastUpd,'yyyy-MM-dd HH:mm:ss') AS ordercreatedate,
-      m.inv_code As orderitemcode,
-      v.gen_name as orderitemname,
-      m.quant As orderqty,
-      p.unit as orderunitcode,
-      p.lamedHow as instructioncode,
-      (SELECT max(value) FROM STRING_SPLIT(p.lamedQty,'-')) as dosage,
-      p.lamedUnit as dosageunitcode,
-      NULL as  frequencycode,
-      p.lamedTime as timecode,
-      NULL As timecount,
-      '1' As durationcode,
-      m.maker As usercreatecode,
-      NULL As orderacceptfromip,
-      null As computername,
-      m.site As departmentcode,
-      si.site_addr As departmentdesc,
-      NULL As itemlotcode,
-      NULL As itemlotexpire,
-      NULL As doctorcode,
-      NULL as doctorname,
-      p.lamedTimeText as  freetext1,
-      p.lamedText as freetext2,
-      FORMAT(p.lastIssTime,'yyyy-MM-dd HH:mm:ss') as  lastmodified,
-      NULL As [language],
-      NULL As ordertype,
-      NULL As highalert,
-      NULL As shelfzone,
-      NULL As shelfname,
-      NULL As varymeal,
-      NULL As varymealtime,
-      NULL As voiddatetime,
-      NULL As sendmachine,
-      NULL As sendmix,
-      NULL As drugusagecode,
-      m.invTMTCode10 As tmtcode,
-      NULL As startdate,
-      NULL As enddate,
-      NULL As offstatus,
-      NULL As groupdrug,
-      NULL As sendmixcode,
-      NULL As sendmixname,
-      NULL As Vol,
-      NULL As dosageunitforVol,
-      NULL As calprice,
-      NULL As genorderdatetime,
-      NULL As screendatetime,
-      NULL As printstatus,
-      ( SELECT Rtrim(LTRIM(mi.Description))+','
-       FROM Med_Info_Group mi
-       LEFT JOIN Med_Info mif on (mif.Med_Info_Code = mi.Code)
-       where mif.Med_Inv_Code =m.inv_code
-       FOR XML PATH('')
-      ) as itemidentify,
-      NULL As printdrp,
-      NULL As meditemindex,
-      NULL As firstdose,
-      NULL As diluentadd,
-      NULL As orderfrom,
-      NULL As holddatetime,
-      NULL As varymealstatus,
-      NULL As odddatetime,
-      NULL As diluentseq,
-      NULL As oddday,
-      NULL As freetext3,
-      NULL As paytype,
-      null As edned,
-      NULL As edneddetail,
-      NULL As DIDcode,
-      NULL As continuestatus,
-      NULL As codetype,
-      m.cost As cost,
-      NULL As [value],
-      NULL As price,
-      m.amount As totalprice,
-      NULL As discount,
-      NULL As dosagetext,
-      v.remarks As orderitemnameTh,
-      b.useDrg AS rightid,
-      t.pay_typedes AS rightname,
-      m.site
-      
-      FROM
-      OPD_H o
-      LEFT JOIN Med_logh mh On o.hn = mh.hn AND o.regNo = mh.regNo
-      left join Med_log m on mh.batch_no = m.batch_no
-      left join Bill_h b on b.hn = mh.hn AND b.regNo = mh.regNo
-      left join Paytype t on t.pay_typecode = b.useDrg
-      left join Med_inv v on (v.code = m.inv_code  and v.[site]='1')
-      left join Patmed p (NOLOCK) on (p.hn = mh.hn and p.registNo = mh.regNo and p.invCode = m.inv_code and m.quant_diff = p.runNo)
-      left join PATIENT pt  on (pt.hn = o.hn)
-      left join PTITLE ti on (ti.titleCode = pt.titleCode)
-      left join Site si On m.site = si.site_key
-      WHERE
-      mh.hn='` +
-      val.data.padL(" ") +
-      `'
-      AND mh.invdate = '` +
-      val.date +
-      `'
-      AND m.pat_status = 'O'
-      AND m.revFlag IS NULL
-      AND m.site IN ('W8','W9')
-      AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
-      val.allTimeOld +
-      `)
-      order by m.date DESC`;
+	m.batch_no AS prescriptionno,
+	m.detail_no AS seq,
+	o.hn AS hn,
+	o.VisitNo AS an,
+	Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
+	CASE
+WHEN pt.sex = 'ช' THEN
+	'M'
+ELSE
+	'F'
+END AS sex,
+ pt.birthDay AS patientdob,
+ pt.marital AS maritalstatus,
+ 'H' AS prioritycode,
+ p.lastIssDate AS takedate,
+ mh.lastUpd AS ordercreatedate,
+p.lastIssTime AS lastmodified,
+ m.inv_code AS orderitemcode,
+ v.gen_name AS orderitemname,
+ m.quant AS orderqty,
+ p.unit AS orderunitcode,
+ p.lamedHow AS instructioncode,
+ p.lamedQty AS dosage,
+ p.lamedUnit AS dosageunitcode,
+ p.lamedTime AS timecode,
+ m.maker AS usercreatecode,
+ m.site AS departmentcode,
+ si.site_addr AS departmentdesc,
+ p.lamedTimeText AS freetext1,
+ p.lamedText AS freetext2,
+ m.invTMTCode10 AS tmtcode,
+ (
+	SELECT
+		Rtrim(LTRIM(mi.Description)) + ',' -- ,mif.Med_Inv_Code
+	FROM
+		Med_Info_Group mi
+	LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+	WHERE
+		mif.Med_Inv_Code = m.inv_code FOR XML PATH ('')
+) AS itemidentify,
+ m.cost AS cost,
+ m.amount AS totalprice,
+ v.remarks AS orderitemnameTh,
+ b.useDrg AS rightid,
+ t.pay_typedes AS rightname,
+ m.site
+FROM
+	OPD_H o
+LEFT JOIN Med_logh mh ON o.hn = mh.hn
+AND o.regNo = mh.regNo
+LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+LEFT JOIN Bill_h b ON b.hn = mh.hn
+AND b.regNo = mh.regNo
+LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
+LEFT JOIN Med_inv v ON (
+	v.code = m.inv_code
+	AND v.[site] = '1'
+)
+LEFT JOIN Patmed p (NOLOCK) ON (
+	p.hn = mh.hn
+	AND p.registNo = mh.regNo
+	AND p.invCode = m.inv_code
+	AND m.quant_diff = p.runNo
+)
+LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
+LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+LEFT JOIN Site si ON m.site = si.site_key
+WHERE
+	mh.hn = '` +
+  val.data.padL(" ") +
+  `'
+AND mh.invdate = '` +
+val.date +
+`'
+AND m.pat_status = 'O'
+AND m.revFlag IS NULL
+AND m.override_code = 'Y'
+AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
+val.allTimeOld +
+`)
+ORDER BY
+	p.lastIssTime`;
+   
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlCommand);
