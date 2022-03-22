@@ -21,6 +21,7 @@ var gd4unit101 = new db_mysql101();
 exports.syncOPDController = async (req, res, next) => {
   let data = req.body;
   const hn = req.body.data;
+  const check = req.body.check;
   let sendv = {};
   // sendv.status = 0;
   // res.send(sendv);
@@ -44,7 +45,7 @@ exports.syncOPDController = async (req, res, next) => {
     if (b.length > 0) {
       let drugarr = [];
       let q = await center102.fill(b[0].hn.trim());
-      // console
+
       let c = {
         hn: b[0].hn.trim(),
         name: b[0].patientname.trim(),
@@ -52,8 +53,8 @@ exports.syncOPDController = async (req, res, next) => {
         prescriptionno: b[0].prescriptionno.trim(),
         patientdob: b[0].patientdob.trim(),
         queue: q[0] ? q[0].QN : "",
-        jvm: true,
-        dih: true,
+        jvm: check.jvm,
+        dih: check.dih,
       };
       for (let i = 0; i < b.length; i++) {
         sql101 = await GD4Unit_101.dataDrug(b[i].orderitemcode);
@@ -84,9 +85,25 @@ exports.syncOPDController = async (req, res, next) => {
           gd4unit101.fill(val).then((result) => {
             if (result.affectedRows > 0) {
               b.forEach(async function (b) {
+                b.lastmodified = b.lastmodified
+                  ? b.lastmodified
+                      .toISOString()
+                      .replace(/T/, " ")
+                      .replace(/\..+/, "")
+                  : "";
+                b.ordercreatedate = b.ordercreatedate
+                  ? b.ordercreatedate
+                      .toISOString()
+                      .replace(/T/, " ")
+                      .replace(/\..+/, "")
+                  : "";
+                b.takedate = b.takedate
+                  ? b.takedate.toISOString().substr(0, 10)
+                  : "";
                 await gd4unit101.insertDrug(b);
               });
               console.log("HN : " + b[0].hn.trim() + " :success");
+              console.log("-------------------------------------------------");
               res.status(200).json({
                 // Authorization: Bearer,
                 status: 1,
@@ -115,13 +132,19 @@ exports.syncOPDManualController = async (req, res, next) => {
   let sendv = {};
   let data = req.body.data;
   let patient = req.body.patient;
-  // let sendv = {};
+
   // sendv.status = 0;
   // res.send(sendv);
-  console.log(patient);
+
+  for (let i = 0; i < data.length; i++) {
+    let unit = await pmpf.dataUnit(data[i].code);
+    data[i].unit = unit[0].miniUnit;
+  }
+
   let q = await center102.fill(patient.hn);
   patient.queue = q[0] ? q[0].QN : "";
 
+  console.log(patient);
   getdataHomc(data, patient).then((value) => {
     if (value.dih === 1 && value.jvm === 1) {
       console.log("HN : " + patient.hn + " :success");
@@ -438,8 +461,8 @@ async function getdataHomc(data, etc) {
       patient: {
         patID: etc.hn,
         patName:
-          etc.name.length > 34
-            ? etc.name.substring(0, 28) +
+          etc.name.length > 20
+            ? etc.name.substring(0, 18) +
               ".." +
               etc.queue +
               " (" +
@@ -485,14 +508,8 @@ async function getdataHomc(data, etc) {
     let xmlDrug = { xml: js2xmlparser.parse("outpOrderDispense", jsonDrug) };
 
     console.log("-------------------------------------------------");
+
     if (etc.dih) {
-      // var now = new Date();
-      // var fileName = moment(now).format("YYYYMMDDHHmmssSSS") + ".xml";
-      // var fullName = "DIH_OPD/" + fileName;
-      // dih = await createFile(fullName, xmlDrug);
-      // if (!dih) {
-      //   dih = 0;
-      // }
       var url =
         "http://192.168.185.102:8788/axis2/services/DIHPMPFWebservice?wsdl";
       var client = await soap.createClientAsync(url);
@@ -509,8 +526,29 @@ async function getdataHomc(data, etc) {
       var now = new Date();
       var fileName = moment(now).format("YYYYMMDDHHmmssSSS") + ".txt";
       var fullNameJVM = fileName;
+
       jvm = await createFile(fullNameJVM, DataJV);
-      if (!jvm) {
+      if (jvm) {
+        const { exec } = require("child_process");
+        exec(
+          "gd4iconv.exe DATA/JVM_OPD/" +
+            fullNameJVM +
+            " tis-620 \\\\192.168.185.164\\OCSReading\\" +
+            fullNameJVM,
+          (err, stdout, stderr) => {
+            if (err) {
+              console.log(err);
+              return;
+            }
+
+            if (stdout == "1") {
+              jvm = 1;
+            } else {
+              jvm = 0;
+            }
+          }
+        );
+      } else {
         jvm = 0;
       }
     }
@@ -551,76 +589,3 @@ async function createFile(filename = "DIH/file.XML", text) {
     resolve(1);
   });
 }
-
-exports.testSOAPController = async (req, res, next) => {
-  res.send("1234");
-  const { exec } = require("child_process");
-  exec("ping 192.168.185.102 -n 1", (err, stdout, stderr) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-
-    // the *entire* stdout and stderr (buffered)
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
-  });
-};
-//   var args = {
-//     xml: `<?xml version='1.0'?>
-//   <outpOrderDispense>
-//       <patient>
-//           <patID>0000</patID>
-//           <patName>TEST (1/1)</patName>
-//           <gender>F</gender>
-//           <birthday>1960-04-16</birthday>
-//           <age>61</age>
-//           <identity/>
-//           <insuranceNo/>
-//           <chargeType/>
-//       </patient>
-//       <prescriptions>
-//           <prescription>
-//               <orderNo>6500235153_555544</orderNo>
-//               <ordertype>M</ordertype>
-//               <pharmacy>OPD</pharmacy>
-//               <windowNo/>
-//               <paymentIP/>
-//               <paymentDT>2022-03-14</paymentDT>
-//               <outpNo/>
-//               <visitNo/>
-//               <deptCode/>
-//               <deptName/>
-//               <doctCode/>
-//               <doctName/>
-//               <diagnosis/>
-//               <drugs>
-//                   <drug>
-//                       <code>EMPAG</code>
-//                       <Name>EMPAGLIFOZIN(JARDIANCE) 10 MG</Name>
-//                       <alias/>
-//                       <firmName>BOEHRINGER INGELHEIM PHARMA, GERMANY</firmName>
-//                       <method/>
-//                       <note/>
-//                       <spec>10 mg</spec>
-//                       <type/>
-//                       <unit>TAB   </unit>
-//                       <Qty>1</Qty>
-//                   </drug>
-//               </drugs>
-//           </prescription>
-//       </prescriptions>
-//   </outpOrderDispense>
-//   `,
-//   };
-
-//   // then/catch
-//   // soap
-//   //   .createClientAsync(url)
-//   //   .then((client) => {
-//   //     return client.outpOrderDispenseAsync(args);
-//   //   })
-//   //   .then((result) => {
-
-//   //   });
-// };

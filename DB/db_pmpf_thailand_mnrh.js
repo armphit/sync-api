@@ -90,4 +90,20 @@ GROUP BY
       });
     });
   };
+
+  this.dataUnit = function fill(val, DATA) {
+    var sql =
+      `SELECT dd.miniUnit
+      FROM dictdrug dd
+      WHERE dd.drugCode = '` +
+      val +
+      `'`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

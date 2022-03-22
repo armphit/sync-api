@@ -26,7 +26,7 @@ app.post("/register", registerController);
 app.post("/login", loginController);
 app.post("/syncOPD", syncOPDController);
 app.post("/syncOPDManual", syncOPDManualController);
-app.get("/testSOAP", testSOAPController);
+
 // app.post("/syncOPDManual", function (req, res) {
 //   syncOPDManualController;
 // });
@@ -40,6 +40,6 @@ app.get("/", (req, res) => {
   res.end("welcom to root path");
 });
 
-app.listen(2000, () => {
-  console.log("Web Service Online:2000");
+app.listen(4000, () => {
+  console.log("Web Service Online:4000");
 });
