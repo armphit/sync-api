@@ -129,7 +129,6 @@ AND mh.invdate = '` +
       `'
 AND m.pat_status = 'O'
 AND m.revFlag IS NULL
-AND m.override_code = 'Y'
 AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       val.allTimeOld +
       `)
