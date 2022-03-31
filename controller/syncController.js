@@ -213,7 +213,33 @@ async function getdataHomc(data, etc) {
         listDrugSE[0].isPrepack == "N" &&
         data[i].Qty >= Number(listDrugSE[0].HisPackageRatio)
       ) {
+        if (data[i].code == "MUCIL") {
+          var LBox = ~~(data[i].Qty / listDrugSE[0].HisPackageRatio);
+
+          if (LBox > 5) {
+            while (LBox > 5) {
+              var se = {};
+              se.code = listDrugSE[0].drugCode;
+              se.Name = data[i].Name;
+              se.alias = data[i].alias;
+              se.firmName = data[i].firmName;
+              se.method = data[i].method;
+              se.note = data[i].note;
+              se.spec = data[i].spec;
+              se.type = data[i].type;
+              se.unit = data[i].unit;
+              se.Qty = 5 * listDrugSE[0].HisPackageRatio;
+              arrSE.push(se);
+              codeArrSE.push(arrSE);
+              arrSE = [];
+              LBox = LBox - 5;
+            }
+
+            data[i].Qty = LBox * listDrugSE[0].HisPackageRatio;
+          }
+        }
         var qtyBox = data[i].Qty / listDrugSE[0].HisPackageRatio;
+
         if (numBox + ~~qtyBox < 10) {
           numBox = numBox + ~~qtyBox;
           var se = {};
@@ -388,7 +414,7 @@ async function getdataHomc(data, etc) {
           let qty = data[i].Qty;
           do {
             j++;
-            amount = qty > 400 ? 400 : qty;
+            amount = qty > numMax ? numMax : qty;
             let dataJVM =
               etc.name +
               "|" +

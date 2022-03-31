@@ -97,8 +97,8 @@ p.lastIssTime AS lastmodified,
  m.amount AS totalprice,
  v.remarks AS orderitemnameTh,
  b.useDrg AS rightid,
- t.pay_typedes AS rightname,
- m.site
+ t.pay_typedes AS rightname
+
 FROM
 	OPD_H o
 LEFT JOIN Med_logh mh ON o.hn = mh.hn
@@ -128,6 +128,7 @@ AND mh.invdate = '` +
       val.date +
       `'
 AND m.pat_status = 'O'
+AND m.site = 'W8'
 AND m.revFlag IS NULL
 AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       val.allTimeOld +
