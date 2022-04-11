@@ -652,6 +652,7 @@ async function getdataHomc(data, etc) {
           patID: etc.hn,
           patName:
             etc.name.length > 17
+<<<<<<< HEAD
               ? etc.queue + 
               " " + 
               etc.name.substring(0, 15) +".."+
@@ -668,6 +669,25 @@ async function getdataHomc(data, etc) {
               "/" +
               op.length +
               ")",
+=======
+              ? etc.queue +
+                " " +
+                etc.name.substring(0, 15) +
+                ".." +
+                " (" +
+                (i + 1) +
+                "/" +
+                op.length +
+                ")"
+              : etc.queue +
+                " " +
+                etc.name +
+                " (" +
+                (i + 1) +
+                "/" +
+                op.length +
+                ")",
+>>>>>>> 8bbe9b01823f63769b472bc6f6aad716a6a6b089
           gender: etc.sex,
           birthday: birthDate,
           age: age,
