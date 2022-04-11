@@ -22,7 +22,8 @@ module.exports = function () {
         hn,
         createdate,
         readdatetime,
-        status
+        status,
+        realdate
       )
       VALUES
         (
@@ -34,10 +35,16 @@ module.exports = function () {
       `',
           CURDATE(),
           CURRENT_TIMESTAMP(),
-          'Y'
+          'Y',
+          '` +
+      val.date +
+      `'
         )
         ON DUPLICATE KEY UPDATE 
-        readdatetime = CURRENT_TIMESTAMP()`;
+        readdatetime = CURRENT_TIMESTAMP(),
+        realdate  = '` +
+      val.date +
+      `'`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

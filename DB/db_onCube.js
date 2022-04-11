@@ -49,8 +49,8 @@ module.exports = function () {
         const result = await request.query(sql);
         resolve(result.recordset);
       } catch (error) {
-        await pool.close();
-        console.log("request:" + error);
+        // await pool.close();
+        console.log("OnCube:" + error);
       }
     });
   };
