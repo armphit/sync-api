@@ -234,6 +234,7 @@ async function getdataHomc(data, etc) {
           se.Qty =
             Math.floor(data[i].Qty / listDrugSE[0].HisPackageRatio) *
             listDrugSE[0].HisPackageRatio;
+
           data[i].Qty = data[i].Qty % listDrugSE[0].HisPackageRatio;
           arrSE.push(se);
         } else {
@@ -258,7 +259,6 @@ async function getdataHomc(data, etc) {
             arrSE.push(se);
             codeArrSE.push(arrSE);
             arrSE = [];
-
             numSize = 0;
           } while (drugSize > 4500);
 
