@@ -92,15 +92,15 @@ exports.syncOPDController = async (req, res, next) => {
                 b.forEach(async function (b) {
                   b.lastmodified = b.lastmodified
                     ? b.lastmodified
-                      .toISOString()
-                      .replace(/T/, " ")
-                      .replace(/\..+/, "")
+                        .toISOString()
+                        .replace(/T/, " ")
+                        .replace(/\..+/, "")
                     : "";
                   b.ordercreatedate = b.ordercreatedate
                     ? b.ordercreatedate
-                      .toISOString()
-                      .replace(/T/, " ")
-                      .replace(/\..+/, "")
+                        .toISOString()
+                        .replace(/T/, " ")
+                        .replace(/\..+/, "")
                     : "";
                   b.takedate = b.takedate
                     ? b.takedate.toISOString().substr(0, 10)
@@ -513,8 +513,8 @@ async function getdataHomc(data, etc) {
       if (
         listDrugLca.length !== 0 &&
         Math.floor(data[i].Qty / listDrugLca[0].HisPackageRatio) *
-        listDrugLca[0].HisPackageRatio >
-        0
+          listDrugLca[0].HisPackageRatio >
+          0
       ) {
         var lca = {};
         lca.code = listDrugLca[0].drugCode;
@@ -652,24 +652,6 @@ async function getdataHomc(data, etc) {
           patID: etc.hn,
           patName:
             etc.name.length > 17
-<<<<<<< HEAD
-              ? etc.queue + 
-              " " + 
-              etc.name.substring(0, 15) +".."+
-              " (" +
-              (i + 1) +
-              "/" +
-              op.length +
-              ")"
-              : etc.queue + 
-              " " + 
-              etc.name +
-              " (" +
-              (i + 1) +
-              "/" +
-              op.length +
-              ")",
-=======
               ? etc.queue +
                 " " +
                 etc.name.substring(0, 15) +
@@ -687,7 +669,6 @@ async function getdataHomc(data, etc) {
                 "/" +
                 op.length +
                 ")",
->>>>>>> 8bbe9b01823f63769b472bc6f6aad716a6a6b089
           gender: etc.sex,
           birthday: birthDate,
           age: age,
@@ -741,9 +722,9 @@ async function getdataHomc(data, etc) {
           const { exec } = require("child_process");
           exec(
             "gd4iconv.exe DATA/JVM_OPD/" +
-            fullNameJVM +
-            " tis-620 \\\\192.168.185.164\\OCSReading\\" +
-            fullNameJVM,
+              fullNameJVM +
+              " tis-620 \\\\192.168.185.164\\OCSReading\\" +
+              fullNameJVM,
             (err, stdout, stderr) => {
               if (err) {
                 console.log(err);
