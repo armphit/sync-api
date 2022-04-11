@@ -304,7 +304,10 @@ async function getdataHomc(data, etc) {
         listDrugPre[0].isPrepack == "Y" &&
         data[i].Qty >= Number(listDrugPre[0].HisPackageRatio)
       ) {
-        var qtyBox = data[i].Qty / listDrugPre[0].HisPackageRatio;
+        let getdrugSize = await Xmed.dataDrugSize(data[i].code);
+        let drugSize =
+          ~~(data[i].Qty / listDrugPre[0].HisPackageRatio) *
+          getdrugSize[0].Item;
         if (numBox + ~~qtyBox < 10) {
           numBox = numBox + ~~qtyBox;
           pre.code = listDrugPre[0].drugCode;
