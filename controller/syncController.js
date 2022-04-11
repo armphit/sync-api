@@ -219,7 +219,7 @@ async function getdataHomc(data, etc) {
         let getdrugSize = await Xmed.dataDrugSize(data[i].code);
         let drugSize =
           ~~(data[i].Qty / listDrugSE[0].HisPackageRatio) * getdrugSize[0].Item;
-        if (numSize + drugSize < 4700) {
+        if (numSize + drugSize < 4500) {
           numSize = numSize + drugSize;
           var se = {};
           se.code = listDrugSE[0].drugCode;
@@ -250,7 +250,7 @@ async function getdataHomc(data, etc) {
             se.type = data[i].type;
             se.unit = data[i].unit;
             se.Qty =
-              ~~(Math.abs(numSize - 4700) / getdrugSize[0].Item) *
+              ~~(Math.abs(numSize - 4500) / getdrugSize[0].Item) *
               listDrugSE[0].HisPackageRatio;
             drugSize =
               ~~((data[i].Qty - se.Qty) / listDrugSE[0].HisPackageRatio) *
@@ -259,9 +259,8 @@ async function getdataHomc(data, etc) {
             arrSE.push(se);
             codeArrSE.push(arrSE);
             arrSE = [];
-            console.log(Math.abs(numSize - 4700));
             numSize = 0;
-          } while (drugSize > 4700);
+          } while (drugSize > 4500);
 
           if (drugSize >= getdrugSize[0].Item) {
             var seS = {};
@@ -299,7 +298,7 @@ async function getdataHomc(data, etc) {
           ~~(data[i].Qty / listDrugPre[0].HisPackageRatio) *
           getdrugSize[0].Item;
 
-        if (numSize + drugSize < 4700) {
+        if (numSize + drugSize < 4500) {
           numSize = numSize + drugSize;
           pre.code = listDrugPre[0].drugCode;
           pre.Name = data[i].Name;
@@ -327,7 +326,7 @@ async function getdataHomc(data, etc) {
             pre.type = data[i].type;
             pre.unit = data[i].unit;
             pre.Qty =
-              ~~(Math.abs(numSize - 4700) / getdrugSize[0].Item) *
+              ~~(Math.abs(numSize - 4500) / getdrugSize[0].Item) *
               listDrugPre[0].HisPackageRatio;
             drugSize =
               ~~((data[i].Qty - pre.Qty) / listDrugPre[0].HisPackageRatio) *
@@ -336,7 +335,7 @@ async function getdataHomc(data, etc) {
             codeArrSE.push(arrSE);
             arrSE = [];
             numSize = 0;
-          } while (drugSize > 4700);
+          } while (drugSize > 4500);
           if (drugSize >= getdrugSize[0].Item) {
             var preS = {};
             preS.code = listDrugPre[0].drugCode;
