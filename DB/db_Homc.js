@@ -8,6 +8,7 @@ module.exports = function () {
     password: "Robot@MNRH2022",
     server: "192.168.44.1",
     database: "MHR",
+    timezone: "utc",
     requestTimeout: 180000, // for timeout setting
     connectionTimeout: 180000, // for timeout setting
     options: {
@@ -36,6 +37,17 @@ module.exports = function () {
       target = n + target;
     }
     return target;
+  };
+
+  this.fill = function fill(CMD, DATA) {
+    // // create Request object
+    new this.sql.Request(this.connection).query(CMD, function (err, recordset) {
+      if (err) console.log("ERROR: " + err);
+
+      // send records as a response
+      // res.send(recordset);
+      DATA(recordset);
+    });
   };
 
   this.fill = async function fill(val, DATA) {
@@ -85,8 +97,8 @@ p.lastIssTime AS lastmodified,
  m.amount AS totalprice,
  v.remarks AS orderitemnameTh,
  b.useDrg AS rightid,
- t.pay_typedes AS rightname,
- m.site
+ t.pay_typedes AS rightname
+
 FROM
 	OPD_H o
 LEFT JOIN Med_logh mh ON o.hn = mh.hn
@@ -110,20 +122,20 @@ LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
 LEFT JOIN Site si ON m.site = si.site_key
 WHERE
 	mh.hn = '` +
-  val.data.padL(" ") +
-  `'
+      val.data.padL(" ") +
+      `'
 AND mh.invdate = '` +
-val.date +
-`'
+      val.date +
+      `'
 AND m.pat_status = 'O'
+AND m.site = 'W8'
 AND m.revFlag IS NULL
-AND m.override_code = 'Y'
 AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
-val.allTimeOld +
-`)
+      val.allTimeOld +
+      `)
 ORDER BY
 	p.lastIssTime`;
-   
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlCommand);
@@ -135,6 +147,7 @@ ORDER BY
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(CMD);
+
       resolve(result);
     });
   };

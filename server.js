@@ -9,8 +9,13 @@ var {
 var {
   syncOPDController,
   syncOPDManualController,
-  testSOAPController,
+
 } = require("./controller/syncController");
+
+var {
+  soapDIHController
+
+} = require("./controller/soapController");
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,6 +31,8 @@ app.post("/register", registerController);
 app.post("/login", loginController);
 app.post("/syncOPD", syncOPDController);
 app.post("/syncOPDManual", syncOPDManualController);
+app.post("/soapDIH", soapDIHController);
+
 
 // app.post("/syncOPDManual", function (req, res) {
 //   syncOPDManualController;

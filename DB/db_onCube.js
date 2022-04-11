@@ -8,8 +8,8 @@ module.exports = function () {
     password: "jvm5822511",
     server: "192.168.185.164",
     database: "OnCube",
-    requestTimeout: 180000, // for timeout setting
-    connectionTimeout: 180000, // for timeout setting
+    // requestTimeout: 180000, // for timeout setting
+    // connectionTimeout: 180000, // for timeout setting
     options: {
       encrypt: false, // need to stop ssl checking in case of local db
       enableArithAbort: true,
@@ -44,8 +44,14 @@ module.exports = function () {
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
-      const result = await pool.request().query(sql);
-      resolve(result.recordset);
+      try {
+        const request = await pool.request();
+        const result = await request.query(sql);
+        resolve(result.recordset);
+      } catch (error) {
+        // await pool.close();
+        console.log("OnCube:" + error);
+      }
     });
   };
 
