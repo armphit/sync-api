@@ -31,16 +31,13 @@ module.exports = function () {
   this.dataDrugSize = async function fill(val, DATA) {
     var sqlgetdrug =
       `SELECT
-      drugCode,
+      val.Code,
       FLOOR(
         (Length / 100) * (Width / 100) * (Height / 100)
       ) AS Item
     FROM
       (
         SELECT
-          MAX (dd.drugID) drugID,
-          MAX (dd.drugCode) drugCode,
-          MAX (dd.drugName) drugName,
           MAX (xm.Code) Code,
           MAX (xm.Length) Length,
           MAX (xm.Width) Width,
@@ -48,14 +45,14 @@ module.exports = function () {
         FROM
           XMed.dbo.Spaces sp
         LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
-        LEFT JOIN dictdrug_102mySQL dd ON dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS = xm.Code COLLATE SQL_Latin1_General_CP1_CI_AS
         WHERE
           xm.Length IS NOT NULL
         AND sp.ProductId IS NOT NULL
         GROUP BY
           sp.ProductId
       ) AS val
-      WHERE drugCode  = N'` +
+    WHERE
+      val.Code = '` +
       val +
       `'`;
     return new Promise(async (resolve, reject) => {
