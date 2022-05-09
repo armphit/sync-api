@@ -34,14 +34,16 @@ module.exports = function () {
       val.Code,
       FLOOR(
         (Length / 100) * (Width / 100) * (Height / 100)
-      ) AS Item
+      ) AS Item,
+      Quantity
     FROM
       (
         SELECT
           MAX (xm.Code) Code,
           MAX (xm.Length) Length,
           MAX (xm.Width) Width,
-          MAX (xm.Height) Height
+          MAX (xm.Height) Height,
+          MAX (sp.Quantity) AS Quantity
         FROM
           XMed.dbo.Spaces sp
         LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
@@ -51,7 +53,7 @@ module.exports = function () {
         GROUP BY
           sp.ProductId
       ) AS val
-    WHERE
+       WHERE
       val.Code = '` +
       val +
       `'`;
