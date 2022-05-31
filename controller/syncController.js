@@ -246,14 +246,14 @@ async function getdataHomc(data, etc) {
             : 0
         );
         let valModulus = [];
-        if (listDrugSE.length > 1) {
+        if (listDrugSE.length > 1 && data[i].Qty > 100) {
           for (let a = 0; a < listDrugSE.length; a++) {
             if (data[i].Qty % listDrugSE[a].HisPackageRatio == 0) {
               valModulus = listDrugSE.sort((a, b) =>
                 data[i].Qty % a.HisPackageRatio >
                 data[i].Qty % b.HisPackageRatio
                   ? 1
-                  : data[i].Qty % a.HisPackageRatio <
+                  : data[i].Qty % a.HisPackageRatio <=
                     data[i].Qty % b.HisPackageRatio
                   ? -1
                   : 0
@@ -264,13 +264,52 @@ async function getdataHomc(data, etc) {
 
           if (valModulus.length == 0) {
             let qty = data[i].Qty;
-            listDrugSE.forEach((element) => {
-              qty = qty % Number(element.HisPackageRatio);
-            });
+            for (let index = 0; index < listDrugSE.length; index++) {
+              qty = qty % Number(listDrugSE[index].HisPackageRatio);
+            }
 
             if (qty != 0) {
-              let obj = listDrugSE.find((o) => o.drugCode === data[i].code);
-              valModulus = obj;
+              if (data[i].Qty % 20 == 0) {
+                let checkBox = 0;
+                let checkMod = 0;
+                let checkQty = data[i].Qty;
+
+                do {
+                  if (checkQty / 100 >= 1) {
+                    checkQty = checkQty - 120;
+                    checkBox++;
+                  } else {
+                    break;
+                  }
+                  checkMod = checkQty % 100;
+                } while (checkMod != 0);
+
+                if (checkMod == 0) {
+                  data[i].Qty = checkBox * listDrugSE[0].HisPackageRatio;
+                  valModulus.push(listDrugSE[0]);
+                  let drug = {
+                    Name: data[i].Name,
+                    Qty: checkQty,
+                    alias: "",
+                    code: data[i].code,
+                    firmName: data[i].firmName,
+                    method: "",
+                    note: "",
+                    spec: data[i].spec,
+                    type: "",
+                    unit: data[i].unit,
+                  };
+                  data.push(drug);
+                } else {
+                  valModulus = listDrugSE.find(
+                    (o) => o.drugCode === data[i].code
+                  );
+                }
+              } else {
+                valModulus = listDrugSE.find(
+                  (o) => o.drugCode === data[i].code
+                );
+              }
             } else {
               valModulus = listDrugSE;
             }
@@ -287,7 +326,7 @@ async function getdataHomc(data, etc) {
             let getdrugSize = await Xmed.dataDrugSize(valModulus[x].drugID);
 
             if (
-              data[i].Qty <
+              data[i].Qty <=
               getdrugSize[0].Quantity * valModulus[x].HisPackageRatio
             ) {
               let drugSize =
@@ -412,13 +451,16 @@ async function getdataHomc(data, etc) {
             } else {
               numMax = data[i].Qty;
             }
+          } else {
+            dateC = moment(date).add(543, "year").format("DD/MM/YYYY");
+            numMax = data[i].Qty;
           }
 
           let amount = 0;
           let qty = data[i].Qty;
           do {
             j++;
-            amount = qty > numMax ? numMax : qty;
+            amount = qty >= numMax ? numMax : qty;
             let dataJVM =
               etc.name +
               "|" +
@@ -504,7 +546,6 @@ async function getdataHomc(data, etc) {
 
       zone = zone.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
 
-
       let jsonDrug = {
         patient: {
           patID: etc.hn,
@@ -553,11 +594,11 @@ async function getdataHomc(data, etc) {
           },
         },
       };
-     
+
       value2 = [];
 
       let xmlDrug = { xml: js2xmlparser.parse("outpOrderDispense", jsonDrug) };
-
+      console.log(xmlDrug);
       console.log("-------------------------------------------------");
 
       if (etc.dih) {

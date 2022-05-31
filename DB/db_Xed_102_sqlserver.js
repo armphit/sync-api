@@ -43,7 +43,7 @@ module.exports = function () {
           MAX (xm.Length) Length,
           MAX (xm.Width) Width,
           MAX (xm.Height) Height,
-          MAX (sp.Quantity) AS Quantity
+          SUM (sp.Quantity) AS Quantity
         FROM
           XMed.dbo.Spaces sp
         LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id

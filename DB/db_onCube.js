@@ -1,31 +1,51 @@
 const { Console } = require("console");
-
 module.exports = function () {
   const sql = require("mssql");
   //จริง
-  this.config = {
-    user: "sa",
-    password: "jvm5822511",
-    server: "192.168.185.164",
-    database: "OnCube",
-    // requestTimeout: 180000, // for timeout setting
-    // connectionTimeout: 180000, // for timeout setting
-    options: {
-      encrypt: false, // need to stop ssl checking in case of local db
-      enableArithAbort: true,
-    },
-  };
-
-  const poolPromise = new sql.ConnectionPool(this.config)
-    .connect()
-    .then((pool) => {
-      console.log("Connected to OnCube");
-      return pool;
+  // this.config = {
+  //   user: "sa",
+  //   password: "jvm5822511",
+  //   server: "192.168.185.164",
+  //   database: "OnCube",
+  //   // requestTimeout: 180000, // for timeout setting
+  //   // connectionTimeout: 180000, // for timeout setting
+  //   options: {
+  //     encrypt: false, // need to stop ssl checking in case of local db
+  //     enableArithAbort: true,
+  //   },
+  // };
+  let poolPromise;
+  let num = 0;
+  connectDB();
+  function connectDB() {
+    poolPromise = new sql.ConnectionPool({
+      user: "sa",
+      password: "jvm5822511",
+      server: "192.168.185.164",
+      database: "OnCube",
+      // requestTimeout: 180000, // for timeout setting
+      // connectionTimeout: 180000, // for timeout setting
+      options: {
+        encrypt: false, // need to stop ssl checking in case of local db
+        enableArithAbort: true,
+      },
     })
-    .catch((err) =>
-      console.log("Database Connection Failed! Bad Config: ", err)
-    );
-
+      .connect()
+      .then((pool) => {
+        console.log("Connected to OnCube");
+        return pool;
+      })
+      .catch((err) => {
+        num++;
+        console.log("Database Connection Failed! Bad Config: ", err);
+        if (num != 5) {
+          setTimeout(() => {
+            console.log("OnCube Error: " + num);
+            connectDB();
+          }, 60000);
+        }
+      });
+  }
   this.datadrug = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -49,8 +69,8 @@ module.exports = function () {
         const result = await request.query(sql);
         resolve(result.recordset);
       } catch (error) {
-        // await pool.close();
         console.log("OnCube:" + error);
+        connectDB();
       }
     });
   };
