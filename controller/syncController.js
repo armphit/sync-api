@@ -598,7 +598,7 @@ async function getdataHomc(data, etc) {
       value2 = [];
 
       let xmlDrug = { xml: js2xmlparser.parse("outpOrderDispense", jsonDrug) };
-      console.log(xmlDrug);
+    
       console.log("-------------------------------------------------");
 
       if (etc.dih) {

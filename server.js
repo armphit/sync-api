@@ -9,13 +9,15 @@ var {
 var {
   syncOPDController,
   syncOPDManualController,
-
 } = require("./controller/syncController");
 
-var {
-  soapDIHController
+var { soapDIHController } = require("./controller/soapController");
 
-} = require("./controller/soapController");
+var {
+  patientSyncController,
+  drugSyncController,
+  listDrugSyncController,
+} = require("./controller/interfaceController");
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,7 +34,9 @@ app.post("/login", loginController);
 app.post("/syncOPD", syncOPDController);
 app.post("/syncOPDManual", syncOPDManualController);
 app.post("/soapDIH", soapDIHController);
-
+app.post("/patientSync", patientSyncController);
+app.post("/drugSync", drugSyncController);
+app.post("/listDrugAllSync", listDrugSyncController);
 
 // app.post("/syncOPDManual", function (req, res) {
 //   syncOPDManualController;
