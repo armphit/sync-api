@@ -24,6 +24,7 @@ module.exports = function () {
         readdatetime,
         status,
         realdate
+        
       )
       VALUES
         (
@@ -45,6 +46,11 @@ module.exports = function () {
         realdate  = '` +
       val.date +
       `'`;
+
+    // ,
+    // clicksend = (select * from (SELECT max(clicksend)+1 FROM synclastupdate_opd WHERE hn = '` +
+    // val.hn.trim() +
+    // `' LIMIT 1) t
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

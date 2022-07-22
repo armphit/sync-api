@@ -222,70 +222,62 @@ GROUP BY
     var sql = ``;
     if (val) {
       sql =
-        `SELECT CASE WHEN dd.drugCode = 'CYCL-' THEN 'CYCL-'
-      WHEN dd.drugCode = 'DEX-O' THEN 'DEX-O'
-      WHEN dd.drugCode = 'POLY-1' THEN 'LPOLY-1'
-      ELSE SUBSTRING_INDEX(dd.drugCode,'-',1)
+        `SELECT
+        CASE
+      WHEN dd.drugCode = 'CYCL-' THEN
+        'CYCL-'
+      WHEN dd.drugCode = 'DEX-O' THEN
+        'DEX-O'
+      WHEN dd.drugCode = 'POLY-1' THEN
+        'LPOLY-1'
+      ELSE
+        SUBSTRING_INDEX(dd.drugCode, '-', 1)
       END AS code,
-      dd.drugName as Name,
-      dd.miniSpec as spec,
-      dd.HISPackageRatio AS pack,
-      dd.firmName as firmName,
-      dd.miniUnit as unit,
-
-      GROUP_CONCAT(dv.deviceCode) as location
+       dd.drugName AS Name,
+       dd.miniSpec AS spec,
+       dd.HISPackageRatio AS pack,
+       dd.firmName AS firmName,
+       dd.miniUnit AS unit,
+       GROUP_CONCAT(dv.deviceCode) AS location
       FROM
-
-      (
-      dictdrug   dd 
-      LEFT JOIN  devicedrugsetting   dt  ON 
-
-          dt . drugID  =  dd . drugID 
-
-
-      )
-      LEFT JOIN  device   dv  ON 
-
-        dv . deviceID  =  dt . deviceID 
-
-
-      WHERE dv.deviceCode is not null
-      AND dv.deviceCode <> 'AP'
+        (
+          dictdrug dd
+          LEFT JOIN devicedrugsetting dt ON dt.drugID = dd.drugID
+        )
+      LEFT JOIN device dv ON dv.deviceID = dt.deviceID
+      WHERE dv.deviceCode <> 'AP'
       AND dd.drugCode = '` +
         val +
         `'
-      GROUP BY code`;
+      GROUP BY
+      code`;
     } else {
-      sql = `SELECT CASE WHEN dd.drugCode = 'CYCL-' THEN 'CYCL-'
-      WHEN dd.drugCode = 'DEX-O' THEN 'DEX-O'
-      WHEN dd.drugCode = 'POLY-1' THEN 'LPOLY-1'
-      ELSE SUBSTRING_INDEX(dd.drugCode,'-',1)
-      END AS code,
-      dd.drugName as Name,
-      dd.miniSpec as spec,
-      dd.HISPackageRatio AS pack,
-      dd.firmName as firmName,
-      dd.miniUnit as unit,
-
-      GROUP_CONCAT(dv.deviceCode) as location
-      FROM
-
+      sql = `SELECT
+      CASE
+    WHEN dd.drugCode = 'CYCL-' THEN
+      'CYCL-'
+    WHEN dd.drugCode = 'DEX-O' THEN
+      'DEX-O'
+    WHEN dd.drugCode = 'POLY-1' THEN
+      'LPOLY-1'
+    ELSE
+      SUBSTRING_INDEX(dd.drugCode, '-', 1)
+    END AS code,
+     dd.drugName AS Name,
+     dd.miniSpec AS spec,
+     dd.HISPackageRatio AS pack,
+     dd.firmName AS firmName,
+     dd.miniUnit AS unit,
+     GROUP_CONCAT(dv.deviceCode) AS location
+    FROM
       (
-      dictdrug   dd 
-      LEFT JOIN  devicedrugsetting   dt  ON 
-
-          dt . drugID  =  dd . drugID 
-
-
+        dictdrug dd
+        LEFT JOIN devicedrugsetting dt ON dt.drugID = dd.drugID
       )
-      LEFT JOIN  device   dv  ON 
-
-        dv . deviceID  =  dt . deviceID 
-
-
-      WHERE dv.deviceCode is not null
-      AND dv.deviceCode <> 'AP'
-      GROUP BY code`;
+    LEFT JOIN device dv ON dv.deviceID = dt.deviceID
+    WHERE dv.deviceCode <> 'AP'
+    GROUP BY
+      code`;
     }
 
     return new Promise(function (resolve, reject) {

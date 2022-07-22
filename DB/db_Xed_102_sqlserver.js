@@ -76,7 +76,8 @@ module.exports = function () {
       drugCode,
       FLOOR(
         (Length / 100) * (Width / 100) * (Height / 100)
-      ) AS Item
+      ) AS Item,
+      Quantity
     FROM
       (
         SELECT

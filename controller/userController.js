@@ -18,11 +18,11 @@ const UserModel = require("../model/userModel");
 // var gd4unit101 = new db_mysql101();
 
 exports.registerController = (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
   bcrypt
     .hash(password, 10)
     .then((hash) => {
-      const User = new UserModel({ email: email, password: hash });
+      const User = new UserModel({ email: email, password: hash, role: role });
       User.registerUser()
         .then(() => {
           res.status(201).json({
@@ -30,12 +30,14 @@ exports.registerController = (req, res, next) => {
           });
         })
         .catch((error) => {
+          console.log(1);
           res.status(500).json({
             message: error,
           });
         });
     })
     .catch((error) => {
+      console.log(error);
       res.status(500).json({
         message: error,
       });

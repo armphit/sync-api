@@ -1,10 +1,11 @@
 const db = require("../db/db");
 
 class UserModel {
-  constructor({ email = "", password = "", id = 0 }) {
+  constructor({ email = "", password = "", role = "" }) {
     this.email = email;
     this.password = password;
-    this.id = id;
+    this.role = role;
+
     this.createAt = new Date();
     this.updateAt = new Date();
   }
@@ -16,10 +17,9 @@ class UserModel {
     ]);
   }
   registerUser() {
-    value = [];
-    let a = db.execute(
-      "INSERT INTO users (user, password, createAt, updateAt) VALUES(?, ?, ?, ?)",
-      [this.email, this.password, this.createAt, this.updateAt]
+    return db.execute(
+      "INSERT INTO users (user, password, createAt, updateAt, role) VALUES(?, ?, ?, ?, ?)",
+      [this.email, this.password, this.createAt, this.updateAt, this.role]
     );
   }
 

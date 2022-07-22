@@ -40,11 +40,10 @@ module.exports = function () {
         console.log("Database Connection Failed! Bad Config: ", err);
         setTimeout(() => {
           if (num <= 5) {
-            console.log('OnCube Error: '+ num)
+            console.log("OnCube Error: " + num);
             connectDB();
           }
-        }, 60000)
-
+        }, 60000);
       });
   }
   this.datadrug = function fill(val, DATA) {
@@ -70,7 +69,7 @@ module.exports = function () {
         const result = await request.query(sql);
         resolve(result.recordset);
       } catch (error) {
-        num = 0
+        num = 0;
         console.log("OnCube datadrug:" + error);
         connectDB();
       }

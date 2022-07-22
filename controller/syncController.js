@@ -18,13 +18,13 @@ var gd4unit101 = new db_mysql101();
 var db_Xmed = require("../DB/db_Xed_102_sqlserver");
 var Xmed = new db_Xmed();
 
+//แก้นับตอนยิง
+
 exports.syncOPDController = async (req, res, next) => {
   let data = req.body;
   const hn = req.body.data;
   const check = req.body.check;
   let sendv = {};
-  // sendv.status = 0;
-  // res.send(sendv);
 
   if (parseInt(hn) != NaN) {
     let allTimeOld = "";
@@ -86,6 +86,7 @@ exports.syncOPDController = async (req, res, next) => {
               date: moment(data.date)
                 .subtract(543, "year")
                 .format("YYYY-MM-DD"),
+              allTimeOld: allTimeOld,
             };
             gd4unit101.fill(val).then((result) => {
               if (result.affectedRows > 0) {
@@ -189,14 +190,12 @@ async function getdataHomc(data, etc) {
     m = moment(etc.patientdob, "YYYYMMDD", "th", true);
 
     birthDate = moment(m).subtract(543, "year").format("YYYY-MM-DD");
-
     if (birthDate == "Invalid date") {
       m = moment(Number(etc.patientdob) - 1, "YYYYMMDD", "th", true);
       birthDate = moment(m).subtract(543, "year");
       birthDate = moment(birthDate).add(1, "day").format("YYYY-MM-DD");
     }
 
-    // let numJV = "6400" + Math.floor(Math.random() * 1000000);
     let getAge = new Date().getFullYear() - 2020;
     let codeArr = new Array();
     let codeArrPush = new Array();
@@ -246,7 +245,11 @@ async function getdataHomc(data, etc) {
             : 0
         );
         let valModulus = [];
-        if (listDrugSE.length > 1 && data[i].Qty > 100) {
+        if (
+          listDrugSE.length > 1 &&
+          data[i].Qty > 100 &&
+          data[i].code !== "CLOPGP"
+        ) {
           for (let a = 0; a < listDrugSE.length; a++) {
             if (data[i].Qty % listDrugSE[a].HisPackageRatio == 0) {
               valModulus = listDrugSE.sort((a, b) =>
@@ -598,7 +601,7 @@ async function getdataHomc(data, etc) {
       value2 = [];
 
       let xmlDrug = { xml: js2xmlparser.parse("outpOrderDispense", jsonDrug) };
-    
+      console.log(xmlDrug);
       console.log("-------------------------------------------------");
 
       if (etc.dih) {
