@@ -189,44 +189,81 @@ module.exports = function () {
       t1.birthTH
   FROM
       (
-          SELECT
-              pre.patientdob as birthTH,
-              syn.prescriptionno,
-              syn.hn,
-              pre.patientname,
-              syn.readdatetime,
-  
-      syn.status as sendMachine,
-      DATE_SUB(
+        SELECT
+        pre.patientdob AS birthTH,
+        syn.prescriptionno,
+        syn.hn,
+        pre.patientname,
+        syn.readdatetime,
+        syn. STATUS AS sendMachine,
+        DATE_SUB(
           pre.patientdob,
           INTERVAL 543 YEAR
-      ) AS patientdob,
-      YEAR (
+        ) AS patientdob,
+        YEAR (
           FROM_DAYS(
-              DATEDIFF(
-                  NOW(),
-                  DATE_SUB(
-                      pre.patientdob,
-                      INTERVAL 543 YEAR
-                  )
+            DATEDIFF(
+              NOW(),
+              DATE_SUB(
+                pre.patientdob,
+                INTERVAL 543 YEAR
               )
+            )
           )
-      ) AS age,
-      MAX(pre.sex) AS sex
-  FROM
-      synclastupdate_OPD AS syn,
-      prescription AS pre
-  WHERE
-      syn.hn = pre.hn
+        ) AS age,
+        MAX(pre.sex) AS sex
+      FROM
+        synclastupdate_OPD AS syn,
+        prescription AS pre
+      WHERE
+        syn.hn = pre.hn
       AND syn.realdate = '` +
       val +
       `'
-  GROUP BY
-      syn.hn,
-      syn.readdatetime,
-      pre.patientname,
-      pre.patientdob
-  ORDER BY syn.readdatetime DESC) t1, (SELECT @rn:=0) t2`;
+      GROUP BY
+        syn.hn,
+        syn.readdatetime,
+        pre.patientname,
+        pre.patientdob
+      UNION
+        SELECT
+          pre2.patientdob AS birthTH,
+          syn2.prescriptionno,
+          syn2.hn,
+          pre2.patientname,
+          syn2.readdatetime,
+          syn2. STATUS AS sendMachine,
+          DATE_SUB(
+            pre2.patientdob,
+            INTERVAL 543 YEAR
+          ) AS patientdob,
+          YEAR (
+            FROM_DAYS(
+              DATEDIFF(
+                NOW(),
+                DATE_SUB(
+                  pre2.patientdob,
+                  INTERVAL 543 YEAR
+                )
+              )
+            )
+          ) AS age,
+          MAX(pre2.sex) AS sex
+        FROM
+          gd4unit_bk.synclastupdate_OPD AS syn2,
+          gd4unit_bk.prescription AS pre2
+        WHERE
+          syn2.hn = pre2.hn
+        AND syn2.realdate = '` +
+      val +
+      `'
+        GROUP BY
+          syn2.hn,
+          syn2.readdatetime,
+          pre2.patientname,
+          pre2.patientdob
+        ORDER BY
+          readdatetime DESC) t1, (SELECT @rn:=0) t2`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -241,31 +278,64 @@ module.exports = function () {
       `SELECT
       prescriptionno,
       sex,
+    
+    IF (
+      DATE_SUB(patientdob, INTERVAL 543 YEAR),
+      DATE_SUB(patientdob, INTERVAL 543 YEAR),
+      DATE_SUB(
+        DATE_SUB(
+          patientdob - 1,
+          INTERVAL 543 YEAR
+        ),
+        INTERVAL - 1 DAY
+      )
+    ) AS patientdob,
+     patientdob AS birth,
+     orderitemcode,
+     orderitemname,
+     FLOOR(orderqty) AS orderqty,
+     orderunitcode,
+     lastmodified AS ordercreatedate,
+     'true' AS STATUS
+    FROM
+      prescription
+    WHERE
+      hn = '` +
+      val.hn +
+      `'
+    AND CAST(lastmodified AS DATE) = '` +
+      val.date +
+      `'
+    UNION
+      SELECT
+        prescriptionno,
+        sex,
+    
       IF (
-          DATE_SUB(patientdob, INTERVAL 543 YEAR),
-          DATE_SUB(patientdob, INTERVAL 543 YEAR),
+        DATE_SUB(patientdob, INTERVAL 543 YEAR),
+        DATE_SUB(patientdob, INTERVAL 543 YEAR),
+        DATE_SUB(
           DATE_SUB(
-              DATE_SUB(
-                  patientdob - 1,
-                  INTERVAL 543 YEAR
-              ),
-              INTERVAL - 1 DAY
-          )
+            patientdob - 1,
+            INTERVAL 543 YEAR
+          ),
+          INTERVAL - 1 DAY
+        )
       ) AS patientdob,
       patientdob AS birth,
       orderitemcode,
       orderitemname,
       FLOOR(orderqty) AS orderqty,
       orderunitcode,
-      lastmodified as ordercreatedate,
-      'true' AS status
-  FROM
-      prescription
-  WHERE
-      hn = '` +
+      lastmodified AS ordercreatedate,
+      'true' AS STATUS
+    FROM
+      gd4unit_bk.prescription gb
+    WHERE
+      gb.hn = '` +
       val.hn +
       `'
-  AND CAST(lastmodified AS DATE) = '` +
+    AND CAST(gb.lastmodified AS DATE) = '` +
       val.date +
       `'`;
 

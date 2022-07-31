@@ -637,7 +637,7 @@ async function getdataHomc(data, etc) {
                 console.log(err);
                 return;
               }
-              console.log(stdout);
+
               if (stdout == "1") {
                 jvm = 1;
               } else {
