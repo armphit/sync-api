@@ -10,7 +10,7 @@ exports.patientSyncController = async (req, res, next) => {
     let patient = await gd4unit101.getPatientSync(req.body.date);
     patient = patient.map((r) => ({
       ...r,
-      readdatetime: moment(r.readdatetime).format("YYYY-MM-DD hh:mm:ss"),
+      readdatetime: moment(r.readdatetime).format("YYYY-MM-DD HH:mm:ss"),
     }));
     res.send(patient);
   }

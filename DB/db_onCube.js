@@ -51,7 +51,12 @@ module.exports = function () {
       `SELECT
         Item.Mnemonic,
         InventoryContainer.ExpiredDate,
-        QuantityMaximum
+        QuantityMaximum,
+        DATEDIFF(
+          DAY,
+          CONVERT (VARCHAR, getdate(), 111),
+          CONVERT (VARCHAR, ExpiredDate, 111)
+        ) AS dateDiff
     FROM
         Item,
         InventoryContainer

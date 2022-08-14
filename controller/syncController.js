@@ -71,6 +71,8 @@ exports.syncOPDController = async (req, res, next) => {
             spec: sql101[0].Strength,
             type: "",
             unit: sql101[0].dosageunitcode,
+            dosage: b[i].dosage ? b[i].dosage.trim() : "",
+            freetext1: b[i].freetext1 ? b[i].freetext1.trim() : "",
           };
           drugarr.push(drug);
         }
@@ -79,6 +81,9 @@ exports.syncOPDController = async (req, res, next) => {
 
       getdataHomc(drugarr, c)
         .then((value) => {
+          // res.status(200).json({
+          //   status: 1,
+          // });
           if (value.dih === 1 && value.jvm === 1) {
             let val = {
               prescriptionno: b[0].prescriptionno,
@@ -106,6 +111,7 @@ exports.syncOPDController = async (req, res, next) => {
                   b.takedate = b.takedate
                     ? b.takedate.toISOString().substr(0, 10)
                     : "";
+                  b.queue = c.queue;
                   await gd4unit101.insertDrug(b);
                 });
                 console.log("HN : " + b[0].hn.trim() + " :success");
@@ -324,7 +330,7 @@ async function getdataHomc(data, etc) {
         for (let x = 0; x < valModulus.length; x++) {
           if (
             data[i].Qty >= Number(valModulus[x].HisPackageRatio) &&
-            Math.floor(data[i].Qty / Number(valModulus[x].HisPackageRatio)) < 30
+            Math.floor(data[i].Qty / Number(valModulus[x].HisPackageRatio)) < 15
           ) {
             let getdrugSize = await Xmed.dataDrugSize(valModulus[x].drugID);
 
@@ -433,12 +439,26 @@ async function getdataHomc(data, etc) {
       let numMax = 0;
       if (data[i].Qty > 0) {
         let jvmD = { code: data[i].code, lo: "JV" };
+
         let listDrugJvm = await pmpf.datadrugMain(jvmD);
         if (listDrugJvm.length !== 0) {
+          console.log(data[i]);
           let dataonCube = await onCube.datadrug(data[i].code);
           let dateC = null;
           let date = new Date();
           date.setFullYear(date.getFullYear() + 1);
+          let r = /\d+/;
+          let s = data[i].freetext1;
+          let warning = null;
+          if (dataonCube[0].dateDiff && data[i].freetext1 && data[i].dosage) {
+            if (
+              dataonCube[0].dateDiff -
+                data[i].Qty / (Number(s.match(r)) * Number(data[i].dosage)) <
+              0
+            ) {
+              warning = "**";
+            }
+          }
 
           if (dataonCube.length !== 0) {
             if (dataonCube[0].ExpiredDate) {
@@ -511,7 +531,7 @@ async function getdataHomc(data, etc) {
         codeArrPush.push(data[i]);
       }
     }
-
+    console.log(codeArr);
     let DataJV = "";
     if (codeArr.length > 0) {
       for (let i = 0; i < codeArr.length; i++) {
@@ -541,9 +561,11 @@ async function getdataHomc(data, etc) {
 
     for (let i = 0; i < op.length; i++) {
       for (let j = 0; j < op[i].length; j++) {
+        let { dosage, freetext1, ...updatedObject } = op[i][j];
         let value = {
-          drug: op[i][j],
+          drug: updatedObject,
         };
+
         value2.push(value);
       }
 
@@ -601,7 +623,9 @@ async function getdataHomc(data, etc) {
       value2 = [];
 
       let xmlDrug = { xml: js2xmlparser.parse("outpOrderDispense", jsonDrug) };
-      console.log(xmlDrug);
+
+      console.log("-------------------------------------------------");
+      // console.log(xmlDrug);
       console.log("-------------------------------------------------");
 
       if (etc.dih) {

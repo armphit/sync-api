@@ -81,7 +81,10 @@ module.exports = function () {
         freetext2 ,
         itemidentify ,
         rightname ,
-        datetimestamp
+        datetimestamp,
+        dosage,
+        freetext1,
+        queue
      )
      VALUES
        (
@@ -139,7 +142,16 @@ module.exports = function () {
       '` +
       val.rightname +
       `',
-      CURRENT_TIMESTAMP
+      CURRENT_TIMESTAMP,
+      '` +
+      val.dosage +
+      `',
+      '` +
+      val.freetext1 +
+      `',
+      '` +
+      val.queue +
+      `'
       )`;
 
     return new Promise(function (resolve, reject) {
