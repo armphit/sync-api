@@ -1,28 +1,13 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const UserModel = require("../model/userModel");
-// const moment = require("moment");
-// const js2xmlparser = require("js2xmlparser");
-
-// var db_Homc = require("../DB/db_Homc");
-// var homc = new db_Homc();
-// var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
-// var pmpf = new db_pmpf();
-// var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
-// var GD4Unit_101 = new db_GD4Unit_101();
-// var db_onCube = require("../DB/db_onCube");
-// var onCube = new db_onCube();
-// var db_mysql102 = require("../DB/db_center_102_mysql");
-// var center102 = new db_mysql102();
-// var db_mysql101 = require("../DB/db_gd4unit_101_mysql");
-// var gd4unit101 = new db_mysql101();
 
 exports.registerController = (req, res, next) => {
-  const { email, password, role } = req.body;
+  const { email,name, password, role } = req.body;
   bcrypt
     .hash(password, 10)
     .then((hash) => {
-      const User = new UserModel({ email: email, password: hash, role: role });
+      const User = new UserModel({ email: email,name: name, password: hash, role: role });
       User.registerUser()
         .then(() => {
           res.status(201).json({
@@ -31,6 +16,36 @@ exports.registerController = (req, res, next) => {
         })
         .catch((error) => {
           console.log(1);
+          res.status(500).json({
+            message: error,
+          });
+        });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({
+        message: error,
+      });
+    });
+};
+
+exports.updatePasswordController = (req, res, next) => {
+  const { email, password } = req.body;
+
+  bcrypt
+    .hash(password, 10)
+    .then((hash) => {
+      const User = new UserModel({
+        email: email,
+        password: hash,
+      });
+      User.updateUser()
+        .then(() => {
+          res.status(201).json({
+            message: "success",
+          });
+        })
+        .catch((error) => {
           res.status(500).json({
             message: error,
           });
@@ -72,6 +87,8 @@ exports.loginController = (req, res, next) => {
                 token: jwtToken,
                 expiresIn: 3600,
                 role: row[0].role,
+                user: row[0].user,
+                name: row[0].name,
               });
               const User = new UserModel({ email: email });
               User.updateLogin();

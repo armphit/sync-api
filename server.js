@@ -5,6 +5,7 @@ const app = express();
 var {
   registerController,
   loginController,
+  updatePasswordController,
 } = require("./controller/userController");
 var {
   syncOPDController,
@@ -17,6 +18,7 @@ var {
   patientSyncController,
   drugSyncController,
   listDrugSyncController,
+  listPatientAllergicController,
 } = require("./controller/interfaceController");
 
 app.use(bodyParser.json());
@@ -30,6 +32,7 @@ app.use(function (req, res, next) {
 });
 
 app.post("/register", registerController);
+app.post("/updatePassword", updatePasswordController);
 app.post("/login", loginController);
 app.post("/syncOPD", syncOPDController);
 app.post("/syncOPDManual", syncOPDManualController);
@@ -37,6 +40,7 @@ app.post("/soapDIH", soapDIHController);
 app.post("/patientSync", patientSyncController);
 app.post("/drugSync", drugSyncController);
 app.post("/listDrugAllSync", listDrugSyncController);
+app.post("/listPatientAllergicController", listPatientAllergicController);
 
 // app.post("/syncOPDManual", function (req, res) {
 //   syncOPDManualController;

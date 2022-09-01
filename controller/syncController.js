@@ -115,6 +115,7 @@ exports.syncOPDController = async (req, res, next) => {
                   await gd4unit101.insertDrug(b);
                 });
                 console.log("HN : " + b[0].hn.trim() + " :success");
+                console.log("successDT : " + new Date().toLocaleString());
                 console.log(
                   "-------------------------------------------------"
                 );
@@ -138,7 +139,10 @@ exports.syncOPDController = async (req, res, next) => {
           res.send(sendv);
         });
     } else {
-      sendv.status = 3;
+      sendv.status = {
+        err: 3,
+        time: allTimeOld,
+      };
       res.send(sendv);
     }
   } else {
@@ -439,24 +443,22 @@ async function getdataHomc(data, etc) {
       let numMax = 0;
       if (data[i].Qty > 0) {
         let jvmD = { code: data[i].code, lo: "JV" };
-
         let listDrugJvm = await pmpf.datadrugMain(jvmD);
         if (listDrugJvm.length !== 0) {
-          console.log(data[i]);
           let dataonCube = await onCube.datadrug(data[i].code);
           let dateC = null;
           let date = new Date();
           date.setFullYear(date.getFullYear() + 1);
           let r = /\d+/;
           let s = data[i].freetext1;
-          let warning = null;
+          let warning = "";
           if (dataonCube[0].dateDiff && data[i].freetext1 && data[i].dosage) {
             if (
               dataonCube[0].dateDiff -
                 data[i].Qty / (Number(s.match(r)) * Number(data[i].dosage)) <
               0
             ) {
-              warning = "**";
+              warning = "";
             }
           }
 
@@ -521,6 +523,8 @@ async function getdataHomc(data, etc) {
               etc.hn +
               "|" +
               etc.queue +
+              " " +
+              warning +
               "|";
 
             codeArr.push(dataJVM);
@@ -531,7 +535,7 @@ async function getdataHomc(data, etc) {
         codeArrPush.push(data[i]);
       }
     }
-    console.log(codeArr);
+
     let DataJV = "";
     if (codeArr.length > 0) {
       for (let i = 0; i < codeArr.length; i++) {
@@ -624,8 +628,6 @@ async function getdataHomc(data, etc) {
 
       let xmlDrug = { xml: js2xmlparser.parse("outpOrderDispense", jsonDrug) };
 
-      console.log("-------------------------------------------------");
-      // console.log(xmlDrug);
       console.log("-------------------------------------------------");
 
       if (etc.dih) {

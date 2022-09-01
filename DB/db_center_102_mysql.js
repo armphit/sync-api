@@ -32,4 +32,25 @@ module.exports = function () {
       });
     });
   };
+
+  this.dataQ = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      patientNO,QN,patientName,createDT,timestamp
+  FROM
+      hospitalQ LEFT JOIN moph_confirm on qn = queue and patientNO = hn
+  
+  WHERE
+  date = CURDATE()
+  AND patientNO = '` +
+      val +
+      `'`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

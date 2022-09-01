@@ -1,8 +1,9 @@
 const db = require("../db/db");
 
 class UserModel {
-  constructor({ email = "", password = "", role = "" }) {
+  constructor({ email = "", name = "", password = "", role = "" }) {
     this.email = email;
+    this.name = name;
     this.password = password;
     this.role = role;
 
@@ -18,8 +19,8 @@ class UserModel {
   }
   registerUser() {
     return db.execute(
-      "INSERT INTO users (user, password, createAt, updateAt, role) VALUES(?, ?, ?, ?, ?)",
-      [this.email, this.password, this.createAt, this.updateAt, this.role]
+      "INSERT INTO users (user, name, password, createAt, updateAt, role) VALUES(?, ?, ?, ?, ?, ?)",
+      [this.email, this.name, this.password, this.createAt, this.updateAt, this.role]
     );
   }
 
@@ -27,6 +28,13 @@ class UserModel {
     let a = db.execute("SELECT * FROM users WHERE user = ?", [email]);
 
     return a;
+  }
+
+  updateUser() {
+    return db.execute(`UPDATE users SET password = ? WHERE user = ?`, [
+      this.password,
+      this.email,
+    ]);
   }
 }
 

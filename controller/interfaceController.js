@@ -4,6 +4,8 @@ var db_104_Center = require("../DB/db_104_Center");
 var Center_104 = new db_104_Center();
 var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
+var db_mysql102 = require("../DB/db_center_102_mysql");
+var center102 = new db_mysql102();
 const moment = require("moment");
 exports.patientSyncController = async (req, res, next) => {
   if (req.body) {
@@ -29,5 +31,17 @@ exports.listDrugSyncController = async (req, res, next) => {
   if (req.body) {
     let patientDrug = await pmpf.allDrug(req.body.code);
     res.send(patientDrug);
+  }
+};
+
+exports.listPatientAllergicController = async (req, res, next) => {
+  if (req.body) {
+    let queue = await center102.dataQ(req.body.hn);
+    let moph_patient = await Center_104.hn_moph_patient(req.body.hn);
+    let data = {
+      queue: queue,
+      moph_patient: moph_patient,
+    };
+    res.send(data);
   }
 };
