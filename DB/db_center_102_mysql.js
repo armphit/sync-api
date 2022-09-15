@@ -41,10 +41,36 @@ module.exports = function () {
       hospitalQ LEFT JOIN moph_confirm on qn = queue and patientNO = hn
   
   WHERE
-  date = CURDATE()
+  date = '` +
+      val.date +
+      `'
   AND patientNO = '` +
+      val.hn +
+      `'
+  ORDER BY createDT`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.hn_moph_patient = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      s.patientID,
+      drugAllergy,
+      timestamp
+    FROM
+      moph_sync s
+    LEFT JOIN moph_confirm c ON s.patientID = c.hn
+    WHERE s.patientID = '` +
       val +
-      `'`;
+      `'
+    ORDER BY
+      drugAllergy`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

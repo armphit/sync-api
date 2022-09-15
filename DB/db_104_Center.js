@@ -40,6 +40,7 @@ module.exports = function () {
       moph_drugs
   WHERE
       moph_patient.personId = moph_drugs.cid
+      AND moph_drugs.hospcode <> 10666
   AND moph_patient.hn = '` +
       val +
       `'`;

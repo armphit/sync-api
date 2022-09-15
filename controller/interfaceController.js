@@ -36,10 +36,8 @@ exports.listDrugSyncController = async (req, res, next) => {
 
 exports.listPatientAllergicController = async (req, res, next) => {
   if (req.body) {
-    let queue = await center102.dataQ(req.body.hn);
-    let moph_patient = await Center_104.hn_moph_patient(req.body.hn);
+    let moph_patient = await center102.hn_moph_patient(req.body.hn);
     let data = {
-      queue: queue,
       moph_patient: moph_patient,
     };
     res.send(data);
