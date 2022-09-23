@@ -62,7 +62,8 @@ module.exports = function () {
       `SELECT
       s.patientID,
       drugAllergy,
-      timestamp
+      timestamp,
+      cid
     FROM
       moph_sync s
     LEFT JOIN moph_confirm c ON s.patientID = c.hn

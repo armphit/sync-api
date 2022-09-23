@@ -51,6 +51,24 @@ module.exports = function () {
     });
   };
 
+  this.hn_moph_maharat = async function fill(val, DATA) {
+    var sqlgetdrug =
+      ` SELECT TOP 1
+      drugcode
+  FROM
+      moph_drugs
+  WHERE
+      moph_drugs.hospcode <> 10666
+  AND cid = '` +
+      val +
+      `' `;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlgetdrug);
+      resolve(result.recordset);
+    });
+  };
+
   module.exports = {
     sql,
     poolPromise,

@@ -37,8 +37,19 @@ exports.listDrugSyncController = async (req, res, next) => {
 exports.listPatientAllergicController = async (req, res, next) => {
   if (req.body) {
     let moph_patient = await center102.hn_moph_patient(req.body.hn);
+    let drug_maharat = 0;
+    if (moph_patient.length) {
+      if (moph_patient[0].drugAllergy === "Y") {
+        let moph_10666 = await Center_104.hn_moph_maharat(moph_patient[0].cid);
+
+        drug_maharat = moph_10666.length;
+      }
+    }
+    console.log(moph_patient);
+    console.log(drug_maharat);
     let data = {
       moph_patient: moph_patient,
+      moph_drug: drug_maharat,
     };
     res.send(data);
   }
