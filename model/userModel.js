@@ -19,13 +19,13 @@ class UserModel {
   }
   registerUser() {
     return db.execute(
-      "INSERT INTO users (user, name, password, createAt, updateAt, role) VALUES(?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (user, name, password, createAt, updateAt, role, status) VALUES(?, ?, ?, ?, ?, ?, 'N')",
       [this.email, this.name, this.password, this.createAt, this.updateAt, this.role]
     );
   }
 
   static findUserByEmail({ email = "" }) {
-    let a = db.execute("SELECT * FROM users WHERE user = ?", [email]);
+    let a = db.execute("SELECT * FROM users WHERE user = ? AND status = 'Y'", [email]);
 
     return a;
   }
