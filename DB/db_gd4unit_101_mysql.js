@@ -366,4 +366,86 @@ module.exports = function () {
     }
     return target;
   };
+
+  this.datadrugX = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      dd.drugID,
+      dd.drugCode,
+      dd.drugName,
+      dd.HisPackageRatio,
+      GROUP_CONCAT(de.deviceCode) AS deviceCode,
+      CASE
+    WHEN locate('-', drugCode) > 0
+    AND dd.drugCode <> 'CYCL-'
+    AND dd.drugCode <> 'DEX-O'
+    AND dd.drugCode <> 'POLY-1'
+    AND de.deviceCode = 'Xmed1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS isPrepack
+    FROM
+    center.devicedrugsetting ds
+    INNER JOIN center.device de ON ds.deviceID = de.deviceID
+    LEFT JOIN center.dictdrug dd ON dd.drugID = ds.drugID
+    WHERE
+      dd.drugCode IS NOT NULL
+      AND de.deviceCode = '` +
+      val.lo +
+      `'
+  AND dd.drugCode like '` +
+      val.code +
+      `%'
+    GROUP BY
+      dd.drugCode
+    ORDER BY
+      dd.HisPackageRatio DESC`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.datadrugMain = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      dd.drugID,
+      dd.drugCode,
+      dd.drugName,
+      dd.HisPackageRatio,
+      GROUP_CONCAT(de.deviceCode) AS deviceCode
+  FROM
+  center.devicedrugsetting ds
+  INNER JOIN center.device de ON ds.deviceID = de.deviceID
+  LEFT JOIN center.dictdrug dd ON dd.drugID = ds.drugID
+  WHERE
+  (
+    dd.drugCode NOT LIKE '%-1%'
+      AND dd.drugCode NOT LIKE '%-2%'
+      AND dd.drugCode NOT LIKE '%-3%'
+      AND dd.drugCode NOT LIKE '%-4%'
+      AND dd.drugCode NOT LIKE '%-5%'
+      OR dd.drugCode = 'poly-1'
+  )
+  AND    dd.drugCode IS NOT NULL
+  AND de.deviceCode = '` +
+      val.lo +
+      `'
+  AND dd.drugCode = '` +
+      val.code +
+      `'
+  GROUP BY
+      dd.drugCode`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };
