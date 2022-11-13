@@ -20,6 +20,7 @@ module.exports = function () {
       `SELECT QN
       FROM hospitalq
       WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
+      AND SUBSTRING(QN, 1, 1) = 2
       AND patientNO = '` +
       val +
       `'
