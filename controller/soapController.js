@@ -1,7 +1,11 @@
 const js2xmlparser = require("js2xmlparser");
 const soap = require("soap");
 const { transform } = require("camaro");
-
+const moment = require("moment");
+var db_mysql101 = require("../DB/db_gd4unit_101_mysql");
+var gd4unit101 = new db_mysql101();
+var db_Homc = require("../DB/db_Homc");
+var homc = new db_Homc();
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
@@ -18,5 +22,72 @@ exports.soapDIHController = async (req, res, next) => {
         status: "success",
       });
     }
+  }
+};
+
+exports.checkpatientController = async (req, res, next) => {
+  if (req.body) {
+    let allTimeOld = "";
+
+    let time = await gd4unit101.checkPatientcheckmed(req.body.hn);
+    if (time.length != 0) {
+      for (let d of time) {
+        allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
+      }
+      allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
+    } else {
+      allTimeOld = `''`;
+    }
+
+    let datasend = req.body;
+    datasend.allTimeOld = allTimeOld;
+
+    let x = {};
+
+    x = await homc.checkmed(datasend);
+
+    let b = x.recordset;
+
+    if (b.length) {
+      for (let data of b) {
+        data.lastmodified = data.lastmodified
+          ? data.lastmodified
+              .toISOString()
+              .replace(/T/, " ")
+              .replace(/\..+/, "")
+          : "";
+        data.ordercreatedate = data.ordercreatedate
+          ? data.ordercreatedate
+              .toISOString()
+              .replace(/T/, " ")
+              .replace(/\..+/, "")
+          : "";
+        let comma = Object.keys(data)
+          .map(function (k) {
+            return data[k];
+          })
+          .join("','");
+
+        comma = `'${comma}'`;
+
+        await gd4unit101.insertDrugcheck({
+          comma: comma,
+          qty: data.qty,
+          count: b.length,
+        });
+      }
+    }
+
+    let datadrugpatient = await gd4unit101.selectcheckmed(req.body.hn);
+    for (let data of datadrugpatient) {
+      data.ordercreatedate = data.ordercreatedate
+        ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
+        : "";
+      data.lastmodified = data.lastmodified
+        ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
+        : "";
+    }
+    // res.send(datadrugpatient);
+    res.send({ datadrugpatient });
   }
 };

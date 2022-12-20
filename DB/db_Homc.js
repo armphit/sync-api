@@ -152,8 +152,104 @@ ORDER BY
     });
   };
 
-  module.exports = {
-    sql,
-    poolPromise,
+  this.checkmed = async function fill(val, DATA) {
+    let hn = String(val.hn);
+    for (let i = 0; i < 7 - String(val.hn).length; i++) {
+      hn = " " + hn;
+    }
+
+    var sqlCommand =
+      `SELECT
+      m.batch_no AS prescriptionno,
+      ROW_NUMBER () OVER (
+        PARTITION BY o.hn,
+        mh.lastUpd
+      ORDER BY
+        p.lastIssTime 
+      ) AS seq,
+      o.hn AS hn,
+      Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
+      CASE
+    WHEN pt.sex = 'ช' THEN
+      'M'
+    ELSE
+      'F'
+    END AS sex,
+     pt.birthDay AS patientdob,
+     m.inv_code AS drugCode,
+     v.gen_name AS drugName,
+     v.remarks AS drugNameTh,
+     m.quant AS qty,
+     p.unit AS unitCode,
+     m.site AS departmentcode,
+     dy.priceGroupDesc,
+     v.charge_c,
+     v.Category,
+     la.lamed_name AS lamed_name,
+     p.lamedQty AS dosage,
+     (
+      SELECT
+        lamed_name
+      FROM
+        Lamed lam
+      WHERE
+        lam.lamed_code = p.lamedUnit
+    ) AS freetext0,
+     p.lamedTimeText AS freetext1,
+     p.lamedText AS freetext2,
+     (
+      SELECT
+        Rtrim(LTRIM(mi.Description)) + ',' -- ,mif.Med_Inv_Code
+      FROM
+        Med_Info_Group mi
+      LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+      WHERE
+        mif.Med_Inv_Code = m.inv_code FOR XML PATH ('')
+    ) AS itemidentify,
+     mh.lastUpd AS ordercreatedate,
+     p.lastIssTime AS lastmodified
+    FROM
+      OPD_H o
+    LEFT JOIN Med_logh mh ON o.hn = mh.hn
+    AND o.regNo = mh.regNo
+    LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+    LEFT JOIN Bill_h b ON b.hn = mh.hn
+    AND b.regNo = mh.regNo
+    LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
+    LEFT JOIN Med_inv v ON (
+      v.code = m.inv_code
+      AND v.[site] = '1'
+    )
+    LEFT JOIN Patmed p (NOLOCK) ON (
+      p.hn = mh.hn
+      AND p.registNo = mh.regNo
+      AND p.invCode = m.inv_code
+      AND m.quant_diff = p.runNo
+    )
+    LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
+    LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+    LEFT JOIN Site si ON m.site = si.site_key
+    LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
+    LEFT JOIN DynPriceGroup dy ON t.medGroupCode = dy.priceGroupCode
+    WHERE
+      mh.hn = '` +
+      hn +
+      `'
+    AND mh.invdate = ` +
+      val.date +
+      `
+    AND m.pat_status = 'O'
+    AND m.site = 'W8'
+    AND m.revFlag IS NULL 
+        AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
+      val.allTimeOld +
+      `)
+    ORDER BY
+      p.lastIssTime`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result);
+    });
   };
 };

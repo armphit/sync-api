@@ -1,13 +1,19 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const UserModel = require("../model/userModel");
+const os = require("os");
 
 exports.registerController = (req, res, next) => {
-  const { email,name, password, role } = req.body;
+  const { email, name, password, role } = req.body;
   bcrypt
     .hash(password, 10)
     .then((hash) => {
-      const User = new UserModel({ email: email,name: name, password: hash, role: role });
+      const User = new UserModel({
+        email: email,
+        name: name,
+        password: hash,
+        role: role,
+      });
       User.registerUser()
         .then(() => {
           res.status(201).json({
@@ -60,8 +66,9 @@ exports.updatePasswordController = (req, res, next) => {
 };
 
 exports.loginController = (req, res, next) => {
-  const { email = "", password } = req.body;
-  UserModel.findUserByEmail({ email: email })
+  const { email = "", password, ip } = req.body;
+  const User = new UserModel({ email: email, ip: ip });
+  User.findUserByEmail()
     .then(([row]) => {
       if (row.length !== 0) {
         return bcrypt
@@ -89,6 +96,9 @@ exports.loginController = (req, res, next) => {
                 role: row[0].role,
                 user: row[0].user,
                 name: row[0].name,
+                ip: row[0].ip,
+                print_ip: row[0].print_ip,
+                print_name: row[0].print_name,
               });
               const User = new UserModel({ email: email });
               User.updateLogin();

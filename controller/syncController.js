@@ -60,6 +60,10 @@ exports.syncOPDController = async (req, res, next) => {
         sql101 = await GD4Unit_101.dataDrug(b[i].orderitemcode);
         sql101 = sql101.recordset;
         if (sql101.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
+          b[i].orderitemname = b[i].orderitemname.replace(
+            /[\/\\#,+$~.'":?<>{}]/g,
+            "_"
+          );
           let drug = {
             Name: b[i].orderitemname.trim(),
             Qty: b[i].orderqty.trim(),
@@ -283,6 +287,11 @@ async function getdataHomc(data, etc) {
           ? -1
           : 0
       );
+
+      let checkdrugmain = listDrugSE.filter(
+        (val) => data[i].Qty % val.HisPackageRatio === 0 && val.lo === "main"
+      );
+      listDrugSE = checkdrugmain.length ? checkdrugmain : listDrugSE;
 
       if (listDrugSE.length > 1) {
         let qty_box = null;
@@ -555,15 +564,15 @@ async function getdataHomc(data, etc) {
         let r = /\d+/;
         let s = data[i].freetext1;
         let warning = "";
-        if (dataonCube[0].dateDiff && data[i].freetext1 && data[i].dosage) {
-          if (
-            dataonCube[0].dateDiff -
-              data[i].Qty / (Number(s.match(r)) * Number(data[i].dosage)) <
-            0
-          ) {
-            warning = "";
-          }
-        }
+        // if (dataonCube[0].dateDiff && data[i].freetext1 && data[i].dosage) {
+        //   if (
+        //     dataonCube[0].dateDiff -
+        //       data[i].Qty / (Number(s.match(r)) * Number(data[i].dosage)) <
+        //     0
+        //   ) {
+        //     warning = "";
+        //   }
+        // }
 
         if (dataonCube.length !== 0) {
           if (dataonCube[0].ExpiredDate) {

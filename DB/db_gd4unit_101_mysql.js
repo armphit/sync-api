@@ -186,6 +186,29 @@ module.exports = function () {
     });
   };
 
+  this.checkPatientcheckmed = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      hn,
+      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+   FROM
+      center.checkmed p
+   WHERE
+      date_format(p.lastmodified, '%Y-%m-%d') = CURRENT_DATE
+   AND p.hn = '` +
+      val +
+      `'
+   GROUP BY
+      date_format(p.lastmodified, '%H:%i')`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
   this.getPatientSync = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -440,6 +463,88 @@ module.exports = function () {
       `'
   GROUP BY
       dd.drugCode`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.insertDrugcheck = function fill(val, DATA) {
+    let sql = `INSERT INTO center.checkmed (
+      rowNum,
+      prescriptionno,
+      seq,
+      hn,
+      patientname,
+      sex,
+      patientdob,
+      drugCode,
+      drugName,
+      drugNameTh,
+      qty,
+      unitCode,
+      departmentcode,
+      righttext1,
+      righttext2,
+      righttext3,
+      lamedName,
+      dosage,
+      freetext0,
+      freetext1,
+      freetext2,
+      itemidentify,
+      ordercreatedate,
+      lastmodified,
+      checkstamp,
+      checkqty
+      )
+      VALUES(${val.count},${val.comma},null,'${val.qty}' )
+       
+      `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.selectcheckmed = function fill(val, DATA) {
+    let sql =
+      `SELECT
+      (SELECT
+        MAX(seq) 
+            FROM
+            center.checkmed
+        
+            WHERE
+              hn = '` +
+      val +
+      `'
+        GROUP BY hn) AS countDrug,
+      pc.*,img.pathImage
+FROM
+    center.checkmed pc
+LEFT JOIN (
+    SELECT
+        drugCode,
+        MIN(pathImage) AS pathImage
+    FROM
+        center.drug_image
+    GROUP BY
+        drugCode
+) img ON TRIM(pc.drugCode) = TRIM(img.drugCode)
+WHERE hn = '` +
+      val +
+      `'
+AND CAST(pc.ordercreatedate AS Date) = CURDATE()      
+ORDER BY checkstamp
+       
+      `;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
