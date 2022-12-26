@@ -496,6 +496,7 @@ module.exports = function () {
       freetext1,
       freetext2,
       itemidentify,
+      qrCode,
       ordercreatedate,
       lastmodified,
       checkstamp,

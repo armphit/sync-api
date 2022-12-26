@@ -6,6 +6,8 @@ var db_mysql101 = require("../DB/db_gd4unit_101_mysql");
 var gd4unit101 = new db_mysql101();
 var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
+var jimp = require("jimp");
+var qrCode = require("qrcode-reader");
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
@@ -50,6 +52,20 @@ exports.checkpatientController = async (req, res, next) => {
 
     if (b.length) {
       for (let data of b) {
+        if (data.QRCode) {
+          try {
+            const img = await jimp.read(data.QRCode);
+            const qr = new qrCode();
+            const value = await new Promise((resolve, reject) => {
+              qr.callback = (err, v) =>
+                err != null ? reject(err) : resolve(v);
+              qr.decode(img.bitmap);
+            });
+            data.QRCode = value.result;
+          } catch (error) {
+            console.log(error.message);
+          }
+        }
         data.lastmodified = data.lastmodified
           ? data.lastmodified
               .toISOString()
@@ -87,7 +103,6 @@ exports.checkpatientController = async (req, res, next) => {
         ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
         : "";
     }
-    // res.send(datadrugpatient);
     res.send({ datadrugpatient });
   }
 };
