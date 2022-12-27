@@ -8,6 +8,8 @@ var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
 var jimp = require("jimp");
 var qrCode = require("qrcode-reader");
+var db_mysql102 = require("../DB/db_center_102_mysql");
+var center102 = new db_mysql102();
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
@@ -104,5 +106,14 @@ exports.checkpatientController = async (req, res, next) => {
         : "";
     }
     res.send({ datadrugpatient });
+  }
+};
+
+exports.prinstickerDataController = async (req, res, next) => {
+  if (req.body) {
+    let datasite = await center102.site_maharat(req.body);
+    let getintruction = await homc.intruction(req.body);
+
+    res.send({ datasite: datasite, intruction: getintruction });
   }
 };

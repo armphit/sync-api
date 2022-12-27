@@ -1,21 +1,21 @@
-const { Console } = require('console')
+const { Console } = require("console");
 
 module.exports = function () {
-  const mysql = require('mysql')
+  const mysql = require("mysql");
   // จริง
   const connection = mysql.createConnection({
-    user: 'root',
-    password: 'cretem',
-    host: '192.168.185.102',
-    database: 'center'
-  })
+    user: "root",
+    password: "cretem",
+    host: "192.168.185.102",
+    database: "center",
+  });
 
   connection.connect(function (err) {
-    if (err) throw err
-    console.log('Connected to Center 102 MySQL')
-  })
+    if (err) throw err;
+    console.log("Connected to Center 102 MySQL");
+  });
 
-  this.fill = function fill (val, DATA) {
+  this.fill = function fill(val, DATA) {
     var sql =
       `SELECT QN
       FROM hospitalq
@@ -24,17 +24,17 @@ module.exports = function () {
       AND patientNO = '` +
       val +
       `'
-      ORDER BY createDT DESC`
+      ORDER BY createDT DESC`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
-        if (err) throw err
-        resolve(result)
-      })
-    })
-  }
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 
-  this.dataQ = function fill (val, DATA) {
+  this.dataQ = function fill(val, DATA) {
     var sql =
       `SELECT
       patientNO,QN,patientName,createDT,timestamp
@@ -48,17 +48,17 @@ module.exports = function () {
   AND patientNO = '` +
       val.hn +
       `'
-  ORDER BY createDT`
+  ORDER BY createDT`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
-        if (err) throw err
-        resolve(result)
-      })
-    })
-  }
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 
-  this.hn_moph_patient = function fill (val, DATA) {
+  this.hn_moph_patient = function fill(val, DATA) {
     var sql =
       //   `SELECT
       //   s.patientID,
@@ -100,21 +100,21 @@ module.exports = function () {
   LEFT JOIN moph_sync s ON s.patientID = q.patientNO
   WHERE
     patientNO =   ` +
-    val +
-    `
+      val +
+      `
   AND date = CURDATE()
   GROUP BY
-    patientNO`
+    patientNO`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
-        if (err) throw err
-        resolve(result)
-      })
-    })
-  }
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 
-  this.hn_moph_maharat = function fill (val, DATA) {
+  this.hn_moph_maharat = function fill(val, DATA) {
     var sql =
       `SELECT
       drugcode
@@ -126,13 +126,30 @@ module.exports = function () {
       val +
       `'
     LIMIT 1
-    `
+    `;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
-        if (err) throw err
-        resolve(result)
-      })
-    })
-  }
-}
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.site_maharat = function fill(val, DATA) {
+    var sql =
+      `SELECT site_name,site_tel
+      FROM mhr_site
+      WHERE site_code = '` +
+      val.floor +
+      `'
+    `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+};

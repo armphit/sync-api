@@ -4,19 +4,25 @@ const app = express();
 
 var {
   registerController,
-  loginController,updatePasswordController
+  loginController,
+  updatePasswordController,
 } = require("./controller/userController");
 var {
   syncOPDController,
   syncOPDManualController,
 } = require("./controller/syncController");
 
-var { soapDIHController,  checkpatientController } = require("./controller/soapController");
+var {
+  soapDIHController,
+  checkpatientController,
+  prinstickerDataController,
+} = require("./controller/soapController");
 
 var {
   patientSyncController,
   drugSyncController,
-  listDrugSyncController,listPatientAllergicController
+  listDrugSyncController,
+  listPatientAllergicController,
 } = require("./controller/interfaceController");
 
 app.use(bodyParser.json());
@@ -40,6 +46,10 @@ app.post("/drugSync", drugSyncController);
 app.post("/listDrugAllSync", listDrugSyncController);
 app.post("/listPatientAllergicController", listPatientAllergicController);
 app.post("/checkpatient", checkpatientController);
+app.post("/prinsticker", prinstickerDataController);
+// app.post("/prinstickerData", function (req, res) {
+//   checkpatientController;
+// });
 // app.post("/syncOPDManual", function (req, res) {
 //   syncOPDManualController;
 // });

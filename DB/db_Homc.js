@@ -1,54 +1,56 @@
-const { Console } = require('console')
+const { Console } = require("console");
 
 module.exports = function () {
-  const sql = require('mssql')
+  const sql = require("mssql");
   //จริง
   this.config = {
-    user: 'robot',
-    password: 'Robot@MNRH2022',
-    server: '192.168.44.1',
-    database: 'MHR',
-    timezone: 'utc',
+    user: "robot",
+    password: "Robot@MNRH2022",
+    server: "192.168.44.1",
+    database: "MHR",
+    timezone: "utc",
     requestTimeout: 180000, // for timeout setting
     connectionTimeout: 180000, // for timeout setting
     options: {
       encrypt: false, // need to stop ssl checking in case of local db
-      enableArithAbort: true
-    }
-  }
+      enableArithAbort: true,
+    },
+  };
 
   this.connection = new sql.connect(this.config, function (err) {
-    if (err) console.log('ERROR: ' + err)
-  })
+    if (err) console.log("ERROR: " + err);
+  });
 
   const poolPromise = new sql.ConnectionPool(this.config)
     .connect()
-    .then(pool => {
-      console.log('Connected to Homc')
-      return pool
+    .then((pool) => {
+      console.log("Connected to Homc");
+      return pool;
     })
-    .catch(err => console.log('Database Connection Failed! Bad Config: ', err))
+    .catch((err) =>
+      console.log("Database Connection Failed! Bad Config: ", err)
+    );
 
-  String.prototype.padL = function padL (n) {
-    var target = this
+  String.prototype.padL = function padL(n) {
+    var target = this;
     while (target.length < 7) {
-      target = n + target
+      target = n + target;
     }
-    return target
-  }
+    return target;
+  };
 
-  this.fill = function fill (CMD, DATA) {
+  this.fill = function fill(CMD, DATA) {
     // // create Request object
     new this.sql.Request(this.connection).query(CMD, function (err, recordset) {
-      if (err) console.log('ERROR: ' + err)
+      if (err) console.log("ERROR: " + err);
 
       // send records as a response
       // res.send(recordset);
-      DATA(recordset)
-    })
-  }
+      DATA(recordset);
+    });
+  };
 
-  this.fill = async function fill (val, DATA) {
+  this.fill = async function fill(val, DATA) {
     var sqlCommand =
       `SELECT
 	m.batch_no AS prescriptionno,
@@ -120,7 +122,7 @@ LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
 LEFT JOIN Site si ON m.site = si.site_key
 WHERE
 	mh.hn = '` +
-      val.data.padL(' ') +
+      val.data.padL(" ") +
       `'
 AND mh.invdate = '` +
       val.date +
@@ -132,30 +134,30 @@ AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       val.allTimeOld +
       `)
 ORDER BY
-	p.lastIssTime`
+	p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise
-      const result = await pool.request().query(sqlCommand)
-      resolve(result)
-    })
-  }
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result);
+    });
+  };
 
-  this.dataDrug = async function fill (CMD, DATA) {
+  this.dataDrug = async function fill(CMD, DATA) {
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise
-      const result = await pool.request().query(CMD)
+      const pool = await poolPromise;
+      const result = await pool.request().query(CMD);
 
-      resolve(result)
-    })
-  }
+      resolve(result);
+    });
+  };
 
-  this.checkmed = async function fill (val, DATA) {
-    let hn = String(val.hn)
+  this.checkmed = async function fill(val, DATA) {
+    let hn = String(val.hn);
     for (let i = 0; i < 7 - String(val.hn).length; i++) {
-      hn = ' ' + hn
+      hn = " " + hn;
     }
- 
+
     var sqlCommand =
       `SELECT
       m.batch_no AS prescriptionno,
@@ -245,11 +247,55 @@ ORDER BY
       val.allTimeOld +
       `)
     ORDER BY
-      p.lastIssTime`
+      p.lastIssTime`;
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise
-      const result = await pool.request().query(sqlCommand)
-      resolve(result)
-    })
-  }
-}
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result);
+    });
+  };
+
+  this.intruction = async function fill(val, DATA) {
+    let hn = String(val.hn);
+    for (let i = 0; i < 7 - String(val.hn).length; i++) {
+      hn = " " + hn;
+    }
+    var sqlCommand =
+      `SELECT
+      TRIM (pt.titleName) + ' ' + pa.firstName + ' ' + TRIM(pa.lastName) AS name_patient,
+      p.invCode,
+      la.lamed_name AS lamedName,
+      p.lamedQty AS dosage,
+      (
+          SELECT
+              lamed_name
+          FROM
+              Lamed lam
+          WHERE
+              lam.lamed_code = p.lamedUnit
+      ) AS freetext0,
+      p.lamedTimeText AS freetext1,
+      p.lastIssTime
+  FROM
+      Patmed p
+  LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
+  LEFT JOIN PATIENT pa ON p.hn = pa.hn
+  LEFT JOIN PTITLE pt ON pa.titleCode = pt.titleCode
+  WHERE
+      p.hn = '` +
+      hn +
+      `'
+      AND p.invCode = '` +
+      val.code +
+      `'
+  AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
+      val.date +
+      `'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
+    });
+  };
+};
