@@ -80,7 +80,7 @@ module.exports = function () {
       //   drugAllergy`;
       `SELECT
     q.patientNO,
-    q.QN,
+    MAX(q.QN) AS QN,
     c. timestamp,
     s.cid,
     s.createdDT,
@@ -103,6 +103,7 @@ module.exports = function () {
       val +
       `
   AND date = CURDATE()
+  AND QN like '2%'
   GROUP BY
     patientNO`;
 
