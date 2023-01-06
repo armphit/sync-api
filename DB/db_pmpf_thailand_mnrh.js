@@ -287,4 +287,61 @@ GROUP BY
       });
     });
   };
+
+  this.drugSEPack = function fill(val, DATA) {
+    var sql =
+      `SELECT
+    *
+  FROM
+    (
+      SELECT
+        dd.drugID,
+        dd.drugCode AS realDrugCode,
+        dd.HisPackageRatio,
+        CASE
+      WHEN locate('-', drugCode) > 0
+      AND dd.drugCode <> 'CYCL-'
+      AND dd.drugCode <> 'DEX-O'
+      AND dd.drugCode <> 'POLY-1'
+      AND de.deviceCode = 'Xmed1' THEN
+        SUBSTRING(
+          dd.drugCode,
+          1,
+          locate('-', dd.drugCode) - 1
+        )
+      ELSE
+        dd.drugCode
+      END AS drugCode,
+      CASE
+    WHEN locate('-', drugCode) > 0
+    AND dd.drugCode <> 'CYCL-'
+    AND dd.drugCode <> 'DEX-O'
+    AND dd.drugCode <> 'POLY-1'
+    AND de.deviceCode = 'Xmed1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS prePack
+    FROM
+      devicedrugsetting ds
+    INNER JOIN device de ON ds.deviceID = de.deviceID
+    LEFT JOIN dictdrug dd ON dd.drugID = ds.drugID
+    WHERE
+      dd.drugCode IS NOT NULL
+    AND de.deviceCode = 'XMed1'
+    GROUP BY
+      dd.drugCode
+    ) AS a
+  WHERE a.drugCode  IN ('` +
+      val +
+      `') 
+  `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

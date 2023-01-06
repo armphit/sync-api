@@ -10,6 +10,8 @@ var jimp = require("jimp");
 var qrCode = require("qrcode-reader");
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
+var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
+var pmpf = new db_pmpf();
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
@@ -105,7 +107,11 @@ exports.checkpatientController = async (req, res, next) => {
         ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
         : "";
     }
-    res.send({ datadrugpatient });
+    let drugjoin = Array.prototype.map
+      .call(datadrugpatient, (s) => s.drugCode.trim())
+      .join("','");
+    let patientDrug = await pmpf.drugSEPack(drugjoin);
+    res.send({ datadrugpatient, patientDrug });
   }
 };
 
