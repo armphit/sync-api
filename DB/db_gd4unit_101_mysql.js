@@ -554,4 +554,26 @@ ORDER BY checkstamp
       });
     });
   };
+
+  this.insertPatient = function fill(val, DATA) {
+    var sql =
+      `
+      INSERT INTO center.checkmedpatient (hn, STATUS, date, TIMESTAMP)
+      VALUES
+        (
+          '` +
+      val +
+      `',
+          NULL,
+          CURRENT_DATE (),
+          CURRENT_TIMESTAMP ()
+        ) ON DUPLICATE KEY UPDATE TIMESTAMP = CURRENT_TIMESTAMP ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

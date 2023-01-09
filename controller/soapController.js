@@ -33,85 +33,92 @@ exports.soapDIHController = async (req, res, next) => {
 
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
-    let allTimeOld = "";
+    let addpatient = await gd4unit101.insertPatient(req.body.hn);
+    if (addpatient.affectedRows) {
+      let allTimeOld = "";
 
-    let time = await gd4unit101.checkPatientcheckmed(req.body.hn);
-    if (time.length != 0) {
-      for (let d of time) {
-        allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
-      }
-      allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
-    } else {
-      allTimeOld = `''`;
-    }
-
-    let datasend = req.body;
-    datasend.allTimeOld = allTimeOld;
-
-    let x = {};
-
-    x = await homc.checkmed(datasend);
-
-    let b = x.recordset;
-
-    if (b.length) {
-      for (let data of b) {
-        if (data.QRCode) {
-          try {
-            const img = await jimp.read(data.QRCode);
-            const qr = new qrCode();
-            const value = await new Promise((resolve, reject) => {
-              qr.callback = (err, v) =>
-                err != null ? reject(err) : resolve(v);
-              qr.decode(img.bitmap);
-            });
-            data.QRCode = value.result;
-          } catch (error) {
-            console.log(error.message);
-          }
+      let time = await gd4unit101.checkPatientcheckmed(req.body.hn);
+      if (time.length != 0) {
+        for (let d of time) {
+          allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
         }
-        data.lastmodified = data.lastmodified
-          ? data.lastmodified
-              .toISOString()
-              .replace(/T/, " ")
-              .replace(/\..+/, "")
-          : "";
-        data.ordercreatedate = data.ordercreatedate
-          ? data.ordercreatedate
-              .toISOString()
-              .replace(/T/, " ")
-              .replace(/\..+/, "")
-          : "";
-        let comma = Object.keys(data)
-          .map(function (k) {
-            return data[k];
-          })
-          .join("','");
-
-        comma = `'${comma}'`;
-
-        await gd4unit101.insertDrugcheck({
-          comma: comma,
-          qty: data.qty,
-          count: b.length,
-        });
+        allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
+      } else {
+        allTimeOld = `''`;
       }
-    }
 
-    let datadrugpatient = await gd4unit101.selectcheckmed(req.body.hn);
-    for (let data of datadrugpatient) {
-      data.ordercreatedate = data.ordercreatedate
-        ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
-        : "";
-      data.lastmodified = data.lastmodified
-        ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
-        : "";
+      let datasend = req.body;
+      datasend.allTimeOld = allTimeOld;
+
+      let x = {};
+
+      x = await homc.checkmed(datasend);
+
+      let b = x.recordset;
+
+      if (b.length) {
+        for (let data of b) {
+          if (data.QRCode) {
+            try {
+              const img = await jimp.read(data.QRCode);
+              const qr = new qrCode();
+              const value = await new Promise((resolve, reject) => {
+                qr.callback = (err, v) =>
+                  err != null ? reject(err) : resolve(v);
+                qr.decode(img.bitmap);
+              });
+              data.QRCode = value.result;
+            } catch (error) {
+              console.log(error.message);
+            }
+          }
+          data.lastmodified = data.lastmodified
+            ? data.lastmodified
+                .toISOString()
+                .replace(/T/, " ")
+                .replace(/\..+/, "")
+            : "";
+          data.ordercreatedate = data.ordercreatedate
+            ? data.ordercreatedate
+                .toISOString()
+                .replace(/T/, " ")
+                .replace(/\..+/, "")
+            : "";
+          let comma = Object.keys(data)
+            .map(function (k) {
+              return data[k];
+            })
+            .join("','");
+
+          comma = `'${comma}'`;
+
+          await gd4unit101.insertDrugcheck({
+            comma: comma,
+            qty: data.qty,
+            count: b.length,
+          });
+        }
+      }
+
+      let datadrugpatient = await gd4unit101.selectcheckmed(req.body.hn);
+      for (let data of datadrugpatient) {
+        data.ordercreatedate = data.ordercreatedate
+          ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
+          : "";
+        data.lastmodified = data.lastmodified
+          ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
+          : "";
+      }
+      let drugjoin = Array.prototype.map
+        .call(datadrugpatient, (s) => s.drugCode.trim())
+        .join("','");
+      let patientDrug = await pmpf.drugSEPack(drugjoin);
+      res.send({ datadrugpatient, patientDrug });
+    } else {
+      res.send({});
     }
-    let drugjoin = Array.prototype.map
-      .call(datadrugpatient, (s) => s.drugCode.trim())
-      .join("','");
-    let patientDrug = await pmpf.drugSEPack(drugjoin);
-    res.send({ datadrugpatient, patientDrug });
+  } else {
+    res.send({});
   }
 };
 
