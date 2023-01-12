@@ -67,9 +67,10 @@ exports.checkpatientController = async (req, res, next) => {
                   err != null ? reject(err) : resolve(v);
                 qr.decode(img.bitmap);
               });
+
               data.QRCode = value.result;
             } catch (error) {
-              console.log(error.message);
+              data.QRCode = "";
             }
           }
           data.lastmodified = data.lastmodified

@@ -500,9 +500,10 @@ module.exports = function () {
       ordercreatedate,
       lastmodified,
       checkstamp,
-      checkqty
+      checkqty,
+      scantimestamp
       )
-      VALUES(${val.count},${val.comma},null,'${val.qty}' )
+      VALUES(${val.count},${val.comma},null,'${val.qty}',CURRENT_TIMESTAMP() )
        
       `;
 
