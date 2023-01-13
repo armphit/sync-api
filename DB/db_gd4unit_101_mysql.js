@@ -503,7 +503,7 @@ module.exports = function () {
       checkqty,
       scantimestamp
       )
-      VALUES(${val.count},${val.comma},null,'${val.qty}',CURRENT_TIMESTAMP() )
+      VALUES(${val.count},${val.comma},null,'${val.qty}','${val.date}' )
        
       `;
 

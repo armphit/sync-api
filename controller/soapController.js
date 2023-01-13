@@ -57,6 +57,7 @@ exports.checkpatientController = async (req, res, next) => {
       let b = x.recordset;
 
       if (b.length) {
+        let datecurrent = moment().format("YYYY-MM-DD HH:mm:ss");
         for (let data of b) {
           if (data.QRCode) {
             try {
@@ -97,6 +98,7 @@ exports.checkpatientController = async (req, res, next) => {
             comma: comma,
             qty: data.qty,
             count: b.length,
+            date: datecurrent,
           });
         }
       }

@@ -153,4 +153,30 @@ module.exports = function () {
       });
     });
   };
+
+  this.insertPhar = function fill(val, DATA) {
+    var sql =
+      `INSERT INTO pharmacist (
+        id_phar,
+        name_phar,
+        createtimestamp
+      )
+      VALUES
+        (
+          '` +
+      val.id +
+      `',
+      '` +
+      val.name +
+      `',
+      CURRENT_TIMESTAMP()
+        )`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

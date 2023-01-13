@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const UserModel = require("../model/userModel");
 const os = require("os");
+var db_mysql102 = require("../DB/db_center_102_mysql");
+var center102 = new db_mysql102();
 
 exports.registerController = (req, res, next) => {
   const { email, name, password, role } = req.body;
@@ -15,7 +17,11 @@ exports.registerController = (req, res, next) => {
         role: role,
       });
       User.registerUser()
-        .then(() => {
+        .then(async () => {
+          await center102.insertPhar({
+            id: email,
+            name: name,
+          });
           res.status(201).json({
             message: "success",
           });
