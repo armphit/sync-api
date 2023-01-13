@@ -114,6 +114,92 @@ module.exports = function () {
     });
   };
 
+  this.dataDrugMain = async function fill(val, DATA) {
+    var sqlgetdrug =
+      `SELECT
+      MAX (dd.drugID) drugID,
+      MAX (dd.drugCode) drugCode,
+      MAX (dd.drugName) drugName,
+      MAX (dd.HisPackageRatio) HisPackageRatio,
+      CASE
+    WHEN CHARINDEX('-', MAX(dd.drugCode)) > 0
+    AND MAX (dd.drugCode) <> 'CYCL-'
+    AND MAX (dd.drugCode) <> 'DEX-O'
+    AND MAX (dd.drugCode) <> 'POLY-1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS isPrepack
+    FROM
+      XMed.dbo.Spaces sp
+    LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
+    LEFT JOIN center.dbo.dictdrug dd ON dd.drugID = xm.Code
+    WHERE
+      xm.Length IS NOT NULL
+    AND sp.ProductId IS NOT NULL
+    AND dd.drugCode = '` +
+      val.code +
+      `%'
+    GROUP BY
+      sp.ProductId
+    ORDER BY
+      CONVERT(int, MAX(dd.HisPackageRatio)) DESC`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      try {
+        const request = await pool.request();
+        const result = await request.query(sqlgetdrug);
+        resolve(result.recordset);
+      } catch (error) {
+        // await pool.close();
+        console.log("XMed:" + error);
+      }
+    });
+  };
+
+  this.datadrugX = async function fill(val, DATA) {
+    var sqlgetdrug =
+      `SELECT
+      MAX (dd.drugID) drugID,
+      MAX (dd.drugCode) drugCode,
+      MAX (dd.drugName) drugName,
+      MAX (dd.HisPackageRatio) HisPackageRatio,
+      CASE
+    WHEN CHARINDEX('-', MAX(dd.drugCode)) > 0
+    AND MAX (dd.drugCode) <> 'CYCL-'
+    AND MAX (dd.drugCode) <> 'DEX-O'
+    AND MAX (dd.drugCode) <> 'POLY-1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS isPrepack
+    FROM
+      XMed.dbo.Spaces sp
+    LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
+    LEFT JOIN center.dbo.dictdrug dd ON dd.drugID = xm.Code
+    WHERE
+      xm.Length IS NOT NULL
+    AND sp.ProductId IS NOT NULL
+    AND dd.drugCode LIKE '` +
+      val.code +
+      `%'
+    GROUP BY
+      sp.ProductId
+    ORDER BY
+      CONVERT(int, MAX(dd.HisPackageRatio)) DESC`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      try {
+        const request = await pool.request();
+        const result = await request.query(sqlgetdrug);
+        resolve(result.recordset);
+      } catch (error) {
+        // await pool.close();
+        console.log("XMed:" + error);
+      }
+    });
+  };
+
   module.exports = {
     sql,
     poolPromise,
