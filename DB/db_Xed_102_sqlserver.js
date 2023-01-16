@@ -139,7 +139,7 @@ module.exports = function () {
     AND sp.ProductId IS NOT NULL
     AND dd.drugCode = '` +
       val.code +
-      `%'
+      `'
     GROUP BY
       sp.ProductId
     ORDER BY

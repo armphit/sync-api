@@ -255,10 +255,11 @@ async function getdataHomc(data, etc) {
         zone.push(3);
       }
     }
-
+    console.log(data[i].code);
     let seD = { code: data[i].code, lo: "XMed1" };
     let listDrugSE = [];
     let datadrugMain = await Xmed.dataDrugMain(seD);
+    console.log(datadrugMain);
     if (datadrugMain.length > 0) {
       if (data[i].Qty >= datadrugMain[0].HisPackageRatio) {
         datadrugMain[0].lo = "main";
@@ -270,6 +271,7 @@ async function getdataHomc(data, etc) {
       lo: "XMed1",
     };
     let datadrugPre = await Xmed.datadrugX(seP);
+    console.log(datadrugPre);
     if (datadrugPre.length > 0) {
       for (let index = 0; index < datadrugPre.length; index++) {
         if (data[i].Qty >= datadrugPre[index].HisPackageRatio) {
@@ -741,7 +743,7 @@ async function getdataHomc(data, etc) {
     let xmlDrug = {
       xml: js2xmlparser.parse("outpOrderDispense", jsonDrug),
     };
-    // console.log(xmlDrug);
+    console.log(xmlDrug);
     console.log("-------------------------------------------------");
 
     if (etc.dih) {
