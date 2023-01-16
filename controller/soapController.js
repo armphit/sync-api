@@ -23,6 +23,8 @@ exports.soapDIHController = async (req, res, next) => {
     if (val.data !== "0") {
       res.send("error");
     } else {
+      console.log(req.body.drug.code);
+
       res.status(200).json({
         // Authorization: Bearer,
         status: "success",
