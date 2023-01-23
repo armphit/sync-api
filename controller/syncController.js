@@ -255,11 +255,11 @@ async function getdataHomc(data, etc) {
         zone.push(3);
       }
     }
-    console.log(data[i].code);
+
     let seD = { code: data[i].code, lo: "XMed1" };
     let listDrugSE = [];
-    let datadrugMain = await Xmed.dataDrugMain(seD);
-    console.log(datadrugMain);
+    let datadrugMain = await pmpf.datadrugMain(seD);
+
     if (datadrugMain.length > 0) {
       if (data[i].Qty >= datadrugMain[0].HisPackageRatio) {
         datadrugMain[0].lo = "main";
@@ -270,7 +270,7 @@ async function getdataHomc(data, etc) {
       code: data[i].code.includes("-") ? data[i].code : data[i].code + "-",
       lo: "XMed1",
     };
-    let datadrugPre = await Xmed.datadrugX(seP);
+    let datadrugPre = await pmpf.datadrugX(seP);
     console.log(datadrugPre);
     if (datadrugPre.length > 0) {
       for (let index = 0; index < datadrugPre.length; index++) {

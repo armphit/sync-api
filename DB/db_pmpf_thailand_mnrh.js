@@ -344,4 +344,23 @@ GROUP BY
       });
     });
   };
+
+  this.druginsert = function fill(val, DATA) {
+    var sql =
+      `SELECT
+    *
+  FROM
+  dictdrug
+  WHERE drugCode = '` +
+      val +
+      `'
+  `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

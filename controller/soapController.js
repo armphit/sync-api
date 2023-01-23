@@ -12,6 +12,8 @@ var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
+var db_Xmed = require("../DB/db_Xed_102_sqlserver");
+var Xmed = new db_Xmed();
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
@@ -23,8 +25,27 @@ exports.soapDIHController = async (req, res, next) => {
     if (val.data !== "0") {
       res.send("error");
     } else {
-      console.log(req.body.drug.code);
+      let datadrug = await pmpf.druginsert(req.body.drug.code);
+      let keys = Object.keys(datadrug[0]);
+      let value = Object.values(datadrug[0]);
+      value[36] = moment(value[36]).format("YYYY-MM-DD HH:mm:ss");
+      value[37] = moment(value[37]).format("YYYY-MM-DD HH:mm:ss");
+      let arrSql = [];
+      let valSql = [];
+      for (let index = 0; index < keys.length; index++) {
+        arrSql[index] = `${keys[index]} = N'${
+          value[index] == null ? "" : value[index]
+        }'`;
+        valSql[index] = `N'${value[index] == null ? "" : value[index]}'`;
+      }
 
+      let send = {
+        update: arrSql.join(","),
+        insert: valSql.join(","),
+        code: req.body.drug.code,
+      };
+
+      let datainsert = await Xmed.updateDicdrug(send);
       res.status(200).json({
         // Authorization: Bearer,
         status: "success",

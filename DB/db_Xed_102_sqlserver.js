@@ -200,8 +200,42 @@ module.exports = function () {
     });
   };
 
-  module.exports = {
-    sql,
-    poolPromise,
+  this.updateDicdrug = async function fill(val, DATA) {
+    var sqlgetdrug =
+      `IF EXISTS (SELECT * FROM dictdrug WHERE drugCode = N'` +
+      val.code +
+      `')
+      BEGIN
+        UPDATE dictdrug
+      SET ` +
+      val.update +
+      `
+      WHERE
+        drugCode = N'` +
+      val.code +
+      `'
+      END
+      ELSE
+      
+      BEGIN
+        INSERT INTO dictdrug 
+      VALUES
+        (
+          ` +
+      val.insert +
+      `
+        ) ;
+      END `;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      try {
+        const request = await pool.request();
+        const result = await request.query(sqlgetdrug);
+        resolve(result.recordset);
+      } catch (error) {
+        // await pool.close();
+        console.log("XMed:" + error);
+      }
+    });
   };
 };
