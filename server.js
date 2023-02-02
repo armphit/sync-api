@@ -14,9 +14,14 @@ var {
 
 var {
   soapDIHController,
-  checkpatientController,
   prinstickerDataController,
 } = require("./controller/soapController");
+
+var {
+  checkpatientController,
+  deletecheckmedController,
+  updatecheckmedController,
+} = require("./controller/checkmedController");
 
 var {
   patientSyncController,
@@ -45,8 +50,12 @@ app.post("/patientSync", patientSyncController);
 app.post("/drugSync", drugSyncController);
 app.post("/listDrugAllSync", listDrugSyncController);
 app.post("/listPatientAllergicController", listPatientAllergicController);
-app.post("/checkpatient", checkpatientController);
+
 app.post("/prinsticker", prinstickerDataController);
+app.post("/checkpatient", checkpatientController);
+app.post("/deletecheckmed", deletecheckmedController);
+app.post("/updatecheckmed", updatecheckmedController);
+
 // app.post("/prinstickerData", function (req, res) {
 //   checkpatientController;
 // });

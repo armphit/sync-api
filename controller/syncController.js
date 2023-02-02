@@ -271,7 +271,7 @@ async function getdataHomc(data, etc) {
       lo: "XMed1",
     };
     let datadrugPre = await pmpf.datadrugX(seP);
-    console.log(datadrugPre);
+
     if (datadrugPre.length > 0) {
       for (let index = 0; index < datadrugPre.length; index++) {
         if (data[i].Qty >= datadrugPre[index].HisPackageRatio) {
@@ -303,7 +303,10 @@ async function getdataHomc(data, etc) {
         let data_qty = data[i].Qty;
         let qty = data[i].Qty;
         let icheck = 0;
-
+        let drugCheck = null;
+        let num = 0;
+        let datapack = new Array();
+        let dataObject = null;
         for (let index = 0; index < listDrugSE.length; index++) {
           icheck = index;
           let datamodzero = [];
@@ -352,64 +355,133 @@ async function getdataHomc(data, etc) {
               let count_box_while = qty_box;
               let count_qty_while = qty_mod;
               indexdrug = index + 1;
+              // console.log(listDrugSE[index]);
+              // console.log(count_box_while);
+              // console.log(count_qty_while);
 
-              if (listDrugSE[indexdrug]) {
-                do {
-                  mod_val =
-                    count_qty_while % listDrugSE[indexdrug].HisPackageRatio;
+              // if (listDrugSE[indexdrug]) {
 
-                  if (mod_val == 0) {
-                    listDrugSE[index].qty =
-                      count_box_while * listDrugSE[index].HisPackageRatio;
-                    listDrugSE[indexdrug].qty = count_qty_while;
-                    listDrugSE = listDrugSE.filter((d) => d.qty);
-                    data[i].Qty = 0;
+              do {
+                // console.log(
+                //   "----------------------high-pack------------------------"
+                // );
+                dataObject = {};
+                dataObject.highpack = listDrugSE[index];
+                dataObject.highpack.box = count_box_while;
+                dataObject.highpack.mod = count_qty_while;
+
+                // console.log(listDrugSE[index]);
+                // console.log(count_box_while);
+                // console.log(count_qty_while);
+                // console.log("----------------------------------------------");
+                // let box_val = 0;
+
+                // box_val =
+
+                // console.log(
+                //   "--------------------------low-pack--------------------"
+                // );
+                if (listDrugSE[indexdrug]) {
+                  if (count_qty_while > listDrugSE[indexdrug].HisPackageRatio) {
+                    mod_val =
+                      count_qty_while % listDrugSE[indexdrug].HisPackageRatio;
+                    dataObject.lowpack = listDrugSE[indexdrug];
+                    dataObject.lowpack.box = ~~(
+                      count_qty_while / listDrugSE[indexdrug].HisPackageRatio
+                    );
+                    dataObject.lowpack.mod = mod_val;
+
+                    // console.log(listDrugSE[indexdrug]);
+
+                    // console.log(
+                    //   ~~(
+                    //     count_qty_while / listDrugSE[indexdrug].HisPackageRatio
+                    //   )
+                    // );
+                    // console.log(mod_val);
                   } else {
-                    if (count_box_while == 1) {
-                      count_box_while = qty_box;
-                      count_qty_while = qty_mod;
-                      indexdrug++;
-                    } else {
-                      count_qty_while =
-                        count_qty_while + listDrugSE[index].HisPackageRatio;
-                      count_box_while--;
-                    }
+                    dataObject.lowpack = dataObject.highpack;
+                    dataObject.highpack = null;
                   }
-                } while (mod_val != 0 && listDrugSE[indexdrug] != undefined);
-              } else {
-                listDrugSE = listDrugSE.filter((o) => {
-                  if (o.lo === "main") {
-                    o.qty =
-                      ~~(data[i].Qty / o.HisPackageRatio) * o.HisPackageRatio;
-                    data[i].Qty = data[i].Qty % o.HisPackageRatio;
-                    return o;
+                } else {
+                  dataObject.lowpack = dataObject.highpack;
+                  dataObject.highpack = null;
+                }
+
+                if (!drugCheck) {
+                  drugCheck = dataObject;
+                } else {
+                  drugCheck =
+                    Number(drugCheck.lowpack.mod) <=
+                    Number(dataObject.lowpack.mod)
+                      ? drugCheck
+                      : dataObject;
+                }
+
+                if (mod_val == 0) {
+                  listDrugSE[index].qty =
+                    count_box_while * listDrugSE[index].HisPackageRatio;
+                  listDrugSE[indexdrug].qty = count_qty_while;
+                  listDrugSE = listDrugSE.filter((d) => d.qty);
+                  data[i].Qty = 0;
+                } else {
+                  if (count_box_while == 1) {
+                    count_box_while = qty_box;
+                    count_qty_while = qty_mod;
+                    indexdrug++;
                   } else {
-                    listDrugSE = [];
+                    count_qty_while =
+                      count_qty_while + listDrugSE[index].HisPackageRatio;
+                    count_box_while--;
                   }
-                });
-              }
+                }
+              } while (mod_val != 0 && listDrugSE[indexdrug] != undefined);
+              // } else {
+              //   listDrugSE = listDrugSE.filter((o) => {
+              //     if (o.lo === "main") {
+              //       o.qty =
+              //         ~~(data[i].Qty / o.HisPackageRatio) * o.HisPackageRatio;
+              //       data[i].Qty = data[i].Qty % o.HisPackageRatio;
+              //       return o;
+              //     } else {
+              //       listDrugSE = [];
+              //     }
+              //   });
+              // }
             }
           }
         }
-      } else {
-        if (listDrugSE.length) {
-          if (listDrugSE[0].lo === "main") {
-            listDrugSE[0].qty =
-              ~~(data[i].Qty / listDrugSE[0].HisPackageRatio) *
-              listDrugSE[0].HisPackageRatio;
-            data[i].Qty = data[i].Qty % listDrugSE[0].HisPackageRatio;
-          } else {
-            if (data[i].Qty % listDrugSE[0].HisPackageRatio === 0) {
-              listDrugSE[0].qty =
-                ~~(data[i].Qty / listDrugSE[0].HisPackageRatio) *
-                listDrugSE[0].HisPackageRatio;
-              data[i].Qty = data[i].Qty % listDrugSE[0].HisPackageRatio;
-            } else {
-              listDrugSE = [];
-            }
-          }
-        }
+        console.log("----end----");
+        drugCheck.highpack.qty =
+          drugCheck.highpack.HisPackageRatio * drugCheck.highpack.box;
+        drugCheck.lowpack.qty =
+          drugCheck.lowpack.HisPackageRatio * drugCheck.lowpack.box;
+        listDrugSE = [];
+        listDrugSE[0] = drugCheck.highpack;
+        listDrugSE[1] = drugCheck.lowpack;
+        data[i].Qty = drugCheck.lowpack.mod;
+        console.log(drugCheck);
+        console.log(listDrugSE);
       }
+      // else {
+      //   if (listDrugSE.length) {
+      //     if (listDrugSE[0].lo === "main") {
+      //       listDrugSE[0].qty =
+      //         ~~(data[i].Qty / listDrugSE[0].HisPackageRatio) *
+      //         listDrugSE[0].HisPackageRatio;
+      //       data[i].Qty = data[i].Qty % listDrugSE[0].HisPackageRatio;
+      //     } else {
+      //       if (data[i].Qty % listDrugSE[0].HisPackageRatio === 0) {
+      //         listDrugSE[0].qty =
+      //           ~~(data[i].Qty / listDrugSE[0].HisPackageRatio) *
+      //           listDrugSE[0].HisPackageRatio;
+      //         data[i].Qty = data[i].Qty % listDrugSE[0].HisPackageRatio;
+      //       } else {
+      //         listDrugSE = [];
+      //       }
+      //     }
+      //   }
+      // }
 
       for (let x = 0; x < listDrugSE.length; x++) {
         if (listDrugSE[x].qty >= Number(listDrugSE[x].HisPackageRatio)) {
@@ -797,8 +869,9 @@ async function getdataHomc(data, etc) {
   }
 
   let checkStatus = {
-    dih: dih,
-    jvm: jvm,
+    dih: 0,
+
+    jvm: 0,
   };
   return checkStatus;
 }

@@ -577,4 +577,96 @@ ORDER BY checkstamp
       });
     });
   };
+  this.dataPatient = function fill(val, DATA) {
+    var sql =
+      `SELECT
+			*
+		FROM
+			center.checkmedpatient_copy
+	WHERE
+		hn = '` +
+      val +
+      `'
+	AND date = CURRENT_DATE ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.insertPatient_copy = function fill(val, DATA) {
+    var sql =
+      `INSERT INTO center.checkmedpatient_copy (
+        id,
+        hn,
+        userCheck,
+        date,
+        timestamp,
+        isDelete,
+        userDelete
+      )
+      VALUES
+        (
+          uuid(),
+              '` +
+      val +
+      `',
+          'admin',
+          CURRENT_DATE (),
+          CURRENT_TIMESTAMP (),
+          NULL,
+          NULL
+        )`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getpatient = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      *
+    FROM
+      center.checkmedpatient_copy
+    WHERE
+      hn = '` +
+      val +
+      `'
+    AND date = CURRENT_DATE ()
+    AND isDelete IS NULL`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.checkPatientcheckmed_copy = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      hn,
+      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+   FROM
+      center.checkmed_copy p
+   WHERE
+      date_format(p.lastmodified, '%Y-%m-%d') = CURRENT_DATE
+   AND p.cmp_id = '` +
+      val +
+      `'
+   GROUP BY
+      date_format(p.lastmodified, '%H:%i')`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };
