@@ -134,10 +134,10 @@ module.exports = function () {
       val.departmentdesc +
       `',
       '` +
-      val.freetext2 +
+      val.freetext2.replace("'", " ") +
       `',
       '` +
-      val.itemidentify +
+      val.itemidentify.replace("'", " ") +
       `',
       '` +
       val.rightname +
@@ -147,13 +147,13 @@ module.exports = function () {
       val.dosage +
       `',
       '` +
-      val.freetext1 +
+      val.freetext1.replace("'", " ") +
       `',
       '` +
       val.queue +
       `'
       )`;
-
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       resolve(sql);
       connection.query(sql, function (err, result, fields) {
