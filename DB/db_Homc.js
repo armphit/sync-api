@@ -197,18 +197,41 @@ ORDER BY
     ) AS freetext0,
      p.lamedTimeText AS freetext1,
      p.lamedText AS freetext2,
-     (
+     '( ' + (
       SELECT
-        Rtrim(LTRIM(mi.Description)) + ',' -- ,mif.Med_Inv_Code
+        DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
       FROM
         Med_Info_Group mi
       LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
       WHERE
-        mif.Med_Inv_Code = m.inv_code FOR XML PATH ('')
-    ) AS itemidentify,
+        mif.Med_Inv_Code = m.inv_code
+      AND (
+        mi.InfoGroup LIKE '%สี%'
+        OR mi.InfoGroup IS NULL
+      ) FOR XML PATH ('')
+    ) + ')' AS itemidentify,
+     (
+      SELECT
+        DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
+      FROM
+        Med_Info_Group mi
+      LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+      WHERE
+        mif.Med_Inv_Code = m.inv_code
+      AND mi.InfoGroup = 'Indication' FOR XML PATH ('')
+    ) AS indication,
     qr.QRCode,
      mh.lastUpd AS ordercreatedate,
-     p.lastIssTime AS lastmodified
+     p.lastIssTime AS lastmodified,
+     la.lamed_eng,
+     (
+      SELECT
+        lamed_eng
+      FROM
+        Lamed lam
+      WHERE
+        lam.lamed_code = p.lamedUnit
+    ) AS freetext1_eng
     FROM
       OPD_H o
     LEFT JOIN Med_logh mh ON o.hn = mh.hn
@@ -290,6 +313,31 @@ ORDER BY
       `'
   AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
       val.date +
+      `'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
+    });
+  };
+  this.getDrugstar = async function fill(val, DATA) {
+    var sqlCommand =
+      `SELECT
+      IIF (
+        SUBSTRING (
+          gen_name,
+          LEN(TRIM(gen_name)),
+          LEN(TRIM(gen_name))
+        ) = '*',
+        1,
+        0
+      ) val
+    FROM
+      Med_inv
+    WHERE
+      code = '` +
+      val +
       `'`;
 
     return new Promise(async (resolve, reject) => {

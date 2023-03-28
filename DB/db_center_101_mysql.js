@@ -20,7 +20,7 @@ module.exports = function () {
       `SELECT
 			*
 		FROM
-			center.checkmedpatient_copy
+			center.checkmedpatient 
 	WHERE
 		hn = '` +
       val +
@@ -38,7 +38,7 @@ module.exports = function () {
 
   this.insertPatient = function fill(val, DATA) {
     var sql =
-      `INSERT INTO checkmedpatient_copy (
+      `INSERT INTO checkmedpatient  (
         id,
         hn,
         userCheck,
@@ -51,9 +51,11 @@ module.exports = function () {
         (
           uuid(),
               '` +
-      val +
+      val.hn +
       `',
-          'admin',
+      '` +
+      val.user +
+      `',
           CURRENT_DATE (),
           CURRENT_TIMESTAMP (),
           NULL,
@@ -71,7 +73,7 @@ module.exports = function () {
       `SELECT
       *
     FROM
-      checkmedpatient_copy
+      checkmedpatient 
     WHERE
       hn = '` +
       val +
@@ -92,7 +94,7 @@ module.exports = function () {
       hn,
       DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
    FROM
-      checkmed_copy p
+      checkmed  p
    WHERE
       date_format(p.lastmodified, '%Y-%m-%d') = CURRENT_DATE
    AND p.cmp_id = '` +
@@ -109,7 +111,7 @@ module.exports = function () {
     });
   };
   this.insertDrugcheck = function fill(val, DATA) {
-    let sql = `INSERT INTO checkmed_copy (
+    let sql = `INSERT INTO checkmed  (
       id,
       cmp_id,
       rowNum,
@@ -134,9 +136,12 @@ module.exports = function () {
       freetext1,
       freetext2,
       itemidentify,
+      indication,
       qrCode,
       ordercreatedate,
       lastmodified,
+      lamedEng,
+      freetext1Eng,
       checkstamp,
       checkqty,
       scantimestamp
@@ -159,7 +164,7 @@ module.exports = function () {
       (SELECT
         MAX(seq) 
             FROM
-            checkmed_copy
+            checkmed 
         
             WHERE
             cmp_id = '` +
@@ -168,7 +173,7 @@ module.exports = function () {
         GROUP BY hn) AS countDrug,
       pc.*,img.pathImage
 FROM
-    checkmed_copy pc
+    checkmed  pc
 LEFT JOIN (
     SELECT
         drugCode,
@@ -196,7 +201,7 @@ ORDER BY checkstamp
 
   this.deletcheckmed = function fill(val, DATA) {
     let sql =
-      `UPDATE checkmedpatient_copy
+      `UPDATE checkmedpatient 
       SET isDelete = CURRENT_TIMESTAMP() , userDelete = '` +
       val.user +
       `'
@@ -216,7 +221,7 @@ ORDER BY checkstamp
   this.updatecheckmed = function fill(val, DATA) {
     let sql =
       `
-      UPDATE checkmed_copy
+      UPDATE checkmed 
         SET checkqty = '` +
       val.currentqty +
       `',
@@ -235,7 +240,7 @@ ORDER BY checkstamp
   };
   this.insertlogcheckmed = function fill(val, DATA) {
     let sql =
-      `INSERT INTO checkmed_log_copy (id, cm_id, qty, user, createDT)
+      `INSERT INTO checkmed_log  (id, cm_id, qty, user, createDT)
       VALUES
         (
           uuid(),
@@ -250,6 +255,23 @@ ORDER BY checkstamp
       `',
       CURRENT_TIMESTAMP()
         )`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.updatePatient = function fill(val, DATA) {
+    let sql =
+      `UPDATE checkmedpatient
+      SET checkComplete = CURRENT_TIMESTAMP() 
+      WHERE
+        (
+          id = '` +
+      val +
+      `')`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

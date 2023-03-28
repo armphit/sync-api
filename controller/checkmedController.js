@@ -12,7 +12,7 @@ exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let dataPatient = await center101.checkdelete(req.body.hn);
     if (!dataPatient.length) {
-      await center101.insertPatient(req.body.hn);
+      await center101.insertPatient(req.body);
       dataPatient = await center101.getpatient(req.body.hn);
     }
 
@@ -67,6 +67,21 @@ exports.checkpatientController = async (req, res, next) => {
                 .toISOString()
                 .replace(/T/, " ")
                 .replace(/\..+/, "")
+            : data.lastmodified;
+          data.freetext1 = data.freetext1
+            ? data.freetext1.replace("'", " ")
+            : "";
+          data.freetext2 = data.freetext2
+            ? data.freetext2.replace("'", " ")
+            : "";
+          data.itemidentify = data.itemidentify
+            ? data.itemidentify.replace("'", " ")
+            : "";
+          data.freetext1_eng = data.freetext1_eng
+            ? data.freetext1_eng.replace("'", " ")
+            : "";
+          data.lamed_eng = data.lamed_eng
+            ? data.lamed_eng.replace("'", " ")
             : "";
           let comma = Object.keys(data)
             .map(function (k) {
@@ -75,6 +90,7 @@ exports.checkpatientController = async (req, res, next) => {
             .join("','");
 
           comma = `'${comma}'`;
+
           await center101.insertDrugcheck({
             comma: comma,
             qty: data.qty,
@@ -96,6 +112,24 @@ exports.checkpatientController = async (req, res, next) => {
       let drugjoin = Array.prototype.map
         .call(datadrugpatient, (s) => s.drugCode.trim())
         .join("','");
+      let imgDrug = await pmpf.drugImage(drugjoin);
+      imgDrug.map((item) => {
+        if (item.pathImage) {
+          item.pathImage = item.pathImage.split(",");
+          item.typeNum = item.typeNum.split(",");
+          return item;
+        }
+      });
+
+      datadrugpatient = datadrugpatient.map((emp) => ({
+        ...emp,
+        ...(imgDrug.find(
+          (item) => item.drugCode.trim() === emp.drugCode.trim()
+        ) ?? {
+          pathImage: null,
+          typeNum: null,
+        }),
+      }));
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
     } else {
@@ -119,6 +153,27 @@ exports.updatecheckmedController = async (req, res, next) => {
     );
     if (insertloginsertlogcheckmed.affectedRows) {
       let datadrugpatient = await center101.selectcheckmed(req.body.cmp_id);
+      let drugjoin = Array.prototype.map
+        .call(datadrugpatient, (s) => s.drugCode.trim())
+        .join("','");
+      let imgDrug = await pmpf.drugImage(drugjoin);
+      imgDrug.map((item) => {
+        if (item.pathImage) {
+          item.pathImage = item.pathImage.split(",");
+          item.typeNum = item.typeNum.split(",");
+          return item;
+        }
+      });
+
+      datadrugpatient = datadrugpatient.map((emp) => ({
+        ...emp,
+        ...(imgDrug.find(
+          (item) => item.drugCode.trim() === emp.drugCode.trim()
+        ) ?? {
+          pathImage: null,
+          typeNum: null,
+        }),
+      }));
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -128,6 +183,13 @@ exports.updatecheckmedController = async (req, res, next) => {
           : "";
       }
       res.send({ datadrugpatient });
+      if (datadrugpatient.length) {
+        let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
+
+        if (checkTime) {
+          let result = await center101.updatePatient(req.body.cmp_id);
+        }
+      }
     } else {
       res.send({});
     }

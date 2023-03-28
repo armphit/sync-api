@@ -328,7 +328,7 @@ GROUP BY
     LEFT JOIN dictdrug dd ON dd.drugID = ds.drugID
     WHERE
       dd.drugCode IS NOT NULL
-    AND de.deviceCode = 'XMed1'
+    -- AND de.deviceCode = 'XMed1'
     GROUP BY
       dd.drugCode
     ) AS a
@@ -354,6 +354,33 @@ GROUP BY
   WHERE drugCode = '` +
       val +
       `'
+  `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.drugImage = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      d.drugCode,
+      GROUP_CONCAT(i.typeNum) typeNum,
+      GROUP_CONCAT(i.pathImage) pathImage,
+      b.barCode
+    FROM
+      pmpf_thailand_mnrh.dictdrug d
+    LEFT JOIN center.images_drugs i ON i.drugCode = d.drugCode
+    LEFT JOIN center.barcode_drug b ON b.drugCode = d.drugCode
+    WHERE
+      d.drugCode <> ''
+      AND d.drugCode IN ('` +
+      val +
+      `') 
+    GROUP BY
+      drugCode
   `;
 
     return new Promise(function (resolve, reject) {

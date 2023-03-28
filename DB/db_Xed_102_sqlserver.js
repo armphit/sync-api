@@ -133,7 +133,7 @@ module.exports = function () {
     FROM
       XMed.dbo.Spaces sp
     LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
-    LEFT JOIN center.dbo.dictdrug dd ON dd.drugID = xm.Code
+    LEFT JOIN center.dbo.dictdrug dd ON dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS = xm.Code
     WHERE
       xm.Length IS NOT NULL
     AND sp.ProductId IS NOT NULL
@@ -176,7 +176,7 @@ module.exports = function () {
     FROM
       XMed.dbo.Spaces sp
     LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
-    LEFT JOIN center.dbo.dictdrug dd ON dd.drugID = xm.Code
+    LEFT JOIN center.dbo.dictdrug dd ON dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS = xm.Code
     WHERE
       xm.Length IS NOT NULL
     AND sp.ProductId IS NOT NULL
