@@ -62,16 +62,16 @@ module.exports = function () {
 
   this.insertDrug = function fill(val, DATA) {
     let freetext2 = val.freetext2
-      ? val.freetext2.replace("'", " ")
-      : val.freetext2;
+    ? val.freetext2.replace("'", " ")
+    : val.freetext2;
 
-    let freetext1 = val.freetext1
-      ? val.freetext1.replace("'", " ")
-      : val.freetext1;
+  let freetext1 = val.freetext1
+    ? val.freetext1.replace("'", " ")
+    : val.freetext1;
 
-    let itemidentify = val.itemidentify
-      ? val.itemidentify.replace("'", " ")
-      : val.itemidentify;
+  let itemidentify = val.itemidentify
+    ? val.itemidentify.replace("'", " ")
+    : val.itemidentify;
     var sql =
       `INSERT INTO  prescription  (
         prescriptionno ,
@@ -145,10 +145,10 @@ module.exports = function () {
       val.departmentdesc +
       `',
       '` +
-      val.freetext2 +
+      freetext2 +
       `',
       '` +
-      val.itemidentify +
+      itemidentify +
       `',
       '` +
       val.rightname +
@@ -158,13 +158,13 @@ module.exports = function () {
       val.dosage +
       `',
       '` +
-      val.freetext1 +
+      freetext1 +
       `',
       '` +
       val.queue +
       `'
       )`;
-    console.log(sql);
+
     return new Promise(function (resolve, reject) {
       resolve(sql);
       connection.query(sql, function (err, result, fields) {

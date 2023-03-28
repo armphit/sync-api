@@ -59,7 +59,6 @@ exports.syncOPDController = async (req, res, next) => {
       for (let i = 0; i < b.length; i++) {
         sql101 = await GD4Unit_101.dataDrug(b[i].orderitemcode);
         sql101 = sql101.recordset;
-
         if (sql101.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
           b[i].orderitemname = b[i].orderitemname.replace(
             /[\/\\#,+$~.'":?<>{}]/g,
@@ -83,7 +82,7 @@ exports.syncOPDController = async (req, res, next) => {
         }
       }
       console.log(c);
-      console.log(drugarr);
+
       // getdataHomc(drugarr, c)
       //   .then((value) => {
 

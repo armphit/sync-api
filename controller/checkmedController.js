@@ -83,15 +83,6 @@ exports.checkpatientController = async (req, res, next) => {
           data.lamed_eng = data.lamed_eng
             ? data.lamed_eng.replace("'", " ")
             : "";
-          data.freetext1 = data.freetext1
-            ? data.freetext1.replace("'", " ")
-            : "";
-          data.freetext2 = data.freetext2
-            ? data.freetext2.replace("'", " ")
-            : "";
-          data.itemidentify = data.itemidentify
-            ? data.itemidentify.replace("'", " ")
-            : "";
           let comma = Object.keys(data)
             .map(function (k) {
               return data[k];
