@@ -69,20 +69,21 @@ exports.checkpatientController = async (req, res, next) => {
                 .replace(/\..+/, "")
             : data.lastmodified;
           data.freetext1 = data.freetext1
-            ? data.freetext1.replace("'", " ")
+            ? data.freetext1.replace("'", "''")
             : "";
           data.freetext2 = data.freetext2
-            ? data.freetext2.replace("'", " ")
+            ? data.freetext2.replace("'", "''")
             : "";
           data.itemidentify = data.itemidentify
-            ? data.itemidentify.replace("'", " ")
+            ? data.itemidentify.replace("'", "''")
             : "";
           data.freetext1_eng = data.freetext1_eng
-            ? data.freetext1_eng.replace("'", " ")
+            ? data.freetext1_eng.replace("'", "''")
             : "";
           data.lamed_eng = data.lamed_eng
-            ? data.lamed_eng.replace("'", " ")
+            ? data.lamed_eng.replace("'", "''")
             : "";
+          data.drugName = data.drugName ? data.drugName.replace("'", "''") : "";
           let comma = Object.keys(data)
             .map(function (k) {
               return data[k];
@@ -132,6 +133,12 @@ exports.checkpatientController = async (req, res, next) => {
       }));
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
+      if (datadrugpatient.length) {
+        let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
+        if (checkTime) {
+          let result = await center101.updatePatient(dataPatient.id);
+        }
+      }
     } else {
       res.send({});
     }
