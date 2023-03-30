@@ -1,6 +1,8 @@
 const moment = require("moment");
-var db_mysql101center = require("../DB/db_center_101_mysql");
-var center101 = new db_mysql101center();
+// var db_mysql101center = require("../DB/db_center_101_mysql");
+// var center101 = new db_mysql101center();
+var db_mysql102 = require("../DB/db_center_102_mysql");
+var center102 = new db_mysql102();
 var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
 var jimp = require("jimp");
@@ -10,16 +12,16 @@ var pmpf = new db_pmpf();
 
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
-    let dataPatient = await center101.checkdelete(req.body.hn);
+    let dataPatient = await center102.checkdelete(req.body.hn);
     if (!dataPatient.length) {
-      await center101.insertPatient(req.body);
-      dataPatient = await center101.getpatient(req.body.hn);
+      await center102.insertPatient(req.body);
+      dataPatient = await center102.getpatient(req.body.hn);
     }
 
     if (dataPatient.length) {
       dataPatient = dataPatient[0];
       let allTimeOld = "";
-      let time = await center101.checkPatientcheckmed(dataPatient.id);
+      let time = await center102.checkPatientcheckmed(dataPatient.id);
       if (time.length != 0) {
         for (let d of time) {
           allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
@@ -92,7 +94,7 @@ exports.checkpatientController = async (req, res, next) => {
 
           comma = `'${comma}'`;
 
-          await center101.insertDrugcheck({
+          await center102.insertDrugcheck({
             comma: comma,
             qty: data.qty,
             count: b.length,
@@ -101,7 +103,7 @@ exports.checkpatientController = async (req, res, next) => {
           });
         }
       }
-      let datadrugpatient = await center101.selectcheckmed(dataPatient.id);
+      let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -113,8 +115,8 @@ exports.checkpatientController = async (req, res, next) => {
       let drugjoin = Array.prototype.map
         .call(datadrugpatient, (s) => s.drugCode.trim())
         .join("','");
-      let imgDrug = await pmpf.drugImage(drugjoin);
-      imgDrug.map((item) => {
+      // let imgDrug = await pmpf.drugImage(drugjoin);
+      datadrugpatient.map((item) => {
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
           item.typeNum = item.typeNum.split(",");
@@ -122,21 +124,21 @@ exports.checkpatientController = async (req, res, next) => {
         }
       });
 
-      datadrugpatient = datadrugpatient.map((emp) => ({
-        ...emp,
-        ...(imgDrug.find(
-          (item) => item.drugCode.trim() === emp.drugCode.trim()
-        ) ?? {
-          pathImage: null,
-          typeNum: null,
-        }),
-      }));
+      // datadrugpatient = datadrugpatient.map((emp) => ({
+      //   ...emp,
+      //   ...(imgDrug.find(
+      //     (item) => item.drugCode.trim() === emp.drugCode.trim()
+      //   ) ?? {
+      //     pathImage: null,
+      //     typeNum: null,
+      //   }),
+      // }));
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
       if (datadrugpatient.length) {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
         if (checkTime) {
-          let result = await center101.updatePatient(dataPatient.id);
+          let result = await center102.updatePatient(dataPatient.id);
         }
       }
     } else {
@@ -148,23 +150,23 @@ exports.checkpatientController = async (req, res, next) => {
 };
 
 exports.deletecheckmedController = async (req, res, next) => {
-  let dataDelete = await center101.deletcheckmed(req.body);
+  let dataDelete = await center102.deletcheckmed(req.body);
   res.send({ dataDelete });
 };
 
 exports.updatecheckmedController = async (req, res, next) => {
-  let update_med = await center101.updatecheckmed(req.body);
+  let update_med = await center102.updatecheckmed(req.body);
   if (update_med.affectedRows) {
-    let insertloginsertlogcheckmed = await center101.insertlogcheckmed(
+    let insertloginsertlogcheckmed = await center102.insertlogcheckmed(
       req.body
     );
     if (insertloginsertlogcheckmed.affectedRows) {
-      let datadrugpatient = await center101.selectcheckmed(req.body.cmp_id);
-      let drugjoin = Array.prototype.map
-        .call(datadrugpatient, (s) => s.drugCode.trim())
-        .join("','");
-      let imgDrug = await pmpf.drugImage(drugjoin);
-      imgDrug.map((item) => {
+      let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
+      // let drugjoin = Array.prototype.map
+      //   .call(datadrugpatient, (s) => s.drugCode.trim())
+      //   .join("','");
+      // let imgDrug = await pmpf.drugImage(drugjoin);
+      datadrugpatient.map((item) => {
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
           item.typeNum = item.typeNum.split(",");
@@ -172,15 +174,15 @@ exports.updatecheckmedController = async (req, res, next) => {
         }
       });
 
-      datadrugpatient = datadrugpatient.map((emp) => ({
-        ...emp,
-        ...(imgDrug.find(
-          (item) => item.drugCode.trim() === emp.drugCode.trim()
-        ) ?? {
-          pathImage: null,
-          typeNum: null,
-        }),
-      }));
+      // datadrugpatient = datadrugpatient.map((emp) => ({
+      //   ...emp,
+      //   ...(imgDrug.find(
+      //     (item) => item.drugCode.trim() === emp.drugCode.trim()
+      //   ) ?? {
+      //     pathImage: null,
+      //     typeNum: null,
+      //   }),
+      // }));
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -194,7 +196,7 @@ exports.updatecheckmedController = async (req, res, next) => {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
 
         if (checkTime) {
-          let result = await center101.updatePatient(req.body.cmp_id);
+          let result = await center102.updatePatient(req.body.cmp_id);
         }
       }
     } else {
