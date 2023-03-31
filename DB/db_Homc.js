@@ -298,7 +298,23 @@ ORDER BY
               lam.lamed_code = p.lamedUnit
       ) AS freetext0,
       p.lamedTimeText AS freetext1,
-      p.lastIssTime
+      p.lastIssTime,
+      p.lamedText AS freetext2,
+      '( ' + (
+       SELECT
+         DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
+       FROM
+         Med_Info_Group mi
+       LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+       WHERE
+         mif.Med_Inv_Code = '` +
+      val.code +
+      `'
+       AND (
+         mi.InfoGroup LIKE '%สี%'
+         OR mi.InfoGroup IS NULL
+       ) FOR XML PATH ('')
+     ) + ')' AS itemidentify
   FROM
       Patmed p
   LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code

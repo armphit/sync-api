@@ -355,7 +355,7 @@ module.exports = function () {
       `'
     AND CAST(pc.ordercreatedate AS Date) = CURDATE()
     GROUP BY
-      img.drugCode
+      pc.drugCode
     ORDER BY
       checkstamp
        
