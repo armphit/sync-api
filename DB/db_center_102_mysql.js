@@ -343,6 +343,11 @@ module.exports = function () {
         GROUP BY
           hn
       ) AS countDrug,
+      IF (
+        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2'),
+        1,
+        0
+      ) checkLength,
       pc.*, 
       GROUP_CONCAT(img.pathImage ORDER BY img.typeNum ASC) pathImage,
       GROUP_CONCAT(img.typeNum ORDER BY img.typeNum ASC) typeNum
@@ -442,6 +447,51 @@ module.exports = function () {
           id = '` +
       val +
       `')`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.getCountcheck = function fill(val, DATA) {
+    let sql =
+      `SELECT
+      p.userCheck,
+      count(p.userCheck) countuserCheck,
+      a.countdrugCode
+    FROM
+      checkmedpatient p
+    LEFT JOIN (
+      SELECT
+        p.userCheck,
+        count(c.drugCode) countdrugCode
+      FROM
+        checkmedpatient p
+      LEFT JOIN checkmed c ON p.id = c.cmp_id
+      WHERE
+        p.userCheck NOT IN ('admin', 'opd')
+      AND p.date BETWEEN '` +
+      val.datestart +
+      `'
+      AND '` +
+      val.dateend +
+      `'
+      GROUP BY
+        p.userCheck
+    ) AS a ON p.userCheck = a.userCheck
+    WHERE
+      p.userCheck NOT IN ('admin', 'opd')
+    AND p.date BETWEEN '` +
+      val.datestart +
+      `'
+    AND '` +
+      val.dateend +
+      `'
+    GROUP BY
+      p.userCheck`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

@@ -1,6 +1,6 @@
 const moment = require("moment");
-// var db_mysql101center = require("../DB/db_center_101_mysql");
-// var center101 = new db_mysql101center();
+var db_mysql101center = require("../DB/db_center_101_mysql");
+var center101 = new db_mysql101center();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 var db_Homc = require("../DB/db_Homc");
@@ -205,4 +205,30 @@ exports.updatecheckmedController = async (req, res, next) => {
   } else {
     res.send({});
   }
+};
+
+exports.reportcheckmedController = async (req, res, next) => {
+  let countcheck = await center102.getCountcheck(req.body);
+  let user = await center101.getUser();
+  let datadrugcheck = [];
+
+  if (countcheck.length) {
+    datadrugcheck = countcheck.map((emp) => ({
+      ...emp,
+      ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
+    }));
+
+    // datadrugcheck[datadrugcheck.length] = {
+    //   userCheck: "รวม",
+    //   name: "",
+    //   countuserCheck: datadrugcheck.reduce((accumulator, object) => {
+    //     return accumulator + object.countuserCheck;
+    //   }, 0),
+    //   countdrugCode: datadrugcheck.reduce((accumulator, object) => {
+    //     return accumulator + object.countdrugCode;
+    //   }, 0),
+    // };
+  }
+
+  res.send({ datadrugcheck });
 };

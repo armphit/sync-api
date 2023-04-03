@@ -16,6 +16,7 @@ var {
   checkpatientController,
   deletecheckmedController,
   updatecheckmedController,
+  reportcheckmedController,
 } = require("./controller/checkmedController");
 
 var {
@@ -54,7 +55,7 @@ app.post("/prinsticker", prinstickerDataController);
 app.post("/checkpatient", checkpatientController);
 app.post("/deletecheckmed", deletecheckmedController);
 app.post("/updatecheckmed", updatecheckmedController);
-
+app.post("/reportcheckmed", reportcheckmedController);
 
 module.exports = app;
 
