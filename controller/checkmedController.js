@@ -12,15 +12,19 @@ var pmpf = new db_pmpf();
 
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
+    let allTimeOld = "";
+    let datasend = req.body;
+    datasend.allTimeOld = `''`;
+    let checkpatientdruglength = await homc.checkmed(datasend);
     let dataPatient = await center102.checkdelete(req.body.hn);
-    if (!dataPatient.length) {
+    if (!dataPatient.length && checkpatientdruglength.recordset.length) {
       await center102.insertPatient(req.body);
       dataPatient = await center102.getpatient(req.body.hn);
     }
 
     if (dataPatient.length) {
       dataPatient = dataPatient[0];
-      let allTimeOld = "";
+
       let time = await center102.checkPatientcheckmed(dataPatient.id);
       if (time.length != 0) {
         for (let d of time) {
@@ -31,7 +35,6 @@ exports.checkpatientController = async (req, res, next) => {
         allTimeOld = `''`;
       }
 
-      let datasend = req.body;
       datasend.allTimeOld = allTimeOld;
 
       let x = {};
@@ -135,17 +138,28 @@ exports.checkpatientController = async (req, res, next) => {
       // }));
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
+
       if (datadrugpatient.length) {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
-        if (checkTime) {
-          let result = await center102.updatePatient(dataPatient.id);
+        if (checkTime && !dataPatient.checkComplete) {
+          let data = {
+            status: 1,
+            patient: dataPatient.id,
+          };
+          await center102.updatePatient(data);
+        } else if (!checkTime && dataPatient.checkComplete) {
+          let data = {
+            status: 0,
+            patient: dataPatient.id,
+          };
+          await center102.updatePatient(data);
         }
       }
     } else {
-      res.send({});
+      res.send({ datadrugpatient: [], patientDrug: [] });
     }
   } else {
-    res.send({});
+    res.send({ datadrugpatient: [], patientDrug: [] });
   }
 };
 
@@ -200,10 +214,10 @@ exports.updatecheckmedController = async (req, res, next) => {
         }
       }
     } else {
-      res.send({});
+      res.send({ datadrugpatient: [] });
     }
   } else {
-    res.send({});
+    res.send({ datadrugpatient: [] });
   }
 };
 

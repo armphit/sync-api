@@ -344,7 +344,7 @@ module.exports = function () {
           hn
       ) AS countDrug,
       IF (
-        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2'),
+        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2','LEVO25'),
         1,
         0
       ) checkLength,
@@ -441,11 +441,11 @@ module.exports = function () {
   this.updatePatient = function fill(val, DATA) {
     let sql =
       `UPDATE checkmedpatient
-      SET checkComplete = CURRENT_TIMESTAMP() 
+      SET checkComplete = ${val.status ? "CURRENT_TIMESTAMP()" : "null"}
       WHERE
         (
           id = '` +
-      val +
+      val.patient +
       `')`;
 
     return new Promise(function (resolve, reject) {
