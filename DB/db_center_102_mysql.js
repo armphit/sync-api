@@ -310,13 +310,7 @@ module.exports = function () {
       checkqty,
       scantimestamp
       )
-      VALUES(uuid(),'${val.cmp_id}',${val.count},${val.comma},${
-      val.qty
-        ? Number(val.qty.trim())
-          ? "null"
-          : "CURRENT_TIMESTAMP()"
-        : val.qty
-    },'${val.qty}','${val.date}' )
+      VALUES(uuid(),'${val.cmp_id}',${val.count},${val.comma},null,'${val.qty}','${val.date}' )
        
       `;
 
@@ -360,7 +354,7 @@ module.exports = function () {
       `'
     AND CAST(pc.ordercreatedate AS Date) = CURDATE()
     GROUP BY
-      pc.drugCode
+      pc.drugCode,pc.seq
     ORDER BY
       checkstamp
        

@@ -390,4 +390,38 @@ GROUP BY
       });
     });
   };
+  this.getDrug = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      dd.drugCode,
+      dd.drugName,
+      dd.miniSpec AS Strength,
+      dd.firmName AS firmname,
+      dd.HISPackageRatio AS pack,
+      dd.miniUnit AS dosageunitcode,
+    
+    IF (
+      GROUP_CONCAT(dv.deviceCode) LIKE '%Xmed1%',
+      1,
+      0
+    ) checkLocation
+    FROM
+      dictdrug dd
+    LEFT JOIN devicedrugsetting ds ON ds.drugID = dd.drugID
+    LEFT JOIN device dv ON ds.deviceID = dv.deviceID
+    WHERE
+      dd.drugCode = '` +
+      val +
+      `'
+    GROUP BY
+      dd.drugCode
+  `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

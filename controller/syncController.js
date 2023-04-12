@@ -57,36 +57,35 @@ exports.syncOPDController = async (req, res, next) => {
         dih: check.dih,
       };
       for (let i = 0; i < b.length; i++) {
-        sql101 = await GD4Unit_101.dataDrug(b[i].orderitemcode);
-        sql101 = sql101.recordset;
-        if (sql101.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
+        let pmpf102 = await pmpf.getDrug(b[i].orderitemcode);
+
+        if (pmpf102.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
           b[i].orderitemname = b[i].orderitemname.replace(
             /[\/\\#,+$~.'":?<>{}]/g,
-            "_"
+            " "
           );
           let drug = {
             Name: b[i].orderitemname.trim(),
             Qty: b[i].orderqty.trim(),
             alias: "",
             code: b[i].orderitemcode.trim(),
-            firmName: sql101[0].firmname,
+            firmName: pmpf102[0].firmname,
             method: "",
             note: "",
-            spec: sql101[0].Strength,
+            spec: pmpf102[0].Strength,
             type: "",
-            unit: sql101[0].dosageunitcode,
-            dosage: b[i].dosage ? b[i].dosage.trim() : "",
-            freetext1: b[i].freetext1 ? b[i].freetext1.trim() : "",
+            unit: pmpf102[0].dosageunitcode,
+            pack: pmpf102[0].pack,
+            location: pmpf102[0].checkLocation,
+            // dosage: b[i].dosage ? b[i].dosage.trim() : "",
+            // freetext1: b[i].freetext1 ? b[i].freetext1.trim() : "",
           };
+
           drugarr.push(drug);
         }
       }
       console.log(c);
 
-      // getdataHomc(drugarr, c)
-      //   .then((value) => {
-
-      // if (value.dih === 1 && value.jvm === 1) {
       let val = {
         prescriptionno: b[0].prescriptionno,
         hn: b[0].hn,
@@ -114,15 +113,7 @@ exports.syncOPDController = async (req, res, next) => {
             b.queue = c.queue;
             await gd4unit101.insertDrug(b);
           });
-          // console.log("HN : " + b[0].hn.trim() + " :success");
-          // console.log("successDT : " + new Date().toLocaleString());
-          // console.log(
-          //   "-------------------------------------------------"
-          // );
-          // res.status(200).json({
-          //   // Authorization: Bearer,
-          //   status: 1,
-          // });
+
           getdataHomc(drugarr, c)
             .then((value) => {
               if (value.dih === 1 && value.jvm === 1) {
@@ -150,16 +141,6 @@ exports.syncOPDController = async (req, res, next) => {
           res.send(sendv);
         }
       });
-      // } else {
-      //   sendv.status = 2;
-      //   res.send(sendv);
-      // }
-      // })
-      // .catch((err) => {
-      //   console.log(err);
-      //   sendv.status = err;
-      //   res.send(sendv);
-      // });
     } else {
       sendv.status = {
         err: 3,
@@ -182,8 +163,8 @@ exports.syncOPDManualController = async (req, res, next) => {
   // res.send(sendv);
 
   for (let i = 0; i < data.length; i++) {
-    let unit = await pmpf.dataUnit(data[i].code);
-    data[i].unit = unit[0].miniUnit;
+    let pmpf102 = await pmpf.getDrug(data[i].code);
+    data[i].location = pmpf102[0].checkLocation;
   }
 
   let q = await center102.fill(patient.hn);
@@ -418,14 +399,15 @@ async function getdataHomc(data, etc) {
       }
 
       for (let x = 0; x < listDrugSE.length; x++) {
-        if (listDrugSE[x].qty >= Number(listDrugSE[x].HisPackageRatio)) {
-          if (
-            Math.floor(
-              listDrugSE[x].qty / Number(listDrugSE[x].HisPackageRatio)
-            ) < 15
-          ) {
-            let getdrugSize = await Xmed.dataDrugSize(listDrugSE[x].drugID);
-            if (getdrugSize.length) {
+        if (listDrugSE[x].qty) {
+          if (listDrugSE[x].qty >= Number(listDrugSE[x].HisPackageRatio)) {
+            if (
+              Math.floor(
+                listDrugSE[x].qty / Number(listDrugSE[x].HisPackageRatio)
+              ) < 15
+            ) {
+              let getdrugSize = await Xmed.dataDrugSize(listDrugSE[x].drugID);
+
               if (
                 listDrugSE[x].qty <=
                 getdrugSize[0].Quantity * listDrugSE[x].HisPackageRatio
@@ -439,7 +421,7 @@ async function getdataHomc(data, etc) {
 
                   var se = {};
                   se.code = listDrugSE[x].drugCode;
-                  se.Name = data[i].Name;
+                  se.Name = getdrugSize[0].drugName;
                   se.alias = data[i].alias;
                   se.firmName = data[i].firmName;
                   se.method = data[i].method;
@@ -447,18 +429,19 @@ async function getdataHomc(data, etc) {
                   se.spec = data[i].spec;
                   se.type = data[i].type;
                   se.unit = data[i].unit;
+                  se.pack = getdrugSize[0].HISPackageRatio;
+                  se.location = data[i].location;
                   se.Qty =
                     Math.floor(
                       listDrugSE[x].qty / listDrugSE[x].HisPackageRatio
                     ) * listDrugSE[x].HisPackageRatio;
                   // data[i].Qty = listDrugSE[x].qty - se.Qty;
-
-                  arrSE.push(se);
+                  Number(se.Qty) ? arrSE.push(se) : "";
                 } else {
                   do {
                     se = {};
                     se.code = listDrugSE[x].drugCode;
-                    se.Name = data[i].Name;
+                    se.Name = getdrugSize[0].drugName;
                     se.alias = data[i].alias;
                     se.firmName = data[i].firmName;
                     se.method = data[i].method;
@@ -466,7 +449,8 @@ async function getdataHomc(data, etc) {
                     se.spec = data[i].spec;
                     se.type = data[i].type;
                     se.unit = data[i].unit;
-
+                    se.pack = getdrugSize[0].HISPackageRatio;
+                    se.location = data[i].location;
                     se.Qty =
                       ~~(Math.abs(numSize - 4200) / getdrugSize[0].Item) *
                       listDrugSE[x].HisPackageRatio;
@@ -478,7 +462,7 @@ async function getdataHomc(data, etc) {
                       ) * getdrugSize[0].Item;
                     listDrugSE[x].qty = listDrugSE[x].qty - se.Qty;
                     // data[i].Qty = listDrugSE[x].qty;
-                    arrSE.push(se);
+                    Number(se.Qty) ? arrSE.push(se) : "";
                     codeArrSE.push(arrSE);
                     arrSE = [];
                     numSize = 0;
@@ -487,7 +471,7 @@ async function getdataHomc(data, etc) {
                   if (drugSize >= getdrugSize[0].Item) {
                     var seS = {};
                     seS.code = listDrugSE[x].drugCode;
-                    seS.Name = data[i].Name;
+                    seS.Name = getdrugSize[0].drugName;
                     seS.alias = data[i].alias;
                     seS.firmName = data[i].firmName;
                     seS.method = data[i].method;
@@ -495,42 +479,39 @@ async function getdataHomc(data, etc) {
                     seS.spec = data[i].spec;
                     seS.type = data[i].type;
                     seS.unit = data[i].unit;
+                    seS.pack = getdrugSize[0].HISPackageRatio;
+                    seS.location = data[i].location;
                     seS.Qty =
                       ~~(drugSize / getdrugSize[0].Item) *
                       listDrugSE[x].HisPackageRatio;
                     // data[i].Qty = data[i].Qty - seS.Qty;
-                    arrSE.push(seS);
+                    Number(seS.Qty) ? arrSE.push(seS) : "";
                     numSize =
                       ~~(drugSize / getdrugSize[0].Item) * getdrugSize[0].Item;
                   }
                 }
               } else {
-                if (listDrugSE[x].lo === "main") {
-                  data[i].Qty = data[i].Qty + listDrugSE[x].qty;
-                } else {
-                  let a = listDrugSE.find((o) => {
-                    if (o.lo === "main") {
-                      data[i].Qty =
-                        data[i].Qty + (listDrugSE[x].qty % o.HisPackageRatio);
-                      o.qty =
-                        ~~(listDrugSE[x].qty / o.HisPackageRatio) *
-                        listDrugSE[x].HisPackageRatio;
-                      return o;
-                    } else {
-                      data[i].Qty = data[i].Qty + listDrugSE[x].qty;
-                    }
-                  });
-                  if (a) {
-                    listDrugSE.push(a);
-                  }
+                let dataArr = listDrugSE.filter(function (item) {
+                  return item.drugCode !== listDrugSE[x].drugCode;
+                });
+
+                let mathAgain = mathSE(dataArr, { Qty: listDrugSE[x].qty });
+                mathAgain.drug = mathAgain.drug.filter(
+                  (element) => element.qty !== 0
+                );
+
+                data[i].Qty = data[i].Qty + mathAgain.Qty;
+
+                for (let j = 0; j < mathAgain.drug.length; j++) {
+                  listDrugSE[listDrugSE.length] = mathAgain.drug[j];
                 }
               }
+            } else {
+              data[i].Qty = data[i].Qty + listDrugSE[x].qty;
             }
           } else {
             data[i].Qty = data[i].Qty + listDrugSE[x].qty;
           }
-        } else {
-          data[i].Qty = data[i].Qty + listDrugSE[x].qty;
         }
       }
     }
@@ -557,6 +538,8 @@ async function getdataHomc(data, etc) {
       lca.spec = data[i].spec;
       lca.type = data[i].type;
       lca.unit = data[i].unit;
+      lca.pack = data[i].pack;
+      lca.location = data[i].location;
       codeArrPush.push(lca);
       data[i].Qty = data[i].Qty % listDrugLca[0].HisPackageRatio;
     }
@@ -570,8 +553,7 @@ async function getdataHomc(data, etc) {
         let dateC = null;
         let date = new Date();
         date.setFullYear(date.getFullYear() + 1);
-        let r = /\d+/;
-        let s = data[i].freetext1;
+
         let warning = "";
         // if (dataonCube[0].dateDiff && data[i].freetext1 && data[i].dosage) {
         //   if (
@@ -660,13 +642,7 @@ async function getdataHomc(data, etc) {
   let DataJV = "";
   if (codeArr.length > 0) {
     for (let i = 0; i < codeArr.length; i++) {
-      const myArray = codeArr[i].split("|");
-
-      var checkStar = await homc.getDrugstar(myArray[12]);
-
-      checkStar = checkStar.length ? (checkStar[0].val === 1 ? "*" : "") : "";
-      codeArr[i] =
-        codeArr[i] + "(" + (i + 1) + "/" + codeArr.length + ")" + checkStar;
+      codeArr[i] = codeArr[i] + "(" + (i + 1) + "/" + codeArr.length + ")";
     }
 
     DataJV = codeArr.join("\r\n");
@@ -678,7 +654,7 @@ async function getdataHomc(data, etc) {
   }
 
   op.push(arrSE.concat(codeArrPush));
-  let numtext = 0;
+
   var orderNo =
     etc.prescriptionno +
     "_" +
@@ -692,19 +668,24 @@ async function getdataHomc(data, etc) {
 
   for (let i = 0; i < op.length; i++) {
     for (let j = 0; j < op[i].length; j++) {
-      let { dosage, freetext1, ...updatedObject } = op[i][j];
+      // let updatedObject = op[i][j];
       let value = {
-        drug: updatedObject,
+        drug: op[i][j],
       };
-
       value2.push(value);
     }
+
+    let checkXmed = value2.every(
+      (item) =>
+        Number(item.drug.Qty) % Number(item.drug.pack) === 0 &&
+        item.drug.location
+    );
 
     zone = zone.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
 
     let jsonDrug = {
       patient: {
-        patID: etc.hn,
+        patID: checkXmed ? "***" + etc.hn : etc.hn,
         patName:
           etc.name.length > 14
             ? etc.queue +
@@ -756,7 +737,7 @@ async function getdataHomc(data, etc) {
     let xmlDrug = {
       xml: js2xmlparser.parse("outpOrderDispense", jsonDrug),
     };
-    // console.log(xmlDrug);
+    console.log(xmlDrug);
     console.log("-------------------------------------------------");
 
     if (etc.dih) {

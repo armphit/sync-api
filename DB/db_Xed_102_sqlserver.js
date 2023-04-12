@@ -29,9 +29,43 @@ module.exports = function () {
     );
 
   this.dataDrugSize = async function fill(val, DATA) {
+    // var sqlgetdrug =
+    //   `SELECT
+    //   val.Code,
+    //   dd.drugName,
+    //   dd.HISPackageRatio AS pack,
+    //   FLOOR(
+    //     (Length / 100) * (Width / 100) * (Height / 100)
+    //   ) AS Item,
+    //   Quantity
+    // FROM
+    //   (
+    //     SELECT
+    //       MAX (xm.Code) Code,
+    //       MAX (xm.Length) Length,
+    //       MAX (xm.Width) Width,
+    //       MAX (xm.Height) Height,
+    //       SUM (sp.Quantity) AS Quantity
+    //     FROM
+    //       XMed.dbo.Spaces sp
+    //     LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
+    //     WHERE
+    //       xm.Length IS NOT NULL
+    //     AND sp.ProductId IS NOT NULL
+    //     GROUP BY
+    //       sp.ProductId
+    //   ) AS val
+    // LEFT JOIN center.dbo.dictdrug dd ON val.Code = dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS
+    // WHERE
+    //   val.Code = '` +
+    //   val +
+    //   `'`;
+
     var sqlgetdrug =
       `SELECT
       val.Code,
+      dd.drugName,
+      dd.HISPackageRatio,
       FLOOR(
         (Length / 100) * (Width / 100) * (Height / 100)
       ) AS Item,
@@ -53,7 +87,8 @@ module.exports = function () {
         GROUP BY
           sp.ProductId
       ) AS val
-       WHERE
+    LEFT JOIN center.dbo.dictdrug dd ON val.Code = dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS
+    WHERE
       val.Code = '` +
       val +
       `'`;

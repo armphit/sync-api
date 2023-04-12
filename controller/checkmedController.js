@@ -210,7 +210,11 @@ exports.updatecheckmedController = async (req, res, next) => {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
 
         if (checkTime) {
-          let result = await center102.updatePatient(req.body.cmp_id);
+          let send = {
+            status: 1,
+            patient: req.body.cmp_id,
+          };
+          await center102.updatePatient(send);
         }
       }
     } else {
