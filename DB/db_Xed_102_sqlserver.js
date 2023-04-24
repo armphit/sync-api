@@ -105,7 +105,7 @@ module.exports = function () {
     });
   };
 
-  this.datadrugMain = async function fill(val, DATA) {
+  this.dataDrugMain = async function fill(val, DATA) {
     // var sqlgetdrug =
     //   `SELECT
     //   MAX (dd.drugID) drugID,

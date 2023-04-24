@@ -283,53 +283,124 @@ ORDER BY
     for (let i = 0; i < 7 - String(val.hn).length; i++) {
       hn = " " + hn;
     }
-    var sqlCommand =
+    // var sqlCommand =
+    //   `SELECT
+    //     TRIM (pt.titleName) + ' ' + pa.firstName + ' ' + TRIM(pa.lastName) AS name_patient,
+    //     p.invCode,
+    //     la.lamed_name AS lamedName,
+    //     p.lamedQty AS dosage,
+    //     (
+    //         SELECT
+    //             lamed_name
+    //         FROM
+    //             Lamed lam
+    //         WHERE
+    //             lam.lamed_code = p.lamedUnit
+    //     ) AS freetext0,
+    //     p.lamedTimeText AS freetext1,
+    //     p.lastIssTime,
+    //     p.lamedText AS freetext2,
+    //     '( ' + (
+    //      SELECT
+    //        DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
+    //      FROM
+    //        Med_Info_Group mi
+    //      LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+    //      WHERE
+    //        mif.Med_Inv_Code = '` +
+    //   val.code +
+    //   `'
+    //      AND (
+    //        mi.InfoGroup LIKE '%สี%'
+    //        OR mi.InfoGroup IS NULL
+    //      ) FOR XML PATH ('')
+    //    ) + ')' AS itemidentify
+    // FROM
+    //     Patmed p
+    // LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
+    // LEFT JOIN PATIENT pa ON p.hn = pa.hn
+    // LEFT JOIN PTITLE pt ON pa.titleCode = pt.titleCode
+    // WHERE
+    //     p.hn = '` +
+    //   hn +
+    //   `'
+    //     AND p.invCode = '` +
+    //   val.code +
+    //   `'
+    // AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
+    //   val.date +
+    //   `'`;
+    let sqlCommand =
       `SELECT
-      TRIM (pt.titleName) + ' ' + pa.firstName + ' ' + TRIM(pa.lastName) AS name_patient,
+      TRIM (ti.titleName) + ' ' + pt.firstName + ' ' + TRIM (pt.lastName) AS name_patient,
       p.invCode,
       la.lamed_name AS lamedName,
       p.lamedQty AS dosage,
       (
-          SELECT
-              lamed_name
-          FROM
-              Lamed lam
-          WHERE
-              lam.lamed_code = p.lamedUnit
+        SELECT
+          lamed_name
+        FROM
+          Lamed lam
+        WHERE
+          lam.lamed_code = p.lamedUnit
       ) AS freetext0,
       p.lamedTimeText AS freetext1,
       p.lastIssTime,
       p.lamedText AS freetext2,
       '( ' + (
-       SELECT
-         DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
-       FROM
-         Med_Info_Group mi
-       LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
-       WHERE
-         mif.Med_Inv_Code = '` +
-      val.code +
-      `'
-       AND (
-         mi.InfoGroup LIKE '%สี%'
-         OR mi.InfoGroup IS NULL
-       ) FOR XML PATH ('')
-     ) + ')' AS itemidentify
-  FROM
-      Patmed p
-  LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
-  LEFT JOIN PATIENT pa ON p.hn = pa.hn
-  LEFT JOIN PTITLE pt ON pa.titleCode = pt.titleCode
-  WHERE
-      p.hn = '` +
+        SELECT DISTINCT
+          (
+            Rtrim(LTRIM(mi.Description))
+          ) + ' '
+        FROM
+          Med_Info_Group mi
+        LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+        WHERE
+          mif.Med_Inv_Code = p.invCode
+        AND (
+          mi.InfoGroup LIKE '%สี%'
+          OR mi.InfoGroup IS NULL
+        ) FOR XML PATH ('')
+      ) + ')' AS itemidentify
+    FROM
+      OPD_H o
+    LEFT JOIN Med_logh mh ON o.hn = mh.hn
+    AND o.regNo = mh.regNo
+    LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+    LEFT JOIN Bill_h b ON b.hn = mh.hn
+    AND b.regNo = mh.regNo
+    LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
+    LEFT JOIN Med_inv v ON (
+      v.code = m.inv_code
+      AND v.[site] = '1'
+    )
+    LEFT JOIN Patmed p (NOLOCK) ON (
+      p.hn = mh.hn
+      AND p.registNo = mh.regNo
+      AND p.invCode = m.inv_code
+      AND m.quant_diff = p.runNo
+    )
+    LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
+    LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+    LEFT JOIN Site si ON m.site = si.site_key
+    LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
+    LEFT JOIN DynPriceGroup dy ON t.medGroupCode = dy.priceGroupCode
+    LEFT JOIN Med_QRCode qr ON m.inv_code = qr.inv_code
+    WHERE
+      mh.hn = '` +
       hn +
       `'
-      AND p.invCode = '` +
+    AND mh.invdate = ` +
+      val.date +
+      `
+    AND m.pat_status = 'O'
+    AND m.site = 'W8'
+    AND m.revFlag IS NULL
+    AND TRIM (m.inv_code) = '` +
       val.code +
       `'
-  AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
-      val.date +
-      `'`;
+    ORDER BY
+      p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

@@ -53,6 +53,8 @@ exports.soapDIHController = async (req, res, next) => {
 exports.prinstickerDataController = async (req, res, next) => {
   if (req.body) {
     let datasite = await center102.site_maharat(req.body);
+
+    req.body.date = moment(req.body.date).add(543, "year").format("YYYYMMDD");
     let getintruction = await homc.intruction(req.body);
 
     res.send({ datasite: datasite, intruction: getintruction });
