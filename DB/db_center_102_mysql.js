@@ -60,52 +60,37 @@ module.exports = function () {
 
   this.hn_moph_patient = function fill(val, DATA) {
     var sql =
-      //   `SELECT
-      //   s.patientID,
-      //   drugAllergy,
-      //   timestamp,
-      //   cid
-      // FROM
-      //   moph_sync s
-      //   LEFT JOIN (SELECT
-      //     TIMESTAMP,hn
-      //   FROM
-      //     moph_confirm
-      //   WHERE
-      //     CAST(timestamp AS Date) = CURDATE())c ON s.patientID = c.hn
-      // WHERE s.patientID = ` +
-      //   val +
-      //   `
-      // ORDER BY
-      //   drugAllergy`;
       `SELECT
-    q.patientNO,
-    MAX(q.QN) AS QN,
-    c. timestamp,
-    s.cid,
-    s.createdDT,
-    s.drugAllergy
-  FROM
-    hospitalq q
-  LEFT JOIN (
-    SELECT
-      timestamp,
-      hn,
-      queue
+      q.patientNO,
+      MAX(q.QN) AS QN,
+      c.timestamp,
+      s.cid,
+      s.createdDT,
+      s.drugAllergy,
+      d.drugcode
     FROM
-      moph_confirm
+      hospitalq q
+    LEFT JOIN (
+      SELECT
+        timestamp,
+        hn,
+        queue
+      FROM
+        moph_confirm
+      WHERE
+        CAST(timestamp AS Date) = CURDATE()
+    ) c ON q.QN = c.queue
+    LEFT JOIN moph_sync s ON s.patientID = q.patientNO
+    LEFT JOIN moph_drugs d ON  s.cid = d.cid AND d.hospcode <> 10666
     WHERE
-      CAST(timestamp AS Date) = CURDATE()
-  ) c ON q.QN = c.queue
-  LEFT JOIN moph_sync s ON s.patientID = q.patientNO
-  WHERE
-    patientNO =   '` +
+      patientNO =  '` +
       val +
       `'
-  AND date = CURDATE()
-  AND QN like '2%'
-  GROUP BY
-    patientNO`;
+    AND date = CURDATE()
+    AND QN LIKE '2%'
+    
+    GROUP BY
+      patientNO`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
