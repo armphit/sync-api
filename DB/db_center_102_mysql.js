@@ -99,9 +99,9 @@ module.exports = function () {
   ) c ON q.QN = c.queue
   LEFT JOIN moph_sync s ON s.patientID = q.patientNO
   WHERE
-    patientNO =   ` +
+    patientNO =   '` +
       val +
-      `
+      `'
   AND date = CURDATE()
   AND QN like '2%'
   GROUP BY

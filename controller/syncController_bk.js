@@ -742,7 +742,6 @@ async function createFile(filename = "DIH/file.XML", text) {
 }
 
 function mathSE(listDrugSE, data) {
-  console.log(listDrugSE);
   let dataDrug = [];
   let listDrug_index = 0;
   listDrugSE = listDrugSE.sort((a, b) =>
@@ -868,6 +867,7 @@ function mathSE(listDrugSE, data) {
           pushArrDrug.push({
             drugID: listDrugSE[0].drugID,
             drugCode: listDrugSE[0].drugCode,
+            drugName: listDrugSE[0].drugName,
             HisPackageRatio: listDrugSE[0].HisPackageRatio,
             qty:
               ~~(data.Qty / listDrugSE[0].HisPackageRatio) *
@@ -900,6 +900,7 @@ function mathSE(listDrugSE, data) {
         pushArrDrug.push({
           drugID: listDrugSE[0].drugID,
           drugCode: listDrugSE[0].drugCode,
+          drugName: listDrugSE[0].drugName,
           HisPackageRatio: listDrugSE[0].HisPackageRatio,
           qty:
             ~~(data.Qty / listDrugSE[0].HisPackageRatio) *
@@ -910,9 +911,8 @@ function mathSE(listDrugSE, data) {
           Item: listDrugSE[0].Item,
         });
         data.Qty = data.Qty % listDrugSE[0].HisPackageRatio;
-
-        listDrugSE = pushArrDrug;
       }
+      listDrugSE = pushArrDrug;
     }
     if (dataDrug.length) {
       let getArr = dataDrug.filter(
