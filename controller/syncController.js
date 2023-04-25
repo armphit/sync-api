@@ -685,18 +685,21 @@ async function getdataHomc(data, etc) {
 
     let jsonDrug = {
       patient: {
-        patID: checkXmed ? "***" + etc.hn : etc.hn,
+        patID: etc.hn,
         patName:
-          etc.name.length > 14
+          etc.name.length > 13
             ? etc.queue +
               " " +
-              etc.name.substring(0, 12) +
+              etc.name.substring(0, 11) +
               ".." +
               `[${zone[0]}](` +
               (i + 1) +
               "/" +
               op.length +
-              ")"
+              ")" +
+              checkXmed
+              ? "*"
+              : ""
             : etc.queue +
               " " +
               etc.name +
@@ -704,7 +707,10 @@ async function getdataHomc(data, etc) {
               (i + 1) +
               "/" +
               op.length +
-              ")",
+              ")" +
+              checkXmed
+            ? "*"
+            : "",
         gender: etc.sex,
         birthday: birthDate,
         age: age,
