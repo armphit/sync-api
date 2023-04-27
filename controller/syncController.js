@@ -562,7 +562,13 @@ async function getdataHomc(data, etc) {
   let DataJV = "";
   if (codeArr.length > 0) {
     for (let i = 0; i < codeArr.length; i++) {
-      codeArr[i] = codeArr[i] + "(" + (i + 1) + "/" + codeArr.length + ")";
+      const myArray = codeArr[i].split("|");
+
+      var checkStar = await homc.getDrugstar(myArray[12]);
+
+      checkStar = checkStar.length ? (checkStar[0].val === 1 ? "*" : "") : "";
+      codeArr[i] =
+        codeArr[i] + "(" + (i + 1) + "/" + codeArr.length + ")" + checkStar;
     }
 
     DataJV = codeArr.join("\r\n");
@@ -601,6 +607,7 @@ async function getdataHomc(data, etc) {
         item.drug.location
     );
 
+    checkXmed = checkXmed ? "*" : "";
     zone = zone.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
 
     let jsonDrug = {
@@ -618,8 +625,6 @@ async function getdataHomc(data, etc) {
               op.length +
               ")" +
               checkXmed
-              ? "*"
-              : ""
             : etc.queue +
               " " +
               etc.name +
@@ -628,9 +633,7 @@ async function getdataHomc(data, etc) {
               "/" +
               op.length +
               ")" +
-              checkXmed
-            ? "*"
-            : "",
+              checkXmed,
         gender: etc.sex,
         birthday: birthDate,
         age: age,

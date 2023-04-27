@@ -226,27 +226,40 @@ exports.updatecheckmedController = async (req, res, next) => {
 };
 
 exports.reportcheckmedController = async (req, res, next) => {
-  let countcheck = await center102.getCountcheck(req.body);
-  let user = await center101.getUser();
   let datadrugcheck = [];
+  if (req.body.choice == "1") {
+    let countcheck = await center102.getCountcheck(req.body);
+    let user = await center101.getUser();
 
-  if (countcheck.length) {
-    datadrugcheck = countcheck.map((emp) => ({
-      ...emp,
-      ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
-    }));
+    if (countcheck.length) {
+      datadrugcheck = countcheck.map((emp) => ({
+        ...emp,
+        ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
+      }));
+      // datadrugcheck[datadrugcheck.length] = {
+      //   userCheck: "รวม",
+      //   name: "",
+      //   countuserCheck: datadrugcheck.reduce((accumulator, object) => {
+      //     return accumulator + object.countuserCheck;
+      //   }, 0),
+      //   countdrugCode: datadrugcheck.reduce((accumulator, object) => {
+      //     return accumulator + object.countdrugCode;
+      //   }, 0),
+      // };
+    }
 
-    // datadrugcheck[datadrugcheck.length] = {
-    //   userCheck: "รวม",
-    //   name: "",
-    //   countuserCheck: datadrugcheck.reduce((accumulator, object) => {
-    //     return accumulator + object.countuserCheck;
-    //   }, 0),
-    //   countdrugCode: datadrugcheck.reduce((accumulator, object) => {
-    //     return accumulator + object.countdrugCode;
-    //   }, 0),
-    // };
+    res.send({ datadrugcheck });
+  } else {
+    let data = await center102.getTimecheck(req.body);
+    for (let i of data) {
+      i.timestamp = i.timestamp
+        ? moment(i.timestamp).format("YYYY-MM-DD HH:mm:ss")
+        : "";
+      i.checkComplete = i.checkComplete
+        ? moment(i.checkComplete).format("YYYY-MM-DD HH:mm:ss")
+        : "";
+    }
+    datadrugcheck = data;
+    res.send({ datadrugcheck });
   }
-
-  res.send({ datadrugcheck });
 };

@@ -479,4 +479,42 @@ module.exports = function () {
       });
     });
   };
+
+  this.getTimecheck = function fill(val, DATA) {
+    let sql =
+      `SELECT
+      p.hn,
+      p.userCheck,
+      p.timestamp,
+      p.checkComplete,
+      
+      TIMEDIFF(
+        TIME(p.checkComplete),
+        TIME(p.timestamp)
+      ) AS time,
+      COUNT(m.cmp_id) AS item
+    FROM
+      checkmedpatient p
+    LEFT JOIN checkmed m ON p.id = m.cmp_id
+    WHERE
+      p.date BETWEEN '` +
+      val.datestart +
+      `'
+      AND '` +
+      val.dateend +
+      `'
+    AND p.checkComplete <> ''
+    AND p.isDelete IS NULL
+    GROUP BY
+      m.cmp_id
+    ORDER BY
+      p.timestamp`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };
