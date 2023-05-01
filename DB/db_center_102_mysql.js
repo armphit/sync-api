@@ -440,7 +440,14 @@ module.exports = function () {
       `SELECT
       p.userCheck,
       count(p.userCheck) countuserCheck,
-      a.countdrugCode
+      a.countdrugCode,
+      SUBSTR(SEC_TO_TIME(AVG(TIMEDIFF(
+        TIME(p.checkComplete),
+        TIME(p.timestamp)
+      ))) , 1, POSITION("." IN SEC_TO_TIME(AVG(TIMEDIFF(
+        TIME(p.checkComplete),
+        TIME(p.timestamp)
+      ))) )-1)   AS time
     FROM
       checkmedpatient p
     LEFT JOIN (
@@ -452,6 +459,8 @@ module.exports = function () {
       LEFT JOIN checkmed c ON p.id = c.cmp_id
       WHERE
         p.userCheck NOT IN ('admin', 'opd')
+      AND p.checkComplete IS NOT NULL
+      AND p.isDelete IS NULL
       AND p.date BETWEEN '` +
       val.datestart +
       `'
@@ -463,6 +472,8 @@ module.exports = function () {
     ) AS a ON p.userCheck = a.userCheck
     WHERE
       p.userCheck NOT IN ('admin', 'opd')
+    AND p.checkComplete IS NOT NULL
+    AND p.isDelete IS NULL
     AND p.date BETWEEN '` +
       val.datestart +
       `'
