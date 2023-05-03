@@ -323,7 +323,7 @@ module.exports = function () {
           hn
       ) AS countDrug,
       IF (
-        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2','LEVO25'),
+        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2','LEVO25','DESOX','ISOSO3'),
         1,
         0
       ) checkLength,
