@@ -5,7 +5,7 @@ module.exports = function () {
   //จริง
   this.config = {
     user: "robot",
-    password: "Robot@MNRH2022",
+    password: "57496208",
     server: "192.168.44.1",
     database: "MHR",
     timezone: "utc",

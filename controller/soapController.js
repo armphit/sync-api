@@ -22,6 +22,7 @@ exports.soapDIHController = async (req, res, next) => {
       res.send("error");
     } else {
       let datadrug = await pmpf.druginsert(req.body.drug.code);
+      datadrug[0].drugName = datadrug[0].HISDrugName;
       let keys = Object.keys(datadrug[0]);
       let value = Object.values(datadrug[0]);
       value[36] = moment(value[36]).format("YYYY-MM-DD HH:mm:ss");
@@ -34,7 +35,7 @@ exports.soapDIHController = async (req, res, next) => {
         }'`;
         valSql[index] = `N'${value[index] == null ? "" : value[index]}'`;
       }
-
+      console.log(arrSql);
       let send = {
         update: arrSql.join(","),
         insert: valSql.join(","),
