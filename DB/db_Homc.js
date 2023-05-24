@@ -394,7 +394,9 @@ ORDER BY
       val.date +
       `
     AND m.pat_status = 'O'
-    AND m.site = 'W8'
+    AND m.site = '` +
+      val.floor +
+      `'
     AND m.revFlag IS NULL
     AND TRIM (m.inv_code) = '` +
       val.code +
