@@ -228,6 +228,8 @@ GROUP BY
         'CYCL-'
       WHEN dd.drugCode = 'DEX-O' THEN
         'DEX-O'
+      WHEN dd.drugCode = 'DEX-E' THEN
+        'DEX-E'
       WHEN dd.drugCode = 'POLY-1' THEN
         'LPOLY-1'
       ELSE
@@ -238,19 +240,22 @@ GROUP BY
        dd.HISPackageRatio AS pack,
        dd.firmName AS firmName,
        dd.miniUnit AS unit,
-       GROUP_CONCAT(dv.deviceCode) AS location
+       GROUP_CONCAT(DISTINCT dv.deviceCode) AS location
       FROM
-        (
+        
           dictdrug dd
           LEFT JOIN devicedrugsetting dt ON dt.drugID = dd.drugID
-        )
+        
       LEFT JOIN device dv ON dv.deviceID = dt.deviceID
-      WHERE dv.deviceCode <> 'AP'
-      AND dd.drugCode = '` +
+      AND 
+      dv.deviceCode NOT IN ('AP','CDMed2')
+      AND dv.isDeleted = 'N'
+      AND dv.isEnabled = 'Y'
+      WHERE dd.drugCode = '` +
         val +
         `'
       GROUP BY
-      code`;
+        code`;
     } else {
       sql = `SELECT
       CASE
@@ -258,6 +263,8 @@ GROUP BY
       'CYCL-'
     WHEN dd.drugCode = 'DEX-O' THEN
       'DEX-O'
+    WHEN dd.drugCode = 'DEX-E' THEN
+      'DEX-E'
     WHEN dd.drugCode = 'POLY-1' THEN
       'LPOLY-1'
     ELSE
@@ -268,14 +275,18 @@ GROUP BY
      dd.HISPackageRatio AS pack,
      dd.firmName AS firmName,
      dd.miniUnit AS unit,
-     GROUP_CONCAT(dv.deviceCode) AS location
+     GROUP_CONCAT(DISTINCT dv.deviceCode) AS location
     FROM
-      (
+      
         dictdrug dd
         LEFT JOIN devicedrugsetting dt ON dt.drugID = dd.drugID
-      )
+      
     LEFT JOIN device dv ON dv.deviceID = dt.deviceID
-    WHERE dv.deviceCode <> 'AP'
+    AND 
+		dv.deviceCode NOT IN ('AP','CDMed2')
+		AND dv.isDeleted = 'N'
+		AND dv.isEnabled = 'Y'
+		
     GROUP BY
       code`;
     }
@@ -416,6 +427,65 @@ GROUP BY
     GROUP BY
       dd.drugCode
   `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getDispense = function fill(val, DATA) {
+    let sql =
+      `SELECT
+      date_format(oss.assignedDT, '%Y-%m-%d') AS assignDate,
+      time_format(oss.assignedDT, '%H:%i:%S') AS assignTime,
+      oif.orderNo AS orderNo,
+      oif.patientID AS patientID,
+      oss.location AS location,
+      oss.position AS position,
+      oss.drugCode AS drugCode,
+      oss.drugName AS drugName,
+      oss.amount AS amount,
+      oss.takeUnit AS takeUnit
+  FROM
+      (
+          outporderassign oss
+          LEFT JOIN outporderinfo oif ON ((oif.orderID = oss.orderID))
+      )
+  WHERE
+      oif.pharmacyCode <> 'IPD'
+  AND DATE_FORMAT(oss.assignedDT, '%Y-%m-%d') BETWEEN '` +
+      val.datestart +
+      `'
+  AND '` +
+      val.dateend +
+      `'
+  UNION
+      SELECT
+          date_format(oss.assignedDT, '%Y-%m-%d') AS assignDate,
+          time_format(oss.assignedDT, '%H:%i:%S') AS assignTime,
+          oif.orderNo AS orderNo,
+          oif.patientID AS patientID,
+          oss.location AS location,
+          oss.position AS position,
+          oss.drugCode AS drugCode,
+          oss.drugName AS drugName,
+          oss.amount AS amount,
+          oss.takeUnit AS takeUnit
+      FROM
+          (
+              center.outporderassign oss
+              LEFT JOIN center.outporderinfo oif ON ((oif.orderID = oss.orderID))
+          )
+      WHERE
+          oif.pharmacyCode <> 'IPD'
+      AND DATE_FORMAT(oss.assignedDT, '%Y-%m-%d') BETWEEN '` +
+      val.datestart +
+      `'
+      AND '` +
+      val.dateend +
+      `'`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

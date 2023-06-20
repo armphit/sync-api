@@ -31,6 +31,8 @@ var {
   listPatientAllergicController,
 } = require("./controller/interfaceController");
 
+var { getDispenseDaterangeController } = require("./controller/msrController");
+
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(function (req, res, next) {
@@ -56,6 +58,7 @@ app.post("/checkpatient", checkpatientController);
 app.post("/deletecheckmed", deletecheckmedController);
 app.post("/updatecheckmed", updatecheckmedController);
 app.post("/reportcheckmed", reportcheckmedController);
+app.post("/getDispenseDaterange", getDispenseDaterangeController);
 
 module.exports = app;
 

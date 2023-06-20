@@ -318,7 +318,7 @@ async function getdataHomc(data, etc) {
           if (
             Math.floor(
               listDrugSE[x].qty / Number(listDrugSE[x].HisPackageRatio)
-            ) < 15
+            ) <= 15
           ) {
             // if (
             //   Math.floor(
@@ -335,7 +335,7 @@ async function getdataHomc(data, etc) {
               ~~(listDrugSE[x].qty / listDrugSE[x].HisPackageRatio) *
               listDrugSE[x].Item;
 
-            if (numSize + drugSize < 4200) {
+            if (numSize + drugSize < 4000) {
               numSize = numSize + drugSize;
 
               var se = {};
@@ -370,7 +370,7 @@ async function getdataHomc(data, etc) {
                 se.pack = listDrugSE[x].HisPackageRatio;
                 se.location = data[i].location;
                 se.Qty =
-                  ~~(Math.abs(numSize - 4200) / listDrugSE[x].Item) *
+                  ~~(Math.abs(numSize - 4000) / listDrugSE[x].Item) *
                   listDrugSE[x].HisPackageRatio;
 
                 drugSize =
@@ -384,7 +384,7 @@ async function getdataHomc(data, etc) {
                 codeArrSE.push(arrSE);
                 arrSE = [];
                 numSize = 0;
-              } while (drugSize > 4200);
+              } while (drugSize > 4000);
               // console.log(listDrugSE[x].Item);
               if (drugSize >= listDrugSE[x].Item) {
                 var seS = {};

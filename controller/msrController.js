@@ -1,5 +1,8 @@
 const axios = require("axios");
 const html2json = require("html2json").html2json;
+
+var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
+var pmpf = new db_pmpf();
 exports.allergicController = async (req, res, next) => {
   let a = await axios.get(
     "http://164.115.23.100/test_token_php/index6.php?cid=" +
@@ -23,4 +26,9 @@ exports.allergicController = async (req, res, next) => {
     console.log("else");
     res.send({});
   }
+};
+
+exports.getDispenseDaterangeController = async (req, res, next) => {
+  let getDispense = await pmpf.getDispense(req.body);
+  res.send(getDispense);
 };
