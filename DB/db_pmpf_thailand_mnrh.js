@@ -437,55 +437,12 @@ GROUP BY
   };
   this.getDispense = function fill(val, DATA) {
     let sql =
-      `SELECT
-      date_format(oss.assignedDT, '%Y-%m-%d') AS assignDate,
-      time_format(oss.assignedDT, '%H:%i:%S') AS assignTime,
-      oif.orderNo AS orderNo,
-      oif.patientID AS patientID,
-      oss.location AS location,
-      oss.position AS position,
-      oss.drugCode AS drugCode,
-      oss.drugName AS drugName,
-      oss.amount AS amount,
-      oss.takeUnit AS takeUnit
-  FROM
-      (
-          outporderassign oss
-          LEFT JOIN outporderinfo oif ON ((oif.orderID = oss.orderID))
-      )
-  WHERE
-      oif.pharmacyCode <> 'IPD'
-  AND DATE_FORMAT(oss.assignedDT, '%Y-%m-%d') BETWEEN '` +
-      val.datestart +
-      `'
-  AND '` +
-      val.dateend +
-      `'
-  UNION
-      SELECT
-          date_format(oss.assignedDT, '%Y-%m-%d') AS assignDate,
-          time_format(oss.assignedDT, '%H:%i:%S') AS assignTime,
-          oif.orderNo AS orderNo,
-          oif.patientID AS patientID,
-          oss.location AS location,
-          oss.position AS position,
-          oss.drugCode AS drugCode,
-          oss.drugName AS drugName,
-          oss.amount AS amount,
-          oss.takeUnit AS takeUnit
-      FROM
-          (
-              center.outporderassign oss
-              LEFT JOIN center.outporderinfo oif ON ((oif.orderID = oss.orderID))
-          )
-      WHERE
-          oif.pharmacyCode <> 'IPD'
-      AND DATE_FORMAT(oss.assignedDT, '%Y-%m-%d') BETWEEN '` +
-      val.datestart +
-      `'
-      AND '` +
-      val.dateend +
-      `'`;
+      `CALL DispensingOPD( '` +
+      val.date1 +
+      `' ,
+      '` +
+      val.date2 +
+      `' )`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
