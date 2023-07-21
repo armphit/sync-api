@@ -55,6 +55,8 @@ exports.syncOPDController = async (req, res, next) => {
         queue: q[0] ? q[0].QN : "",
         jvm: check.jvm,
         dih: check.dih,
+        win1: check.win1,
+        win2: check.win2,
       };
       for (let i = 0; i < b.length; i++) {
         let pmpf102 = await pmpf.getDrug(b[i].orderitemcode);
@@ -436,7 +438,7 @@ async function getdataHomc(data, etc) {
       }
     }
 
-    let lcaD = { code: data[i].code + "-", lo: "LCA" };
+    let lcaD = { code: data[i].code + "-", lo: "J" };
     let listDrugLca = await pmpf.datadrugX(lcaD);
 
     if (
@@ -591,6 +593,15 @@ async function getdataHomc(data, etc) {
   let value2 = [];
   let dih = 1;
   let jvm = 1;
+  let checkWin = null;
+  if (etc.win1 && !etc.win2) {
+    checkWin = 3;
+  } else if (!etc.win1 && etc.win2) {
+    checkWin = 4;
+  } else {
+    checkWin = "";
+    // checkWin = op.length > 1 ? 4 : "";
+  }
 
   for (let i = 0; i < op.length; i++) {
     for (let j = 0; j < op[i].length; j++) {
@@ -646,7 +657,7 @@ async function getdataHomc(data, etc) {
           orderNo: orderNo + (i + 1),
           ordertype: "M",
           pharmacy: "OPD",
-          windowNo: "",
+          windowNo: checkWin,
           paymentIP: "",
           paymentDT: datePayment,
           outpNo: "",
