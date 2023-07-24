@@ -172,9 +172,11 @@ module.exports = function () {
 			center.checkmedpatient 
 	WHERE
 		hn = '` +
-      val +
+      val.hn +
       `'
-	AND date = CURRENT_DATE ()
+	AND date = '` +
+      val.dateEN +
+      `'
   AND isDelete IS NULL`;
 
     return new Promise(function (resolve, reject) {
@@ -205,7 +207,9 @@ module.exports = function () {
       '` +
       val.user +
       `',
-          CURRENT_DATE (),
+      '` +
+      val.dateEN +
+      `',
           CURRENT_TIMESTAMP (),
           NULL,
           NULL
@@ -225,9 +229,11 @@ module.exports = function () {
       checkmedpatient 
     WHERE
       hn = '` +
-      val +
+      val.hn +
       `'
-    AND date = CURRENT_DATE ()
+    AND date = '` +
+      val.dateEN +
+      `'
     AND isDelete IS NULL`;
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -245,8 +251,7 @@ module.exports = function () {
    FROM
       checkmed  p
    WHERE
-      date_format(p.lastmodified, '%Y-%m-%d') = CURRENT_DATE
-   AND p.cmp_id = '` +
+      p.cmp_id = '` +
       val +
       `'
    GROUP BY
@@ -323,7 +328,7 @@ module.exports = function () {
           hn
       ) AS countDrug,
       IF (
-        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2','LEVO25','DESOX','ISOSO3'),
+        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2','LEVO25','DESOX','ISOSO3','TRIA5'),
         1,
         0
       ) checkLength,
@@ -337,7 +342,6 @@ module.exports = function () {
       cmp_id = '` +
       val +
       `'
-    AND CAST(pc.ordercreatedate AS Date) = CURDATE()
     GROUP BY
       pc.drugCode,pc.seq
     ORDER BY

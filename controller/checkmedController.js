@@ -16,10 +16,10 @@ exports.checkpatientController = async (req, res, next) => {
     let datasend = req.body;
     datasend.allTimeOld = `''`;
     let checkpatientdruglength = await homc.checkmed(datasend);
-    let dataPatient = await center102.checkdelete(req.body.hn);
+    let dataPatient = await center102.checkdelete(datasend);
     if (!dataPatient.length && checkpatientdruglength.recordset.length) {
-      await center102.insertPatient(req.body);
-      dataPatient = await center102.getpatient(req.body.hn);
+      await center102.insertPatient(datasend);
+      dataPatient = await center102.getpatient(datasend);
     }
 
     if (dataPatient.length) {
