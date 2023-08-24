@@ -332,12 +332,66 @@ module.exports = function () {
         1,
         0
       ) checkLength,
-      pc.*, 
+      pc.*,
+      IF (
+        sortDrug.sortOrder IS NULL,
+        (
+          SELECT
+            MAX(sortOrder)
+          FROM
+            pmpf_thailand_mnrh.devicedescription
+        ),
+        sortDrug.sortOrder
+      ) sortOrder, 
       GROUP_CONCAT(img.pathImage ORDER BY img.typeNum ASC) pathImage,
-      GROUP_CONCAT(img.typeNum ORDER BY img.typeNum ASC) typeNum
+      GROUP_CONCAT(img.typeNum ORDER BY img.typeNum ASC) typeNum,
+      bdg.barCode
     FROM
       checkmed pc
     LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
+    LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
+    LEFT JOIN (
+      SELECT
+        drugCode,
+        drugName,
+        device,
+        sortOrder
+      FROM
+        (
+          SELECT
+            dd.drugCode,
+            dd.drugName,
+            dv.deviceCode AS device,
+            pd.sortOrder
+          FROM
+            devicedrugsetting ds
+          LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
+          LEFT JOIN pmpf_thailand_mnrh.dictdrug dd ON ds.drugID = dd.drugID
+          LEFT JOIN pmpf_thailand_mnrh.devicedescription pd ON pd.shortName =
+          IF (
+            dv.deviceCode = 'CDMed1',
+            'C',
+            dv.deviceCode
+          )
+          WHERE
+            ds.drugID IS NOT NULL
+          AND dv.deviceCode NOT IN (
+            'AP',
+            'CDMed2',
+            'Xmed1',
+            'ตู้ฉร'
+          )
+          AND dv.deviceCode NOT LIKE 'H%'
+          AND dd.drugCode IS NOT NULL
+          GROUP BY
+            dd.drugCode,
+            dv.deviceCode
+        ) sortDrug
+      GROUP BY
+        sortDrug.drugCode
+      ORDER BY
+        sortDrug.sortOrder
+    ) sortDrug ON sortDrug.drugCode = pc.drugCode
     WHERE
       cmp_id = '` +
       val +
@@ -345,7 +399,7 @@ module.exports = function () {
     GROUP BY
       pc.drugCode,pc.seq
     ORDER BY
-      checkstamp
+      sortOrder
        
       `;
 
