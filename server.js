@@ -17,6 +17,8 @@ var {
   deletecheckmedController,
   updatecheckmedController,
   reportcheckmedController,
+  getCompilerController,
+  mederrorController,
 } = require("./controller/checkmedController");
 
 var {
@@ -59,6 +61,8 @@ app.post("/deletecheckmed", deletecheckmedController);
 app.post("/updatecheckmed", updatecheckmedController);
 app.post("/reportcheckmed", reportcheckmedController);
 app.post("/getDispenseDaterange", getDispenseDaterangeController);
+app.post("/getCompiler", getCompilerController);
+app.post("/medError", mederrorController);
 
 module.exports = app;
 

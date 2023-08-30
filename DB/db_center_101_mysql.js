@@ -20,7 +20,9 @@ module.exports = function () {
       user,
       name
     FROM
-      users`;
+      users
+    WHERE status = "Y"
+    AND user NOT IN ('test','admin')`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

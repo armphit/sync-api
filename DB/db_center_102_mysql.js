@@ -586,4 +586,166 @@ module.exports = function () {
       });
     });
   };
+  this.get_compiler = function fill(val, DATA) {
+    let sql =
+      `SELECT
+      cm.drugCode,
+      GROUP_CONCAT(DISTINCT cml. USER) userCheck
+    FROM
+      checkmedpatient cmp
+    LEFT JOIN checkmed cm ON cm.cmp_id = cmp.id
+    LEFT JOIN checkmed_log cml ON cml.cm_id = cm.id
+    WHERE
+      cmp.hn = '` +
+      val.hn +
+      `'
+    AND cmp.date = '` +
+      val.date +
+      `'
+    AND cmp.isDelete IS NULL
+    GROUP BY
+      cml.cm_id`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.insert_mederror = function fill(val, DATA) {
+    let sql =
+      `INSERT INTO med_error (
+        id,
+        hn,
+        hnDT,
+        med,
+        med_good,
+        med_wrong,
+        med_good_text,
+        med_wrong_text,
+        position_text,
+        type_text,
+        interceptor_id,
+        interceptor_name,
+        offender_id,
+        offender_name,
+        note,
+        location,
+        createDT
+      )
+      VALUES
+        (
+          UUID(),
+          '` +
+      val.hn.hn +
+      `',
+          '` +
+      val.hn.hnDT +
+      `',
+          '` +
+      val.med.code +
+      `',
+          '` +
+      val.medGood.code +
+      `',
+          '` +
+      val.medWrong.code +
+      `',
+          '` +
+      val.medGood_text +
+      `',
+          '` +
+      val.medWrong_text +
+      `',
+          '` +
+      val.position_text +
+      `',
+          '` +
+      val.type_text +
+      `',
+          '` +
+      val.interceptor.user +
+      `',
+          '` +
+      val.interceptor.name +
+      `',
+          '` +
+      val.offender.user +
+      `',
+          '` +
+      val.offender.name +
+      `',
+          '` +
+      val.note +
+      `',
+      '` +
+      val.location +
+      `',
+          CURRENT_TIMESTAMP
+        )`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.get_mederror = function fill(val, DATA) {
+    let sql = "";
+    if (!val.choice) {
+      sql =
+        `SELECT
+      *
+    FROM
+      med_error
+    WHERE
+      hn = '` +
+        val.hn.hn +
+        `'
+          
+    AND CAST(hnDT AS Date) = '` +
+        val.hn.hnDT.substr(0, val.hn.hnDT.indexOf(" ")) +
+        `' 
+    ORDER BY createDT desc`;
+    } else {
+      sql =
+        `SELECT
+      	med_error.*, (
+          SELECT
+            drugName
+          FROM
+            pmpf_thailand_mnrh.dictdrug
+          WHERE
+            drugCode = med_good
+        ) med_good_name,
+        (
+          SELECT
+            drugName
+          FROM
+            pmpf_thailand_mnrh.dictdrug
+          WHERE
+            drugCode = med_wrong
+        ) med_wrong_name
+    FROM
+      med_error
+    
+    WHERE
+      CAST(createDT AS Date)  BETWEEN '` +
+        val.datestart +
+        `'
+      AND '` +
+        val.dateend +
+        `'
+        ORDER BY createDT desc`;
+    }
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

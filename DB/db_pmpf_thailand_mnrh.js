@@ -259,18 +259,47 @@ GROUP BY
     } else {
       sql = `SELECT
       CASE
-    WHEN dd.drugCode = 'CYCL-' THEN
-      'CYCL-'
-    WHEN dd.drugCode = 'DEX-O' THEN
-      'DEX-O'
-    WHEN dd.drugCode = 'DEX-E' THEN
-      'DEX-E'
-    WHEN dd.drugCode = 'POLY-1' THEN
-      'LPOLY-1'
-    ELSE
-      SUBSTRING_INDEX(dd.drugCode, '-', 1)
+      WHEN dd.drugCode = 'CYCL-' THEN
+        'CYCL-'
+      WHEN dd.drugCode = 'DEX-O' THEN
+        'DEX-O'
+      WHEN dd.drugCode = 'DEX-E' THEN
+        'DEX-E'
+      WHEN dd.drugCode = 'POLY-1' THEN
+        'POLY-1'
+      WHEN dd.drugCode = 'CO-TR3' THEN
+        'CO-TR3'
+      WHEN dd.drugCode = 'CO-TR2' THEN
+        'CO-TR2'
+      WHEN dd.drugCode = 'CO-TR1' THEN
+        'CO-TR1'
+      WHEN dd.drugCode = 'L-ASPA' THEN
+        'L-ASPA'
+      WHEN dd.drugCode = 'RIS-1' THEN
+        'RIS-1'
+      WHEN dd.drugCode = 'RIS-2' THEN
+        'RIS-2'
+      WHEN dd.drugCode = 'N-ACE' THEN
+        'N-ACE'
+      WHEN dd.drugCode = 'ANTI-D' THEN
+        'ANTI-D'
+      WHEN dd.drugCode = 'CIS-P2' THEN
+        'CIS-P2'
+      WHEN dd.drugCode = 'CO-TR3-1' THEN
+        'CO-TR3'
+      WHEN dd.drugCode = 'CO-TR3-2' THEN
+        'CO-TR3'
+      ELSE
+        SUBSTRING_INDEX(dd.drugCode, '-', 1)
     END AS code,
-     dd.drugName AS Name,
+      (
+	SELECT
+		drugName
+	FROM
+		pmpf_thailand_mnrh.dictdrug
+	WHERE
+		drugCode = code
+) AS Name,
      dd.miniSpec AS spec,
      dd.HISPackageRatio AS pack,
      dd.firmName AS firmName,

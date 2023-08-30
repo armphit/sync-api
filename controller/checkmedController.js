@@ -228,26 +228,25 @@ exports.updatecheckmedController = async (req, res, next) => {
 exports.reportcheckmedController = async (req, res, next) => {
   let datadrugcheck = [];
   if (req.body.choice == "1") {
-    let countcheck = await center102.getCountcheck(req.body);
-    let user = await center101.getUser();
+    // let countcheck = await center102.getCountcheck(req.body);
+    // let user = await center101.getUser();
 
-    if (countcheck.length) {
-      datadrugcheck = countcheck.map((emp) => ({
-        ...emp,
-        ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
-      }));
-      // datadrugcheck[datadrugcheck.length] = {
-      //   userCheck: "รวม",
-      //   name: "",
-      //   countuserCheck: datadrugcheck.reduce((accumulator, object) => {
-      //     return accumulator + object.countuserCheck;
-      //   }, 0),
-      //   countdrugCode: datadrugcheck.reduce((accumulator, object) => {
-      //     return accumulator + object.countdrugCode;
-      //   }, 0),
-      // };
+    // if (countcheck.length) {
+    //   datadrugcheck = countcheck.map((emp) => ({
+    //     ...emp,
+    //     ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
+    //   }));
+
+    // }
+    let get_mederror = await center102.get_mederror(req.body);
+    if (get_mederror.length) {
+      for (let data of get_mederror) {
+        data.createDT = data.createDT
+          ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
+      }
+      datadrugcheck = get_mederror;
     }
-
     res.send({ datadrugcheck });
   } else {
     let data = await center102.getTimecheck(req.body);
@@ -261,5 +260,29 @@ exports.reportcheckmedController = async (req, res, next) => {
     }
     datadrugcheck = data;
     res.send({ datadrugcheck });
+  }
+};
+
+exports.getCompilerController = async (req, res, next) => {
+  let get_compiler = await center102.get_compiler(req.body);
+  let user_list = await center101.getUser();
+  let drug_list = await pmpf.allDrug();
+  drug_list = drug_list.map((val) => {
+    return {
+      code: val.code ? val.code.trim() : val.code,
+      name: val.Name ? val.Name.trim() : val.Name,
+    };
+  });
+  res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
+};
+
+exports.mederrorController = async (req, res, next) => {
+  let insertMederror = await center102.insert_mederror(req.body);
+  let get_data = [];
+  if (insertMederror.affectedRows) {
+    get_data = await center102.get_mederror(req.body);
+    res.send(get_data);
+  } else {
+    res.send(get_data);
   }
 };
