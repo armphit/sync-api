@@ -435,4 +435,19 @@ ORDER BY
       resolve(result.recordset);
     });
   };
+  this.getDrughomc = async function fill(val, DATA) {
+    var sqlCommand = `SELECT
+      TRIM (code) code,
+      TRIM (name) name
+    FROM
+      Med_inv
+    WHERE
+      site = '1'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
+    });
+  };
 };

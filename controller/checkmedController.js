@@ -266,13 +266,7 @@ exports.reportcheckmedController = async (req, res, next) => {
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
   let user_list = await center101.getUser();
-  let drug_list = await pmpf.allDrug();
-  drug_list = drug_list.map((val) => {
-    return {
-      code: val.code ? val.code.trim() : val.code,
-      name: val.Name ? val.Name.trim() : val.Name,
-    };
-  });
+  let drug_list = await homc.getDrughomc();
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 
