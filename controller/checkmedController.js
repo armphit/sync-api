@@ -280,3 +280,15 @@ exports.mederrorController = async (req, res, next) => {
     res.send(get_data);
   }
 };
+
+exports.positionerrorController = async (req, res, next) => {
+  let data = req.body;
+  data.createdDT = moment(data.createdDT).format("YYYY-MM-DD");
+  let getCheck = await center102.dataCheckQ(data);
+
+  let datasend = {
+    key: "",
+    check: getCheck.length ? getCheck[0].userName : "",
+  };
+  res.send(datasend);
+};

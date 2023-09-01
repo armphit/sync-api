@@ -364,7 +364,7 @@ module.exports = function () {
             dv.deviceCode AS device,
             pd.sortOrder
           FROM
-            devicedrugsetting ds
+          pmpf_thailand_mnrh.devicedrugsetting ds
           LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
           LEFT JOIN pmpf_thailand_mnrh.dictdrug dd ON ds.drugID = dd.drugID
           LEFT JOIN pmpf_thailand_mnrh.devicedescription pd ON pd.shortName =
@@ -741,6 +741,32 @@ module.exports = function () {
         ORDER BY createDT desc`;
     }
 
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.dataCheckQ = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      CONCAT(checker_id, " ", checker_name) AS userName 
+  FROM
+      hospitalQ
+  
+  WHERE
+  date = '` +
+      val.createdDT +
+      `'
+  AND patientNO = '` +
+      val.patientNO +
+      `'
+  AND QN = '` +
+      val.QN +
+      `'      
+  ORDER BY createDT desc`;
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
