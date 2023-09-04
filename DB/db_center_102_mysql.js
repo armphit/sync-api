@@ -375,12 +375,17 @@ module.exports = function () {
           )
           WHERE
             ds.drugID IS NOT NULL
-          AND dv.deviceCode NOT IN (
-            'AP',
-            'CDMed2',
-            'Xmed1',
-            'ตู้ฉร'
-          )
+            AND (
+              dv.deviceCode NOT IN (
+                'AP',
+                'CDMed2',
+                'Xmed1',
+                'ตู้ฉร',
+                'C',
+                'CATV'
+              )
+              AND dv.deviceCode NOT LIKE 'INJ%'
+            )
           AND dv.deviceCode NOT LIKE 'H%'
           AND dd.drugCode IS NOT NULL
           GROUP BY
