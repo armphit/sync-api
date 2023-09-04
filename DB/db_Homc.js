@@ -450,4 +450,40 @@ ORDER BY
       resolve(result.recordset);
     });
   };
+  this.getMaker = async function fill(val, DATA) {
+    let hn = String(val.patientNO);
+    while (hn.length < 7) {
+      hn = " " + hn;
+    }
+    var sqlCommand =
+      `SELECT
+    mlh.hn,
+    ml.inv_code,
+    TRIM (pf.firstName) +' '+ TRIM (pf.lastName) name,
+    TRIM (pf.firstName) + TRIM (pf.lastName) maker
+    FROM
+      Med_logh mlh
+    LEFT JOIN Med_log ml ON mlh.batch_no = ml.batch_no
+    LEFT JOIN profile pf ON ml.maker = pf.UserCode
+  WHERE
+    mlh.hn = '` +
+      hn +
+      `'
+  AND ml.makeDate = ` +
+      val.date +
+      `
+  AND ml.pat_status = 'O'
+  AND ml.site = '` +
+      val.site +
+      `'
+  AND ml.revFlag IS NULL
+  AND TRIM (ml.inv_code) = TRIM('` +
+      val.drugCode +
+      `')`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
+    });
+  };
 };

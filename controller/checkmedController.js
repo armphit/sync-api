@@ -285,10 +285,22 @@ exports.positionerrorController = async (req, res, next) => {
   let data = req.body;
   data.createdDT = moment(data.createdDT).format("YYYY-MM-DD");
   let getCheck = await center102.dataCheckQ(data);
+  let key = null;
+  data.date = moment(data.createdDT).add(543, "year").format("YYYYMMDD");
+
+  let dataKey = await homc.getMaker(data);
+
+  if (dataKey.length) {
+    let dataUser = await center101.getUser();
+    key = dataUser.find(
+      (val) => val.name.replace(" ", "") === dataKey[0].maker
+    ) ?? { user: "", name: dataKey[0].name };
+  }
 
   let datasend = {
-    key: "",
+    key: key ? key.user + " " + key.name : "",
     check: getCheck.length ? getCheck[0].userName : "",
   };
+
   res.send(datasend);
 };

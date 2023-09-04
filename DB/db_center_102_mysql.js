@@ -402,7 +402,7 @@ module.exports = function () {
       val +
       `'
     GROUP BY
-      pc.drugCode,pc.seq
+      pc.drugCode,pc.seq,pc.lastmodified
     ORDER BY
       sortOrder
        
