@@ -20,6 +20,7 @@ var {
   getCompilerController,
   mederrorController,
   positionerrorController,
+  manageerrorController,
 } = require("./controller/checkmedController");
 
 var {
@@ -65,6 +66,7 @@ app.post("/getDispenseDaterange", getDispenseDaterangeController);
 app.post("/getCompiler", getCompilerController);
 app.post("/medError", mederrorController);
 app.post("/positionError", positionerrorController);
+app.post("/manageError", manageerrorController);
 
 module.exports = app;
 

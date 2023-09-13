@@ -508,6 +508,8 @@ async function getdataHomc(data, etc) {
 
         let amount = 0;
         let qty = data[i].Qty;
+        let dateAdd = "00:" + (j < 10 ? `0${j}` : `${j}`);
+
         do {
           j++;
           amount = qty >= numMax ? numMax : qty;
@@ -535,8 +537,7 @@ async function getdataHomc(data, etc) {
             "|" +
             dateA +
             "|" +
-            "00:0" +
-            j +
+            dateAdd +
             "|||โรงพยาบาลมหาราชนครราชสีมา|||" +
             etc.prescriptionno +
             data[i].code +
@@ -551,7 +552,7 @@ async function getdataHomc(data, etc) {
             " " +
             warning +
             "|";
-
+          console.log(dataJVM);
           codeArr.push(dataJVM);
           qty = qty - amount;
         } while (qty > 0);
@@ -677,7 +678,7 @@ async function getdataHomc(data, etc) {
     let xmlDrug = {
       xml: js2xmlparser.parse("outpOrderDispense", jsonDrug),
     };
-    console.log(xmlDrug);
+    // console.log(xmlDrug);
     console.log("-------------------------------------------------");
 
     if (etc.dih) {

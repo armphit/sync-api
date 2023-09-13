@@ -327,25 +327,82 @@ module.exports = function () {
         GROUP BY
           hn
       ) AS countDrug,
-      IF (
-        TRIM(pc.drugCode) IN ('CYCLO3','TDF+2','LEVO25','DESOX','ISOSO3','TRIA5'),
-        1,
-        0
-      ) checkLength,
-      pc.*,
-      IF (
-        sortDrug.sortOrder IS NULL,
-        (
-          SELECT
-            MAX(sortOrder)
-          FROM
-            pmpf_thailand_mnrh.devicedescription
-        ),
-        sortDrug.sortOrder
-      ) sortOrder, 
-      GROUP_CONCAT(img.pathImage ORDER BY img.typeNum ASC) pathImage,
-      GROUP_CONCAT(img.typeNum ORDER BY img.typeNum ASC) typeNum,
-      bdg.barCode
+    
+    IF (
+      TRIM(pc.drugCode) IN (
+        'CYCLO3',
+        'TDF+2',
+        'LEVO25',
+        'DESOX',
+        'ISOSO3',
+        'TRIA5'
+      ),
+      1,
+      0
+    ) checkLength,
+     pc.id,
+     pc.cmp_id,
+     pc.rowNum,
+     pc.prescriptionno,
+     pc.seq,
+     pc.hn,
+     pc.patientname,
+     pc.sex,
+     pc.patientdob,
+     pc.drugCode,
+    
+    IF (
+      TRIM(pc.drugCode) IN ('OLAZA'),
+      CONCAT(
+        SUBSTRING(pc.drugName, 1, 36),
+        '...'
+      ),
+      pc.drugName
+    ) drugName,
+     pc.drugNameTh,
+     pc.qty,
+     pc.unitCode,
+     pc.departmentcode,
+     pc.righttext1,
+     pc.righttext2,
+     pc.righttext3,
+     pc.lamedName,
+     pc.dosage,
+     pc.freetext0,
+     pc.freetext1,
+     pc.freetext2,
+     pc.itemidentify,
+     pc.indication,
+     pc.qrCode,
+     pc.ordercreatedate,
+     pc.lastmodified,
+     pc.lamedEng,
+     pc.freetext1Eng,
+     pc.checkstamp,
+     pc.checkqty,
+     pc.scantimestamp,
+    
+    IF (
+      sortDrug.sortOrder IS NULL,
+      (
+        SELECT
+          MAX(sortOrder)
+        FROM
+          pmpf_thailand_mnrh.devicedescription
+      ),
+      sortDrug.sortOrder
+    ) sortOrder,
+     GROUP_CONCAT(
+      img.pathImage
+      ORDER BY
+        img.typeNum ASC
+    ) pathImage,
+     GROUP_CONCAT(
+      img.typeNum
+      ORDER BY
+        img.typeNum ASC
+    ) typeNum,
+     bdg.barCode
     FROM
       checkmed pc
     LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
@@ -364,7 +421,7 @@ module.exports = function () {
             dv.deviceCode AS device,
             pd.sortOrder
           FROM
-          pmpf_thailand_mnrh.devicedrugsetting ds
+            pmpf_thailand_mnrh.devicedrugsetting ds
           LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
           LEFT JOIN pmpf_thailand_mnrh.dictdrug dd ON ds.drugID = dd.drugID
           LEFT JOIN pmpf_thailand_mnrh.devicedescription pd ON pd.shortName =
@@ -375,19 +432,20 @@ module.exports = function () {
           )
           WHERE
             ds.drugID IS NOT NULL
-            AND (
-              dv.deviceCode NOT IN (
-                'AP',
-                'CDMed2',
-                'Xmed1',
-                'ตู้ฉร',
-                'C',
-                'CATV'
-              )
-              AND dv.deviceCode NOT LIKE 'INJ%'
+          AND (
+            dv.deviceCode NOT IN (
+              'AP',
+              'CDMed2',
+              'Xmed1',
+              'ตู้ฉร',
+              'C',
+              'CATV'
             )
+            AND dv.deviceCode NOT LIKE 'INJ%'
+          )
           AND dv.deviceCode NOT LIKE 'H%'
           AND dd.drugCode IS NOT NULL
+          AND dv.pharmacyCode <> 'IPD'
           GROUP BY
             dd.drugCode,
             dv.deviceCode
@@ -402,7 +460,9 @@ module.exports = function () {
       val +
       `'
     GROUP BY
-      pc.drugCode,pc.seq,pc.lastmodified
+      pc.drugCode,
+      pc.seq,
+      pc.lastmodified
     ORDER BY
       sortOrder
        
@@ -713,6 +773,7 @@ module.exports = function () {
     AND CAST(hnDT AS Date) = '` +
         val.hn.hnDT.substr(0, val.hn.hnDT.indexOf(" ")) +
         `' 
+        AND deleteID is null    
     ORDER BY createDT desc`;
     } else {
       sql =
@@ -743,6 +804,7 @@ module.exports = function () {
       AND '` +
         val.dateend +
         `'
+      AND deleteID is null
         ORDER BY createDT desc`;
     }
 
@@ -757,7 +819,8 @@ module.exports = function () {
   this.dataCheckQ = function fill(val, DATA) {
     var sql =
       `SELECT
-      CONCAT(checker_id, " ", checker_name) AS userName 
+      CONCAT(checker_id, " ", checker_name) AS userName ,
+      CONCAT(dispenser_id, " ", dispenser_name) AS userDispen
   FROM
       hospitalQ
   
@@ -772,6 +835,90 @@ module.exports = function () {
       val.QN +
       `'      
   ORDER BY createDT desc`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.manage_mederror = function fill(val, DATA) {
+    var sql = ``;
+    if (val.check === "edit") {
+      sql =
+        `UPDATE center.med_error
+      SET id = '` +
+        val.id +
+        `',
+       hn = '` +
+        val.hn +
+        `',
+       med = '` +
+        val.med +
+        `',
+       med_good = '` +
+        val.medGood.code +
+        `',
+       med_wrong = '` +
+        val.medWrong.code +
+        `',
+       med_good_text = '` +
+        val.medGood_text +
+        `',
+       med_wrong_text = '` +
+        val.medWrong_text +
+        `',
+       position_text = '` +
+        val.position_text +
+        `',
+       type_text = '` +
+        val.type_text +
+        `',
+       interceptor_id = '` +
+        val.interceptor.user +
+        `',
+       interceptor_name = '` +
+        val.interceptor.name +
+        `',
+       offender_id = '` +
+        val.offender.user +
+        `',
+       offender_name = '` +
+        val.offender.name +
+        `',
+       note = '` +
+        val.note +
+        `',
+       updateDT = CURRENT_TIMESTAMP,
+       deleteDT = NULL,
+       deleteID = NULL
+      WHERE
+        (
+          id = '` +
+        val.id +
+        `'
+        );
+      `;
+    } else {
+      sql =
+        `UPDATE center.med_error
+      SET id = '` +
+        val.id +
+        `',
+       updateDT = CURRENT_TIMESTAMP,
+       deleteDT = CURRENT_TIMESTAMP,
+       deleteID = '` +
+        val.userLogin +
+        `'
+      WHERE
+        (
+          id = '` +
+        val.id +
+        `'
+        );
+      `;
+    }
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;

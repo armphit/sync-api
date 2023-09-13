@@ -244,12 +244,38 @@ exports.reportcheckmedController = async (req, res, next) => {
         data.createDT = data.createDT
           ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
           : "";
+        data.hnDT = data.hnDT
+          ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
+        data.createdDT = data.createdDT
+          ? moment(data.createdDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
       }
       datadrugcheck = get_mederror;
     }
     res.send({ datadrugcheck });
   } else {
     let data = await center102.getTimecheck(req.body);
+    var date1 = new Date("2023-09-13 08:34:17");
+    // var date2 = new Date("2023-09-13 08:34:23");
+
+    // var diff = date2.getTime() - date1.getTime();
+
+    // var msec = diff;
+    // var hh = Math.floor(msec / 1000 / 60 / 60);
+    // msec -= hh * 1000 * 60 * 60;
+    // var mm = Math.floor(msec / 1000 / 60);
+    // msec -= mm * 1000 * 60;
+    // var ss = Math.floor(msec / 1000);
+    // msec -= ss * 1000;
+
+    // console.log(
+    //   (hh < 10 ? "0" + hh : hh) +
+    //     ":" +
+    //     (mm < 10 ? "0" + mm : mm) +
+    //     ":" +
+    //     (ss < 10 ? "0" + ss : ss)
+    // );
     for (let i of data) {
       i.timestamp = i.timestamp
         ? moment(i.timestamp).format("YYYY-MM-DD HH:mm:ss")
@@ -293,14 +319,21 @@ exports.positionerrorController = async (req, res, next) => {
   if (dataKey.length) {
     let dataUser = await center101.getUser();
     key = dataUser.find(
-      (val) => val.name.replace(" ", "") === dataKey[0].maker
+      (val) => val.name.replace(" ", "").trim() === dataKey[0].maker.trim()
     ) ?? { user: "", name: dataKey[0].name };
   }
 
   let datasend = {
     key: key ? key.user + " " + key.name : "",
     check: getCheck.length ? getCheck[0].userName : "",
+    dispend: getCheck.length ? getCheck[0].userDispen : "",
   };
 
   res.send(datasend);
+};
+
+exports.manageerrorController = async (req, res, next) => {
+  let data = req.body;
+  let manage_error = await center102.manage_mederror(data);
+  manage_error.affectedRows ? res.send([1]) : [];
 };
