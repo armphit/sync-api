@@ -615,34 +615,107 @@ module.exports = function () {
   };
 
   this.getTimecheck = function fill(val, DATA) {
+    // let sql =
+    //   `SELECT
+    //   p.hn,
+    //   p.userCheck,
+    //   p.timestamp,
+    //   p.checkComplete,
+
+    //   TIMEDIFF(
+    //     TIME(p.checkComplete),
+    //     TIME(p.timestamp)
+    //   ) AS time,
+    //   COUNT(m.cmp_id) AS item
+    // FROM
+    //   checkmedpatient p
+    // LEFT JOIN checkmed m ON p.id = m.cmp_id
+    // WHERE
+    //   p.date BETWEEN '` +
+    //   val.datestart +
+    //   `'
+    //   AND '` +
+    //   val.dateend +
+    //   `'
+    // AND p.checkComplete <> ''
+    // AND p.isDelete IS NULL
+    // GROUP BY
+    //   m.cmp_id
+    // ORDER BY
+    //   p.timestamp`;
     let sql =
       `SELECT
-      p.hn,
-      p.userCheck,
-      p.timestamp,
-      p.checkComplete,
-      
-      TIMEDIFF(
-        TIME(p.checkComplete),
-        TIME(p.timestamp)
-      ) AS time,
-      COUNT(m.cmp_id) AS item
-    FROM
-      checkmedpatient p
-    LEFT JOIN checkmed m ON p.id = m.cmp_id
-    WHERE
-      p.date BETWEEN '` +
+    q.QN,
+    oud.queue,
+    oud.patientID AS hn,
+    oud.createdDT AS 'timestamp',
+    
+  IF (
+    cc.checkComplete IS NULL,
+    q.completeDT,
+    cc.checkComplete
+  ) AS checkComplete,
+  
+  IF (
+    cc.checkComplete IS NOT NULL,
+    TIMEDIFF(
+      TIME(cc.checkComplete),
+      TIME(oud.createdDT)
+    ),
+    TIMEDIFF(
+      TIME(q.completeDT),
+      TIME(oud.createdDT)
+    )
+  ) AS time
+  FROM
+    (
+      SELECT
+        patientID,
+        patientName,
+        createdDT,
+        SUBSTR(
+          patientName,
+          1,
+          LOCATE(" ", patientName) - 1
+        ) queue
+      FROM
+        pmpf_thailand_mnrh.outporderinfo
+      WHERE
+        CAST(createdDT AS Date) BETWEEN '` +
       val.datestart +
       `'
-      AND '` +
+        AND '` +
       val.dateend +
       `'
-    AND p.checkComplete <> ''
-    AND p.isDelete IS NULL
-    GROUP BY
-      m.cmp_id
-    ORDER BY
-      p.timestamp`;
+      AND pharmacyCode = 'OPD'
+      UNION
+      SELECT
+			patientID,
+			patientName,
+			createdDT,
+			SUBSTR(
+				patientName,
+				1,
+				LOCATE(" ", patientName) - 1
+			) queue
+		FROM
+			center.outporderinfo
+		WHERE
+			CAST(createdDT AS Date) BETWEEN '` +
+      val.datestart +
+      `'
+        AND '` +
+      val.dateend +
+      `'
+		AND pharmacyCode = 'OPD'
+    ) oud
+    LEFT JOIN hospitalq q ON oud.patientID = q.patientNO
+    AND CAST(oud.createdDT AS Date) = q.date
+  LEFT JOIN center.checkmedpatient cc ON cc.hn = oud.patientID
+  AND CAST(createdDT AS Date) = cc.date
+  ORDER BY
+    oud.createdDT 
+    `;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -798,7 +871,7 @@ module.exports = function () {
       med_error
     
     WHERE
-      CAST(createDT AS Date)  BETWEEN '` +
+      CAST(hnDT AS Date)  BETWEEN '` +
         val.datestart +
         `'
       AND '` +

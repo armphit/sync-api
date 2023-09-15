@@ -256,26 +256,6 @@ exports.reportcheckmedController = async (req, res, next) => {
     res.send({ datadrugcheck });
   } else {
     let data = await center102.getTimecheck(req.body);
-    var date1 = new Date("2023-09-13 08:34:17");
-    // var date2 = new Date("2023-09-13 08:34:23");
-
-    // var diff = date2.getTime() - date1.getTime();
-
-    // var msec = diff;
-    // var hh = Math.floor(msec / 1000 / 60 / 60);
-    // msec -= hh * 1000 * 60 * 60;
-    // var mm = Math.floor(msec / 1000 / 60);
-    // msec -= mm * 1000 * 60;
-    // var ss = Math.floor(msec / 1000);
-    // msec -= ss * 1000;
-
-    // console.log(
-    //   (hh < 10 ? "0" + hh : hh) +
-    //     ":" +
-    //     (mm < 10 ? "0" + mm : mm) +
-    //     ":" +
-    //     (ss < 10 ? "0" + ss : ss)
-    // );
     for (let i of data) {
       i.timestamp = i.timestamp
         ? moment(i.timestamp).format("YYYY-MM-DD HH:mm:ss")
@@ -285,7 +265,19 @@ exports.reportcheckmedController = async (req, res, next) => {
         : "";
     }
     datadrugcheck = data;
-    res.send({ datadrugcheck });
+    arr = data
+      .map(({ time }) => time)
+      .filter((t) => t !== null)
+      .filter((i) => !i.includes("-"));
+    let average = null;
+    if (arr.length) {
+      average = arr.reduce(function (a, b) {
+        return a + +new Date("1970T" + b + "Z");
+      }, 0);
+      average = new Date(average / arr.length + 500).toJSON().slice(11, 19);
+    }
+
+    res.send({ datadrugcheck, average });
   }
 };
 
