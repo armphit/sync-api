@@ -402,7 +402,8 @@ module.exports = function () {
       ORDER BY
         img.typeNum ASC
     ) typeNum,
-     bdg.barCode
+     bdg.barCode,
+     sortDrug.device
     FROM
       checkmed pc
     LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode

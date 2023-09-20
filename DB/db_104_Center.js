@@ -1,8 +1,6 @@
-const { Console } = require("console");
-
 module.exports = function () {
   const sql = require("mssql");
-
+  //จริง
   this.config = {
     user: "Robot",
     password: "p@ssw0rd",
@@ -30,47 +28,102 @@ module.exports = function () {
       console.log("Database Connection Failed! Bad Config: ", err)
     );
 
-  this.hn_moph_patient = async function fill(val, DATA) {
+  this.insertLED = async function fill(val, DATA) {
     var sqlgetdrug =
-      `SELECT
-      drugcode,
-      drugname
-  FROM
-      moph_patient,
-      moph_drugs
-  WHERE
-      moph_patient.personId = moph_drugs.cid
-      AND moph_drugs.hospcode <> 10666
-  AND moph_patient.hn = '` +
-      val +
-      `'`;
+      `IF EXISTS (
+          SELECT
+            *
+          FROM
+            LED.dbo.ms_box
+          WHERE
+            ipmain = '` +
+      val.ipmain +
+      `'
+        )
+        BEGIN
+        
+        IF EXISTS (
+          SELECT
+            *
+          FROM
+          LED.dbo.ms_OpenLEDTime
+          WHERE
+            PrescriptionNo = '` +
+      val.PrescriptionNo +
+      `'
+          AND ipmain = '` +
+      val.ipmain +
+      `'
+        )
+        BEGIN
+          UPDATE [LED].[dbo].[ms_OpenLEDTime]
+        SET [readdatetime] = NULL
+        WHERE
+         
+            [PrescriptionNo] = '` +
+      val.PrescriptionNo +
+      `'
+        AND ipmain = '` +
+      val.ipmain +
+      `'
+        END
+        ELSE
+        
+        BEGIN
+          INSERT INTO [LED].[dbo].[ms_OpenLEDTime] (
+            [PrescriptionNo],
+            [ipmain],
+            [userid]
+          )
+        VALUES
+          (
+            '` +
+      val.PrescriptionNo +
+      `',
+        '` +
+      val.ipmain +
+      `',
+        '` +
+      val.user +
+      `'     
+          ) ;
+        END
+        END`;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlgetdrug);
-      resolve(result.recordset);
+      resolve(result);
     });
   };
+  this.update_led = async function fill(val, DATA) {
+    var sqlgetdrug =
+      `IF EXISTS (
+        SELECT
+          *
+        FROM
+          LED.dbo.ms_box
+        WHERE
+          ipmain = '` +
+      val.ip +
+      `'
+      )
+      BEGIN
+        UPDATE LED.dbo.ms_LEDTime
+      SET DispensTime = DATEADD(mi ,- 10, GETDATE()),
+       [position] = '` +
+      val.drugCode +
+      `'
+      WHERE
+        (boxid = '` +
+      val.device +
+      `')
+      END`;
 
-  // this.hn_moph_maharat = async function fill(val, DATA) {
-  //   var sqlgetdrug =
-  //     ` SELECT TOP 1
-  //     drugcode
-  // FROM
-  //     moph_drugs
-  // WHERE
-  //     moph_drugs.hospcode <> 10666
-  // AND cid = '` +
-  //     val +
-  //     `' `;
-  //   return new Promise(async (resolve, reject) => {
-  //     const pool = await poolPromise;
-  //     const result = await pool.request().query(sqlgetdrug);
-  //     resolve(result.recordset);
-  //   });
-  // };
-
-  module.exports = {
-    sql,
-    poolPromise,
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlgetdrug);
+      resolve(result);
+    });
   };
 };

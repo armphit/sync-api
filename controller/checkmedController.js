@@ -9,7 +9,8 @@ var jimp = require("jimp");
 var qrCode = require("qrcode-reader");
 var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
-
+var db_center104 = require("../DB/db_104_Center");
+var center104 = new db_center104();
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
@@ -155,6 +156,11 @@ exports.checkpatientController = async (req, res, next) => {
           await center102.updatePatient(data);
         }
       }
+
+      datasend.PrescriptionNo =
+        datadrugpatient[datadrugpatient.length - 1].prescriptionno;
+
+      let insertOpenled = await center104.insertLED(datasend);
     } else {
       res.send({ datadrugpatient: [], patientDrug: [] });
     }
@@ -205,6 +211,9 @@ exports.updatecheckmedController = async (req, res, next) => {
           ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
           : "";
       }
+      if (req.body.currentqty == 0) {
+        let sed_led = await center104.update_led(req.body);
+      }
       res.send({ datadrugpatient });
       if (datadrugpatient.length) {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
@@ -239,6 +248,7 @@ exports.reportcheckmedController = async (req, res, next) => {
 
     // }
     let get_mederror = await center102.get_mederror(req.body);
+    let getname = [];
     if (get_mederror.length) {
       for (let data of get_mederror) {
         data.createDT = data.createDT
@@ -250,9 +260,48 @@ exports.reportcheckmedController = async (req, res, next) => {
         data.createdDT = data.createdDT
           ? moment(data.createdDT).format("YYYY-MM-DD HH:mm:ss")
           : "";
+        for (let data of get_mederror) {
+          data.createDT = data.createDT
+            ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
+            : "";
+          data.hnDT = data.hnDT
+            ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
+            : "";
+          data.createdDT = data.createdDT
+            ? moment(data.createdDT).format("YYYY-MM-DD HH:mm:ss")
+            : "";
+
+          if (!data.med_wrong_name) {
+            getname = await homc.getDrugstar(data.med_wrong);
+            if (getname.length) {
+              data.med_wrong_name = getname[0].name;
+            }
+          }
+          if (!data.med_good_name) {
+            if (data.med_good == data.med_wrong) {
+              if (getname.length) {
+                data.med_good_name = getname[0].name;
+              } else {
+                getname = await homc.getDrugstar(data.med_good);
+
+                if (getname.length) {
+                  data.med_good_name = getname[0].name;
+                }
+              }
+            } else {
+              getname = await homc.getDrugstar(data.med_good);
+
+              if (getname.length) {
+                data.med_good_name = getname[0].name;
+              }
+            }
+          }
+        }
       }
+
       datadrugcheck = get_mederror;
     }
+
     res.send({ datadrugcheck });
   } else {
     let data = await center102.getTimecheck(req.body);

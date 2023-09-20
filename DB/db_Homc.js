@@ -421,7 +421,10 @@ ORDER BY
         ) = '*',
         1,
         0
-      ) val
+      ) val,     
+      TRIM (code) code,
+      TRIM (name) name,
+      TRIM (gen_name) gen_name
     FROM
       Med_inv
     WHERE
