@@ -116,6 +116,9 @@ exports.syncOPDController = async (req, res, next) => {
             b.takedate = b.takedate
               ? b.takedate.toISOString().substr(0, 10)
               : "";
+            b.orderitemname = data.orderitemname
+              ? data.orderitemname.replace("'", "''")
+              : "";
             b.queue = c.queue;
             await gd4unit101.insertDrug(b);
           });
