@@ -1,34 +1,34 @@
-const axios = require("axios");
-const html2json = require("html2json").html2json;
-
 var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
-exports.allergicController = async (req, res, next) => {
-  let a = await axios.get(
-    "http://164.115.23.100/test_token_php/index6.php?cid=" +
-      req.body.cid +
-      "&format=json"
-  );
 
-  let dataDrug = html2json(a.data).child[0].child[3].child[5].text;
-  let dataDrug2 = html2json(a.data).child[0].child[3].child[6].text;
-  console.log(html2json(a.data).child[0].child[3]);
-  console.log(dataDrug2);
-  if (dataDrug) {
-    console.log("dataDrug");
-    // console.log(JSON.parse(dataDrug).data);
-    res.send(JSON.parse(dataDrug).data);
-  } else if (dataDrug2) {
-    console.log("dataDrug2");
-    // console.log(JSON.parse(dataDrug2).data);
-    res.send(JSON.parse(dataDrug2).data);
-  } else {
-    console.log("else");
-    res.send({});
-  }
-};
+var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
+var GD4Unit_101 = new db_GD4Unit_101();
 
 exports.getDispenseDaterangeController = async (req, res, next) => {
   let getDispense = await pmpf.getDispense(req.body);
   res.send(getDispense);
+};
+
+exports.doorreportController = async (req, res, next) => {
+  let getDoorreport = null;
+  if (req.body.choice === 1) {
+    getDoorreport = await GD4Unit_101.doorReport(req.body);
+
+    if (getDoorreport.recordset.length) {
+      for (let data of getDoorreport.recordset) {
+        let time = JSON.stringify(data.datetime)
+          .toString()
+          .replaceAll('"', "")
+          .split("T");
+        data.datetime = data.datetime
+          ? time[0] +
+            " " +
+            time[1].split("Z")[0].substring(0, time[1].length - 5)
+          : "";
+      }
+    }
+  } else {
+    getDoorreport = await GD4Unit_101.freqdoorReport(req.body);
+  }
+  res.send(getDoorreport);
 };

@@ -35,7 +35,10 @@ var {
   listPatientAllergicController,
 } = require("./controller/interfaceController");
 
-var { getDispenseDaterangeController } = require("./controller/msrController");
+var {
+  getDispenseDaterangeController,
+  doorreportController,
+} = require("./controller/msrController");
 
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -63,6 +66,7 @@ app.post("/deletecheckmed", deletecheckmedController);
 app.post("/updatecheckmed", updatecheckmedController);
 app.post("/reportcheckmed", reportcheckmedController);
 app.post("/getDispenseDaterange", getDispenseDaterangeController);
+app.post("/doorReport", doorreportController);
 app.post("/getCompiler", getCompilerController);
 app.post("/medError", mederrorController);
 app.post("/positionError", positionerrorController);

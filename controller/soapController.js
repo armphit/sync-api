@@ -10,6 +10,8 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_Xmed = require("../DB/db_Xed_102_sqlserver");
 var Xmed = new db_Xmed();
+var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
+var GD4Unit_101 = new db_GD4Unit_101();
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
@@ -35,14 +37,16 @@ exports.soapDIHController = async (req, res, next) => {
         }'`;
         valSql[index] = `N'${value[index] == null ? "" : value[index]}'`;
       }
-      console.log(arrSql);
+
       let send = {
         update: arrSql.join(","),
         insert: valSql.join(","),
         code: req.body.drug.code,
       };
 
-      let datainsert = await Xmed.updateDicdrug(send);
+      await Xmed.updateDicdrug(send);
+      await GD4Unit_101.updatePack101(req.body);
+
       res.status(200).json({
         // Authorization: Bearer,
         status: "success",

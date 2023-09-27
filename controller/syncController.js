@@ -7,8 +7,6 @@ var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
 var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
-var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
-var GD4Unit_101 = new db_GD4Unit_101();
 var db_onCube = require("../DB/db_onCube");
 var onCube = new db_onCube();
 var db_mysql102 = require("../DB/db_center_102_mysql");
@@ -59,13 +57,13 @@ exports.syncOPDController = async (req, res, next) => {
         win2: check.win2,
       };
       for (let i = 0; i < b.length; i++) {
+        b[i].orderitemname = b[i].orderitemname.replace(
+          /[\/\\#,+$~.'":?<>{}]/g,
+          " "
+        );
         let pmpf102 = await pmpf.getDrug(b[i].orderitemcode);
 
         if (pmpf102.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
-          b[i].orderitemname = b[i].orderitemname.replace(
-            /[\/\\#,+$~.'":?<>{}]/g,
-            " "
-          );
           let drug = {
             Name: b[i].orderitemname.trim(),
             Qty: b[i].orderqty.trim(),
@@ -115,9 +113,6 @@ exports.syncOPDController = async (req, res, next) => {
               : "";
             b.takedate = b.takedate
               ? b.takedate.toISOString().substr(0, 10)
-              : "";
-            b.orderitemname = data.orderitemname
-              ? data.orderitemname.replace("'", "''")
               : "";
             b.queue = c.queue;
             await gd4unit101.insertDrug(b);
