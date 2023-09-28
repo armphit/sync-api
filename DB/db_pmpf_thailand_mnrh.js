@@ -439,7 +439,7 @@ GROUP BY
       dd.firmName AS firmname,
       dd.HISPackageRatio AS pack,
       dd.miniUnit AS dosageunitcode,
-    
+      dv.deviceCode,
     IF (
       GROUP_CONCAT(dv.deviceCode) LIKE '%Xmed1%',
       1,
@@ -448,7 +448,18 @@ GROUP BY
     FROM
       dictdrug dd
     LEFT JOIN devicedrugsetting ds ON ds.drugID = dd.drugID
-    LEFT JOIN device dv ON ds.deviceID = dv.deviceID
+    LEFT JOIN device dv ON ds.deviceID = dv.deviceID AND (
+      dv.deviceCode NOT IN (
+        'AP',
+        'CDMed2',
+        'Xmed1',
+        'ตู้ฉร',
+        'C',
+        'CATV'
+      )
+      AND dv.deviceCode NOT LIKE 'INJ%'
+      AND dv.pharmacyCode <> 'IPD'
+    )
     WHERE
       dd.drugCode = '` +
       val +

@@ -62,36 +62,38 @@ module.exports = function () {
   };
 
   this.doorReport = async function fill(val, DATA) {
-    let val_type = val.type ? `AND aml.device_name = '` + val.type + `'` : "";
+    let val_type = val.type == "in" ? "MIN" : "MAX";
     var sqlgetdrug =
       `SELECT
       MAX (u.Badgenumber) AS USERID,
       CASE
-          WHEN MAX (u.lastname) <> '' THEN
-              MAX (u.Name) + ' ' + MAX (u.lastname)
-          ELSE
-              MAX (u.Name)
-      END AS Name,
-      MAX (d.DEPTNAME) DEPTNAME,
-      MAX (aml.device_name) deviceName,
-      MAX (aml. TIME) datetime
-  FROM
-  ZKAccess.dbo.acc_monitor_log aml
-  LEFT JOIN ZKAccess.dbo.USERINFO u ON u.Badgenumber = aml.pin
-  LEFT JOIN ZKAccess.dbo.DEPARTMENTS d ON d.DEPTID = u.DEFAULTDEPTID
-  WHERE
-      CAST (TIME AS DATE) BETWEEN '` +
+    WHEN MAX (u.lastname) <> '' THEN
+      MAX (u.Name) + ' ' + MAX (u.lastname)
+    ELSE
+      MAX (u.Name)
+    END AS Name,
+     MAX (d.DEPTNAME) DEPTNAME,
+     MAX (aml.device_name) deviceName,
+     CONVERT(varchar, ` +
+      val_type +
+      `(aml. TIME), 120) datetime
+    FROM
+      ZKAccess.dbo.acc_monitor_log aml
+    LEFT JOIN ZKAccess.dbo.USERINFO u ON u.Badgenumber = aml.pin
+    LEFT JOIN ZKAccess.dbo.DEPARTMENTS d ON d.DEPTID = u.DEFAULTDEPTID
+    WHERE
+      CONVERT (DATE, aml. TIME) BETWEEN '` +
       val.date1 +
       `'
-      AND '` +
+    AND '` +
       val.date2 +
       `'
-  AND USERID IS NOT NULL
-  ` +
-      val_type +
-      `
-  GROUP BY
-  aml. TIME`;
+    AND USERID IS NOT NULL
+    AND aml.device_name = 'MHR-OPD1'
+    AND u.Badgenumber NOT IN (68,70,29252,69,72,208,212,29237)
+    GROUP BY
+      CONVERT (DATE, aml. TIME),
+      u.Badgenumber`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -100,11 +102,22 @@ module.exports = function () {
     });
   };
   this.freqdoorReport = async function fill(val, DATA) {
-    let val_type = val.type ? `AND device_name = '` + val.type + `'` : "";
+    let val_type = val.type == "in" ? "MIN" : "MAX";
+    let num =
+      val.type == "in"
+        ? {
+            one: "07",
+            two: "08",
+          }
+        : {
+            one: "16",
+            two: "17",
+          };
     var sqlgetdrug =
       `SELECT
-      a.pin USERID,
+      MAX (u.Badgenumber) USERID,
       MAX (a.device_name) deviceName,
+      MAX (d.DEPTNAME) DEPTNAME,
       CASE
   WHEN MAX (u.lastname) <> '' THEN
       MAX (u.Name) + ' ' + MAX (u.lastname)
@@ -113,7 +126,9 @@ module.exports = function () {
   END AS Name,
    COUNT (
       CASE
-      WHEN a.ti < CAST ('07:30:00.0000000' AS TIME) THEN
+      WHEN a.ti < CAST ('` +
+      num.one +
+      `:30:00.0000000' AS TIME) THEN
           1
       ELSE
           NULL
@@ -121,8 +136,12 @@ module.exports = function () {
   ) 'time1',
    COUNT (
       CASE
-      WHEN a.ti > CAST ('07:30:00.0000000' AS TIME)
-      AND a.ti < CAST ('07:45:00.0000000' AS TIME) THEN
+      WHEN a.ti > CAST ('` +
+      num.one +
+      `:30:00.0000000' AS TIME)
+      AND a.ti < CAST ('` +
+      num.one +
+      `:45:00.0000000' AS TIME) THEN
           1
       ELSE
           NULL
@@ -130,8 +149,12 @@ module.exports = function () {
   ) 'time2',
    COUNT (
       CASE
-      WHEN a.ti > CAST ('07:45:00.0000000' AS TIME)
-      AND a.ti < CAST ('08:00:00.0000000' AS TIME) THEN
+      WHEN a.ti > CAST ('` +
+      num.one +
+      `:45:00.0000000' AS TIME)
+      AND a.ti < CAST ('` +
+      num.two +
+      `:00:00.0000000' AS TIME) THEN
           1
       ELSE
           NULL
@@ -139,8 +162,12 @@ module.exports = function () {
   ) 'time3',
    COUNT (
       CASE
-      WHEN a.ti > CAST ('08:00:00.0000000' AS TIME)
-      AND a.ti < CAST ('08:15:00.0000000' AS TIME) THEN
+      WHEN a.ti > CAST ('` +
+      num.two +
+      `:00:00.0000000' AS TIME)
+      AND a.ti < CAST ('` +
+      num.two +
+      `:15:00.0000000' AS TIME) THEN
           1
       ELSE
           NULL
@@ -148,8 +175,12 @@ module.exports = function () {
   ) 'time4',
    COUNT (
       CASE
-      WHEN a.ti > CAST ('08:15:00.0000000' AS TIME)
-      AND a.ti < CAST ('08:30:00.0000000' AS TIME) THEN
+      WHEN a.ti > CAST ('` +
+      num.two +
+      `:15:00.0000000' AS TIME)
+      AND a.ti < CAST ('` +
+      num.two +
+      `:30:00.0000000' AS TIME) THEN
           1
       ELSE
           NULL
@@ -157,7 +188,9 @@ module.exports = function () {
   ) 'time5',
    COUNT (
       CASE
-      WHEN a.ti > CAST ('08:30:00.0000000' AS TIME) THEN
+      WHEN a.ti > CAST ('` +
+      num.two +
+      `:30:00.0000000' AS TIME) THEN
           1
       ELSE
           NULL
@@ -167,7 +200,9 @@ module.exports = function () {
       (
           SELECT
               pin,
-              CAST (MIN(TIME) AS TIME) AS ti,
+              CAST (` +
+      val_type +
+      `(TIME) AS TIME) AS ti,
               device_id,
               MAX (device_name) AS device_name
           FROM
@@ -179,23 +214,22 @@ module.exports = function () {
           AND '` +
       val.date2 +
       `'
-          ` +
-      val_type +
-      `
           GROUP BY
               pin,
               device_id,
               CAST (TIME AS DATE)
       ) AS a
   LEFT JOIN ZKAccess.dbo.USERINFO u ON a.pin = u.Badgenumber
+  LEFT JOIN ZKAccess.dbo.DEPARTMENTS d ON d.DEPTID = u.DEFAULTDEPTID
   WHERE
       u.Badgenumber IS NOT NULL
+  AND u.Badgenumber NOT IN (68,70,29252,69,72,208,212,29237)
   GROUP BY
       a.pin,
       a.device_id
   ORDER BY
       CAST (pin AS INT)`;
-
+    console.log(sqlgetdrug);
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlgetdrug);

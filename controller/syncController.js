@@ -77,6 +77,7 @@ exports.syncOPDController = async (req, res, next) => {
             unit: pmpf102[0].dosageunitcode,
             pack: pmpf102[0].pack,
             location: pmpf102[0].checkLocation,
+            device: pmpf102[0].deviceCode,
             // dosage: b[i].dosage ? b[i].dosage.trim() : "",
             // freetext1: b[i].freetext1 ? b[i].freetext1.trim() : "",
           };
@@ -201,6 +202,7 @@ exports.syncOPDManualController = async (req, res, next) => {
         unit: pmpf102[0].dosageunitcode,
         pack: pmpf102[0].pack,
         location: pmpf102[0].checkLocation,
+        device: pmpf102[0].deviceCode,
         // dosage: b[i].dosage ? b[i].dosage.trim() : "",
         // freetext1: b[i].freetext1 ? b[i].freetext1.trim() : "",
       };
@@ -350,6 +352,7 @@ async function getdataHomc(data, etc) {
               se.unit = data[i].unit;
               se.pack = listDrugSE[x].HisPackageRatio;
               se.location = data[i].location;
+              se.device = "XMed";
               se.Qty =
                 Math.floor(listDrugSE[x].qty / listDrugSE[x].HisPackageRatio) *
                 listDrugSE[x].HisPackageRatio;
@@ -369,6 +372,7 @@ async function getdataHomc(data, etc) {
                 se.unit = data[i].unit;
                 se.pack = listDrugSE[x].HisPackageRatio;
                 se.location = data[i].location;
+                se.device = "XMed";
                 se.Qty =
                   ~~(Math.abs(numSize - 4000) / listDrugSE[x].Item) *
                   listDrugSE[x].HisPackageRatio;
@@ -399,6 +403,7 @@ async function getdataHomc(data, etc) {
                 seS.unit = data[i].unit;
                 seS.pack = listDrugSE[x].HisPackageRatio;
                 seS.location = data[i].location;
+                seS.device = "XMed";
                 seS.Qty =
                   ~~(drugSize / listDrugSE[x].Item) *
                   listDrugSE[x].HisPackageRatio;
@@ -460,6 +465,7 @@ async function getdataHomc(data, etc) {
       lca.unit = data[i].unit;
       lca.pack = data[i].pack;
       lca.location = data[i].location;
+      lca.device = "J";
       codeArrPush.push(lca);
       data[i].Qty = data[i].Qty % listDrugLca[0].HisPackageRatio;
     }
@@ -550,7 +556,7 @@ async function getdataHomc(data, etc) {
             " " +
             warning +
             "|";
-          console.log(dataJVM);
+
           codeArr.push(dataJVM);
           qty = qty - amount;
         } while (qty > 0);
@@ -592,32 +598,18 @@ async function getdataHomc(data, etc) {
   let value2 = [];
   let dih = 1;
   let jvm = 1;
-  let checkWin = null;
-  if (etc.win1 && !etc.win2) {
-    checkWin = 3;
-  } else if (!etc.win1 && etc.win2) {
-    checkWin = 4;
-  } else {
-    checkWin = "";
-    // checkWin = op.length > 1 ? 4 : "";
-  }
-
+  let arrJson = [];
+  let value3 = [];
   for (let i = 0; i < op.length; i++) {
     for (let j = 0; j < op[i].length; j++) {
-      // let updatedObject = op[i][j];
       let value = {
         drug: op[i][j],
       };
+
       value2.push(value);
+      value3.push(value);
     }
 
-    let checkXmed = value2.every(
-      (item) =>
-        Number(item.drug.Qty) % Number(item.drug.pack) === 0 &&
-        item.drug.location
-    );
-
-    checkXmed = checkXmed ? "*" : "";
     zone = zone.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
 
     let jsonDrug = {
@@ -633,8 +625,7 @@ async function getdataHomc(data, etc) {
               (i + 1) +
               "/" +
               op.length +
-              ")" +
-              checkXmed
+              ")"
             : etc.queue +
               " " +
               etc.name +
@@ -642,8 +633,7 @@ async function getdataHomc(data, etc) {
               (i + 1) +
               "/" +
               op.length +
-              ")" +
-              checkXmed,
+              ")",
         gender: etc.sex,
         birthday: birthDate,
         age: age,
@@ -656,7 +646,8 @@ async function getdataHomc(data, etc) {
           orderNo: orderNo + (i + 1),
           ordertype: "M",
           pharmacy: "OPD",
-          windowNo: checkWin,
+          // windowNo: checkWin,
+          windowNo: "",
           paymentIP: "",
           paymentDT: datePayment,
           outpNo: "",
@@ -670,15 +661,19 @@ async function getdataHomc(data, etc) {
         },
       },
     };
-
+    arrJson.push(jsonDrug);
     value2 = [];
-
+  }
+  let ex = value3.map((a) => a.drug.device).filter(Boolean);
+  ex = Array.from(new Set(ex));
+  arrJson.map(async function (item) {
+    item.prescriptions.prescription.windowNo = ex.length > 2 ? 3 : 4;
     let xmlDrug = {
-      xml: js2xmlparser.parse("outpOrderDispense", jsonDrug),
+      xml: js2xmlparser.parse("outpOrderDispense", item),
     };
-    // console.log(xmlDrug);
+    console.log(xmlDrug);
     console.log("-------------------------------------------------");
-
+    console.log("WindowNo : " + ex);
     if (etc.dih) {
       var url =
         "http://192.168.185.102:8788/axis2/services/DIHPMPFWebservice?wsdl";
@@ -691,7 +686,9 @@ async function getdataHomc(data, etc) {
         dih = 0;
       }
     }
-  }
+    return item;
+  });
+
   zone = [];
   let numtxt = 0;
   if (etc.jvm) {
@@ -933,6 +930,7 @@ function mathSE(listDrugSE, data) {
       }
       listDrugSE = pushArrDrug;
     }
+
     if (dataDrug.length) {
       let getArr = dataDrug.filter(
         (d) => d.data_mod === Math.min(...dataDrug.map((item) => item.data_mod))
@@ -947,7 +945,7 @@ function mathSE(listDrugSE, data) {
         (v) =>
           v.zero_length === Math.max(...getArr.map((item) => item.zero_length))
       );
-
+      console.log(getArr);
       if (getArr[0].data_mod) {
         listDrugSE = [];
       } else {
