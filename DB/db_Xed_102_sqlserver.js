@@ -291,7 +291,8 @@ WHERE
         UPDATE dictdrug
       SET ` +
       val.update +
-      `
+      `,
+      checkPrint = NULL
       WHERE
         drugCode = N'` +
       val.code +

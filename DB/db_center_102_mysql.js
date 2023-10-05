@@ -403,11 +403,13 @@ module.exports = function () {
         img.typeNum ASC
     ) typeNum,
      bdg.barCode,
-     sortDrug.device
+     sortDrug.device,
+     mp.drugCode checkDrug
     FROM
       checkmed pc
     LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
     LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
+    LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
     LEFT JOIN (
       SELECT
         drugCode,

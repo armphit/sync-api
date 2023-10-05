@@ -34,3 +34,8 @@ exports.doorreportController = async (req, res, next) => {
   }
   res.send(getDoorreport);
 };
+
+exports.onuspharController = async (req, res, next) => {
+  let getdata = await pmpf.onusphar(req.body);
+  res.send(getdata);
+};

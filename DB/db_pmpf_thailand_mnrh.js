@@ -491,4 +491,54 @@ GROUP BY
       });
     });
   };
+  this.onusphar = function fill(val, DATA) {
+    var sql =
+      `SELECT
+  a.userCheck staff,
+  '' AS 'staffName',
+  '' AS 'order',
+  COUNT(*) AS item
+FROM
+  (
+      SELECT
+          cmp.id,
+          cm.id cm_id,
+          cm.drugCode,
+          cml.user userCheck
+      FROM
+          center.checkmedpatient cmp
+      LEFT JOIN center.checkmed cm ON cm.cmp_id = cmp.id
+      LEFT JOIN center.checkmed_log cml ON cml.cm_id = cm.id
+      WHERE
+          cmp.timestamp BETWEEN '` +
+      val.date1 +
+      `` +
+      " " +
+      val.time1 +
+      `'
+          AND '` +
+      val.date2 +
+      `` +
+      " " +
+      val.time2 +
+      `'
+      AND cmp.isDelete IS NULL
+      AND cml.user IS NOT NULL
+      GROUP BY
+          cml.cm_id,
+          cml.user
+      ORDER BY
+          cml.cm_id,
+          cm.drugCode
+  ) AS a
+GROUP BY
+  a.userCheck`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };
