@@ -97,6 +97,7 @@ module.exports = function () {
     });
   };
   this.update_led = async function fill(val, DATA) {
+    let de = val.device == "CR" ? "LED15" : val.device;
     var sqlgetdrug =
       `IF EXISTS (
         SELECT
@@ -116,7 +117,7 @@ module.exports = function () {
       `'
       WHERE
         (boxid = '` +
-      val.device +
+      de +
       `')
       END`;
 
