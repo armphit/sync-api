@@ -11,16 +11,21 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
+const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
+var gd4unit_101_mysql = new db_gd4unit_101_mysql();
+
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
     let datasend = req.body;
     datasend.allTimeOld = `''`;
+    let q = await center102.fill(req.body.hn.trim());
+    datasend.queue = q[0] ? q[0].QN : "";
     let checkpatientdruglength = await homc.checkmed(datasend);
     let dataPatient = await center102.checkdelete(datasend);
     if (!dataPatient.length && checkpatientdruglength.recordset.length) {
       await center102.insertPatient(datasend);
-      dataPatient = await center102.getpatient(datasend);
+      dataPatient = await center102.checkdelete(datasend);
     }
 
     if (dataPatient.length) {
@@ -280,20 +285,34 @@ exports.reportcheckmedController = async (req, res, next) => {
 
     res.send({ datadrugcheck });
   } else {
-    let data = await center102.getTimecheck(req.body);
-    for (let i of data) {
-      i.timestamp = i.timestamp
-        ? moment(i.timestamp).format("YYYY-MM-DD HH:mm:ss")
-        : "";
-      i.checkComplete = i.checkComplete
-        ? moment(i.checkComplete).format("YYYY-MM-DD HH:mm:ss")
-        : "";
-    }
-    datadrugcheck = data;
-    arr = data
+    let data101 = await gd4unit_101_mysql.getDrug101(req.body);
+    let data = await center102.getQ(req.body);
+
+    let result = data.map((val) => {
+      return {
+        ...val,
+        ...data101.find((dt) => dt.queue == val.QN && dt.date == val.date),
+      };
+    });
+    result = result.filter((val) => val.queue);
+
+    datadrugcheck = result
+      .map((val) => {
+        return {
+          ...val,
+          time: get_time_difference(val.timestamp, val.checkComplete),
+        };
+      })
+      .sort((a, b) => {
+        let da = new Date(a.timestamp),
+          db = new Date(b.timestamp);
+        return db - da;
+      });
+    arr = datadrugcheck
       .map(({ time }) => time)
       .filter((t) => t !== null)
       .filter((i) => !i.includes("-"));
+
     let average = null;
     if (arr.length) {
       average = arr.reduce(function (a, b) {
@@ -354,3 +373,29 @@ exports.manageerrorController = async (req, res, next) => {
   let manage_error = await center102.manage_mederror(data);
   manage_error.affectedRows ? res.send([1]) : [];
 };
+
+function get_time_difference(date1, date2) {
+  if (date1 && date2) {
+    date1 = new Date(date1);
+    date2 = new Date(date2);
+    var diff = date2.getTime() - date1.getTime();
+
+    var msec = diff;
+    var hh = Math.floor(msec / 1000 / 60 / 60);
+    msec -= hh * 1000 * 60 * 60;
+    var mm = Math.floor(msec / 1000 / 60);
+    msec -= mm * 1000 * 60;
+    var ss = Math.floor(msec / 1000);
+    msec -= ss * 1000;
+
+    return (
+      (hh < 10 ? "0" + hh : hh) +
+      ":" +
+      (mm < 10 ? "0" + mm : mm) +
+      ":" +
+      (ss < 10 ? "0" + ss : ss)
+    );
+  } else {
+    return null;
+  }
+}

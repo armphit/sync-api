@@ -370,6 +370,52 @@ module.exports = function () {
     });
   };
 
+  this.getDrug101 = function fill(val, DATA) {
+    var sql =
+      `SELECT
+    queue,
+    hn,
+    CONVERT(	DATE_SUB(
+      datetimestamp,
+      INTERVAL 4 MINUTE
+    ),CHAR) timestamp,
+    CONVERT(CAST(p.datetimestamp AS DATE), CHAR) date
+  FROM
+    prescription p
+  WHERE
+    CAST(p.datetimestamp AS DATE)  BETWEEN '` +
+      val.datestart +
+      `'
+      AND '` +
+      val.dateend +
+      `'
+  UNION
+    SELECT
+      queue,
+      hn,
+      CONVERT(	DATE_SUB(
+        datetimestamp,
+        INTERVAL 4 MINUTE
+      ),CHAR) datetimestamp,
+      CONVERT(CAST(gb.datetimestamp AS DATE), CHAR) date
+    FROM
+      gd4unit_bk.prescription gb
+    WHERE
+      CAST(gb.datetimestamp AS DATE) BETWEEN '` +
+      val.datestart +
+      `'
+        AND '` +
+      val.dateend +
+      `'`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
   String.prototype.padL = function padL(n) {
     var target = this;
     while (target.length < 7) {

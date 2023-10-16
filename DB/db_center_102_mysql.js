@@ -165,6 +165,7 @@ module.exports = function () {
     });
   };
   this.checkdelete = function fill(val, DATA) {
+    let checkq = val.queue ? `AND queue = '` + val.queue + `'` : ``;
     var sql =
       `SELECT
 			*
@@ -177,6 +178,9 @@ module.exports = function () {
 	AND date = '` +
       val.dateEN +
       `'
+  ` +
+      checkq +
+      `
   AND isDelete IS NULL`;
 
     return new Promise(function (resolve, reject) {
@@ -196,7 +200,9 @@ module.exports = function () {
         date,
         timestamp,
         isDelete,
-        userDelete
+        userDelete,
+        checkComplete,
+        queue
       )
       VALUES
         (
@@ -212,8 +218,13 @@ module.exports = function () {
       `',
           CURRENT_TIMESTAMP (),
           NULL,
-          NULL
+          NULL,
+          NULL,
+          '` +
+      val.queue +
+      `'
         );`;
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -994,6 +1005,39 @@ module.exports = function () {
         );
       `;
     }
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getQ = function fill(val, DATA) {
+    var sql =
+      `
+    SELECT
+	h.QN,
+	h.patientName,
+
+IF (
+	c.checkComplete,
+	CONVERT (c.checkComplete, CHAR),
+	CONVERT (h.completeDT, CHAR)
+) checkComplete,
+ h.date
+FROM
+	hospitalq h
+LEFT JOIN checkmedpatient c ON h.QN = c.queue
+AND h.date = c.date
+WHERE
+h.date  BETWEEN '` +
+      val.datestart +
+      `'
+AND '` +
+      val.dateend +
+      `'
+AND h.locationQ = 'PHAR_A2'`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
