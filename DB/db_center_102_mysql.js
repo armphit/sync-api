@@ -863,6 +863,41 @@ module.exports = function () {
         AND deleteID is null    
     ORDER BY createDT desc`;
     } else {
+      let checkid = val.id
+        ? `AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+          val.time1 +
+          `' AND '` +
+          val.time2 +
+          `'
+    AND position_text = '` +
+          val.type +
+          `'
+    AND IF (
+      UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
+      SUBSTR(
+        offender_id,
+        2,
+        LENGTH(offender_id)
+      ),
+      offender_id
+    ) = IF (
+      UPPER(SUBSTR('` +
+          val.id +
+          `', 1, 1)) = 'P',
+      SUBSTR(
+        '` +
+          val.id +
+          `',
+        2,
+        LENGTH('` +
+          val.id +
+          `')
+      ),
+      '` +
+          val.id +
+          `'
+    )`
+        : ``;
       sql =
         `SELECT
       	med_error.*, (
@@ -890,11 +925,13 @@ module.exports = function () {
         `'
       AND '` +
         val.dateend +
-        `'
+        `'` +
+        checkid +
+        `
       AND deleteID is null
         ORDER BY createDT desc`;
     }
-
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
