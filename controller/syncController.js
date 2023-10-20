@@ -939,7 +939,7 @@ function mathSE(listDrugSE, data) {
         (v) => v.box_count === Math.min(...getArr.map((item) => item.box_count))
       );
       getArr = getArr.filter(
-        (v) => v.box_main === Math.min(...getArr.map((item) => item.box_main))
+        (v) => v.box_main === Math.max(...getArr.map((item) => item.box_main))
       );
       getArr = getArr.filter(
         (v) =>
