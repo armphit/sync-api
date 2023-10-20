@@ -859,16 +859,17 @@ module.exports = function () {
           
     AND CAST(hnDT AS Date) = '` +
         val.hn.hnDT.substr(0, val.hn.hnDT.indexOf(" ")) +
+        `'
+    AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+        val.time1 +
+        `' AND '` +
+        val.time2 +
         `' 
         AND deleteID is null    
     ORDER BY createDT desc`;
     } else {
       let checkid = val.id
-        ? `AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
-          val.time1 +
-          `' AND '` +
-          val.time2 +
-          `'
+        ? `
     AND position_text = '` +
           val.type +
           `'
@@ -928,6 +929,11 @@ module.exports = function () {
         `'` +
         checkid +
         `
+        AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+        val.time1 +
+        `' AND '` +
+        val.time2 +
+        `'
       AND deleteID is null
         ORDER BY createDT desc`;
     }

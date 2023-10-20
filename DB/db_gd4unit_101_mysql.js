@@ -389,6 +389,11 @@ module.exports = function () {
       AND '` +
       val.dateend +
       `'
+      AND TIME_FORMAT(p.datetimestamp , '%H:%i:%s') BETWEEN '` +
+      val.time1 +
+      `' AND '` +
+      val.time2 +
+      `'
   UNION
     SELECT
       queue,
@@ -406,6 +411,11 @@ module.exports = function () {
       `'
         AND '` +
       val.dateend +
+      `'
+      AND TIME_FORMAT(gb.datetimestamp , '%H:%i:%s') BETWEEN '` +
+      val.time1 +
+      `' AND '` +
+      val.time2 +
       `'`;
 
     return new Promise(function (resolve, reject) {
