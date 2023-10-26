@@ -39,3 +39,8 @@ exports.onuspharController = async (req, res, next) => {
   let getdata = await pmpf.onusphar(req.body);
   res.send(getdata);
 };
+
+exports.dispendController = async (req, res, next) => {
+  let getdata = await GD4Unit_101.getDispend(req.body);
+  res.send(getdata);
+};

@@ -39,6 +39,7 @@ var {
   getDispenseDaterangeController,
   doorreportController,
   onuspharController,
+  dispendController,
 } = require("./controller/msrController");
 
 app.use(bodyParser.json());
@@ -73,6 +74,7 @@ app.post("/medError", mederrorController);
 app.post("/positionError", positionerrorController);
 app.post("/manageError", manageerrorController);
 app.post("/onusPhar", onuspharController);
+app.post("/getDispend", dispendController);
 
 module.exports = app;
 

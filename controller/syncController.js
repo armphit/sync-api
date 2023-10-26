@@ -667,7 +667,7 @@ async function getdataHomc(data, etc) {
   let ex = value3.map((a) => a.drug.device).filter(Boolean);
   ex = Array.from(new Set(ex));
   arrJson.map(async function (item) {
-    item.prescriptions.prescription.windowNo = ex.length > 2 ? 3 : 4;
+    item.prescriptions.prescription.windowNo = ex.length > 4 ? 3 : 4;
     let xmlDrug = {
       xml: js2xmlparser.parse("outpOrderDispense", item),
     };
@@ -945,7 +945,7 @@ function mathSE(listDrugSE, data) {
         (v) =>
           v.zero_length === Math.max(...getArr.map((item) => item.zero_length))
       );
-      console.log(getArr);
+
       if (getArr[0].data_mod) {
         listDrugSE = [];
       } else {

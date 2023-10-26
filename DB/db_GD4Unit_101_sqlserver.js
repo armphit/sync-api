@@ -229,11 +229,79 @@ module.exports = function () {
       a.device_id
   ORDER BY
       CAST (pin AS INT)`;
-    console.log(sqlgetdrug);
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlgetdrug);
       resolve(result);
+    });
+  };
+
+  this.getDispend = async function fill(val, DATA) {
+    var sqlgetdrug = `SELECT
+      *
+    FROM
+      (
+        SELECT
+          sdp.[user] phar,
+          COUNT (DISTINCT sdp.hn) numHN,
+          COUNT (sdd.drugCode) drungCount
+        FROM
+        msr.dbo.smart_dispend_phar sdp
+        LEFT JOIN msr.dbo.smart_dispend_drug sdd ON sdd.sdp_id = sdp.id
+        WHERE
+          sdp.[date] BETWEEN '${val.date1}'
+          AND '${val.date2}'
+        GROUP BY
+          sdp.[user]
+      ) AS a
+    LEFT JOIN (
+      SELECT
+        sde.user_check,
+        COUNT (sde.id) errorCount,
+        ISNULL(SUM(drp1), 0) drp1,
+        ISNULL(SUM(drp2), 0) drp2,
+        ISNULL(SUM(drp3), 0) drp3,
+        ISNULL(SUM(drp4), 0) drp4,
+        ISNULL(SUM(drp5), 0) drp5,
+        ISNULL(SUM(drp6), 0) drp6,
+        ISNULL(SUM(drp7), 0) drp7,
+        ISNULL(SUM(drp8_1), 0) drp8_1,
+        ISNULL(SUM(drp8_2), 0) drp8_2,
+        ISNULL(SUM(drp8_3), 0) drp8_3,
+        ISNULL(SUM(drp8_4), 0) drp8_4,
+        ISNULL(SUM(drp8_5), 0) drp8_5,
+        ISNULL(SUM(drp9), 0) drp9,
+        ISNULL(SUM(it1), 0) it1,
+        ISNULL(SUM(it2), 0) it2,
+        ISNULL(SUM(doi1), 0) doi1,
+        ISNULL(SUM(doi2), 0) doi2,
+        ISNULL(SUM(doi3), 0) doi3,
+        ISNULL(SUM(doi4), 0) doi4,
+        ISNULL(SUM(doi5), 0) doi5,
+        ISNULL(SUM(doi6), 0) doi6,
+        ISNULL(SUM(doi7), 0) doi7,
+        ISNULL(SUM(doi8), 0) doi8,
+        ISNULL(SUM(doi9), 0) doi9,
+        ISNULL(SUM(roi1), 0) roi1,
+        ISNULL(SUM(roi2), 0) roi2,
+        ISNULL(SUM(roi3), 0) roi3
+      FROM
+      msr.dbo.smart_dispend_error sde
+      LEFT JOIN msr.dbo.smart_dispend_drp drp ON drp.sde_id = sde.id
+      LEFT JOIN msr.dbo.smart_dispend_it it ON it.sde_id = sde.id
+      LEFT JOIN msr.dbo.smart_dispend_doi doi ON doi.sde_id = sde.id
+      LEFT JOIN msr.dbo.smart_dispend_roi roi ON roi.sde_id = sde.id
+      WHERE
+        CAST (sde.time_stamp AS DATE) BETWEEN '${val.date1}'
+        AND '${val.date2}'
+      GROUP BY
+        sde.user_check
+    ) AS e ON a.phar = e.user_check`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlgetdrug);
+      resolve(result.recordset);
     });
   };
 };

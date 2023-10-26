@@ -846,6 +846,13 @@ module.exports = function () {
   };
   this.get_mederror = function fill(val, DATA) {
     let sql = "";
+    let time = val.time1
+      ? `    AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+        val.time1 +
+        `' AND '` +
+        val.time2 +
+        `' `
+      : ``;
     if (!val.choice) {
       sql =
         `SELECT
@@ -860,11 +867,7 @@ module.exports = function () {
     AND CAST(hnDT AS Date) = '` +
         val.hn.hnDT.substr(0, val.hn.hnDT.indexOf(" ")) +
         `'
-    AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
-        val.time1 +
-        `' AND '` +
-        val.time2 +
-        `' 
+    ${time}
         AND deleteID is null    
     ORDER BY createDT desc`;
     } else {
@@ -873,15 +876,42 @@ module.exports = function () {
     AND position_text = '` +
           val.type +
           `'
-    AND IF (
-      UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
-      SUBSTR(
-        offender_id,
-        2,
-        LENGTH(offender_id)
-      ),
-      offender_id
-    ) = IF (
+    AND      IF (
+            UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
+          
+          IF (
+            LOCATE(
+              ' ',
+              SUBSTR(
+                offender_id,
+                2,
+                LENGTH(offender_id)
+              )
+            ),
+            SUBSTRING(
+              SUBSTR(
+                offender_id,
+                2,
+                LENGTH(offender_id)
+              ),
+              1,
+              LOCATE(
+                ' ',
+                SUBSTR(
+                  offender_id,
+                  2,
+                  LENGTH(offender_id)
+                )
+              )
+            ),
+            SUBSTR(
+              offender_id,
+              2,
+              LENGTH(offender_id)
+            )
+          ),
+           offender_id
+          )= IF (
       UPPER(SUBSTR('` +
           val.id +
           `', 1, 1)) = 'P',
@@ -929,14 +959,11 @@ module.exports = function () {
         `'` +
         checkid +
         `
-        AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
-        val.time1 +
-        `' AND '` +
-        val.time2 +
-        `'
+        ${time}
       AND deleteID is null
         ORDER BY createDT desc`;
     }
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
