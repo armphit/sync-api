@@ -426,6 +426,41 @@ module.exports = function () {
     });
   };
 
+  this.getDrugQ = function fill(val, DATA) {
+    var sql = `SELECT
+      queue,
+      COUNT(*) item
+    FROM
+      prescription
+    WHERE
+      CAST(lastmodified AS DATE) BETWEEN '${val.date1}'
+      AND '${val.date2}'
+      AND TIME_FORMAT(lastmodified, '%H:%i:%s') BETWEEN '${val.time1}'
+      AND '${val.time2}'
+    GROUP BY
+      queue
+    UNION
+      SELECT
+        queue,
+        COUNT(*)
+      FROM
+        gd4unit_bk.prescription
+      WHERE
+        CAST(lastmodified AS DATE) BETWEEN '${val.date1}'
+        AND '${val.date2}'
+        AND TIME_FORMAT(lastmodified, '%H:%i:%s') BETWEEN '${val.time1}'
+        AND '${val.time2}'
+      GROUP BY
+        queue`;
+    console.log(sql);
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
   String.prototype.padL = function padL(n) {
     var target = this;
     while (target.length < 7) {
