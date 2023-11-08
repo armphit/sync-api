@@ -218,6 +218,7 @@ ORDER BY
       LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
       WHERE
         mif.Med_Inv_Code = m.inv_code
+      AND mi.Description <> ''
       AND mi.InfoGroup = 'Indication' FOR XML PATH ('')
     ) AS indication,
     qr.QRCode,
