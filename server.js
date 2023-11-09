@@ -33,6 +33,7 @@ var {
   drugSyncController,
   listDrugSyncController,
   listPatientAllergicController,
+  checkallergyController,
 } = require("./controller/interfaceController");
 
 var {
@@ -75,6 +76,7 @@ app.post("/positionError", positionerrorController);
 app.post("/manageError", manageerrorController);
 app.post("/onusPhar", onuspharController);
 app.post("/getDispend", dispendController);
+app.post("/checkAllergy", checkallergyController);
 
 module.exports = app;
 

@@ -43,3 +43,9 @@ exports.listPatientAllergicController = async (req, res, next) => {
     res.send(data);
   }
 };
+
+exports.checkallergyController = async (req, res, next) => {
+  let getdata = await center102.get_moph(req.body);
+
+  res.send(getdata);
+};

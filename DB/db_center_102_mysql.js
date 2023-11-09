@@ -1115,4 +1115,40 @@ AND h.locationQ = 'PHAR_A2'`;
       });
     });
   };
+
+  this.get_moph = function fill(val, DATA) {
+    var sql = `
+    SELECT
+	@rownum := @rownum + 1 AS indexrow,
+	a.*
+FROM
+	(
+		SELECT
+			s.patientID,
+			s.CID,
+			GROUP_CONCAT(d.drugcode) drugcode,
+			GROUP_CONCAT(d.drugname) drugname,
+			DATE_FORMAT(
+				s.updateDT,
+				'%Y-%m-%d %H:%i:%s'
+			) updateDT
+		FROM
+			moph_sync s
+		LEFT JOIN moph_drugs d ON s.CID = d.cid
+		AND d.hospcode <> '10666'
+		WHERE
+			CAST(s.updateDT AS date) = '${val.date}'
+		GROUP BY
+			s.patientID
+		ORDER BY
+			s.updateDT DESC
+	) AS a,
+	(SELECT @rownum := 0) r`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

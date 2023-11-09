@@ -947,6 +947,12 @@ function mathSE(listDrugSE, data) {
       );
 
       if (getArr[0].data_mod) {
+        // let test = dataDrug.filter(
+        //   (d) =>
+        //     d.box_main === Math.max(...dataDrug.map((item) => item.box_main))
+        // );
+        // // .filter((d) => d.box_main === d.box_count);
+        // console.log(test);
         listDrugSE = [];
       } else {
         listDrugSE = getArr[0].drug;
