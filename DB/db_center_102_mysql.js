@@ -1151,6 +1151,109 @@ FROM
       });
     });
   };
+  this.check_moph = function fill(val, DATA) {
+    var sql = `
+    SELECT
+      *
+    FROM
+      moph_sync s
+    WHERE
+      CAST(s.updateDT AS date) = '${val.date}'
+    AND s.patientID = '${val.hn}' 
+    `;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.insertSync = function fill(val, DATA) {
+    var sql =
+      `INSERT INTO moph_sync (
+      patientID,
+      CID,
+      sync_status,
+      createdDT,
+      drugAllergy,
+      updateDT
+    )
+    VALUES
+      (
+        '` +
+      val.hn +
+      `',
+      '` +
+      val.cid +
+      `',
+        'Y',
+        CURRENT_TIMESTAMP(),
+        '` +
+      val.check +
+      `',
+      CURRENT_TIMESTAMP()
+      )ON DUPLICATE KEY UPDATE updateDT = CURRENT_TIMESTAMP ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.insertDrugAllergy = function fill(val, DATA) {
+    var sql =
+      `INSERT INTO moph_drugs (
+        cid,
+        hospcode,
+        drugcode,
+        drugname,
+        daterecord,
+        createdDT
+      )
+    VALUES
+      (
+        '` +
+      val.cid +
+      `',
+        '` +
+      val.hospcode +
+      `',
+        '` +
+      val.drugcode +
+      `',
+        N'` +
+      val.drugname +
+      `',
+        '` +
+      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+      `',
+      CURRENT_TIMESTAMP ()
+      )ON DUPLICATE KEY UPDATE drugname = '` +
+      val.drugname +
+      `',
+       daterecord = '` +
+      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+      `',
+      createdDT = CURRENT_TIMESTAMP ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.deleteAllgerlic = function fill(val, DATA) {
+    var sql = `DELETE FROM moph_drugs WHERE cid = '` + val + `'`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
   this.getQGroupby = function fill(val, DATA) {
     let checkdata = val.choice == 1 ? "checker" : "dispenser";
     let position_text = val.choice == 1 ? "check" : "จ่าย";

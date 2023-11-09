@@ -490,4 +490,18 @@ ORDER BY
       resolve(result.recordset);
     });
   };
+
+  this.getCid = async function fill(val, DATA) {
+    var cid =
+      `SELECT CardID
+      FROM PatSS
+      WHERE hn = ` +
+      val +
+      ``;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(cid);
+      resolve(result.recordset);
+    });
+  };
 };
