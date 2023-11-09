@@ -1151,4 +1151,144 @@ FROM
       });
     });
   };
+  this.getQGroupby = function fill(val, DATA) {
+    let checkdata = val.choice == 1 ? "checker" : "dispenser";
+    let position_text = val.choice == 1 ? "check" : "จ่าย";
+
+    val.site;
+    let pharma = val.site
+      ? val.site == "W8"
+        ? "PHAR_A2"
+        : val.site == "W9"
+        ? "PHAR_A1"
+        : val.site == "W18"
+        ? "PHAR_A3"
+        : ""
+      : "";
+    let getsite = {
+      h: "",
+      l: "",
+      s: "",
+    };
+    if (pharma) {
+      getsite.l = `AND location = '${val.site}'`;
+      getsite.h = `AND locationQ =  '${pharma}'`;
+      getsite.s = `AND site = '${val.site}'`;
+    }
+
+    var sql = `
+    SELECT
+	${checkdata}_id,
+  ${checkdata}_name,
+	a.order,
+	SUM(h.item) item,
+	e.error
+FROM
+	hospitalq q
+LEFT JOIN (
+	SELECT
+		hn,
+		COUNT(hn) item
+	FROM
+		hospital_order_his
+	WHERE
+		createDate BETWEEN '${val.date1}'
+    AND '${val.date2}' 
+    ${getsite.s}
+	GROUP BY
+		hn
+) AS h ON h.hn = q.patientNO
+LEFT JOIN (
+	SELECT
+		${checkdata}_id AS id,
+		COUNT(${checkdata}_id) 'order'
+	FROM
+		hospitalq
+	WHERE
+  date BETWEEN '${val.date1}'
+  AND '${val.date2}'
+  AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  AND '${val.time2}'
+	AND ${checkdata}_id <> '' 
+  ${getsite.h}
+	GROUP BY
+		${checkdata}_id
+) a ON a.id = q.${checkdata}_id
+LEFT JOIN (
+	SELECT
+		offender_id,
+		SUBSTRING_INDEX(offender_id, " ", 1),
+
+	IF (
+		UPPER(
+			SUBSTR(
+				SUBSTRING_INDEX(offender_id, " ", 1),
+				1,
+				1
+			)
+		) = 'P',
+		SUBSTR(
+			SUBSTRING_INDEX(offender_id, " ", 1),
+			2,
+			LENGTH(
+				SUBSTRING_INDEX(offender_id, " ", 1)
+			)
+		),
+		SUBSTRING_INDEX(offender_id, " ", 1)
+	) of_id,
+	COUNT(*) error
+FROM
+	med_error
+WHERE
+	position_text = '${position_text}'
+AND CAST(hnDT AS Date) BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}' 
+${getsite.l}
+AND (
+	UPPER(
+		SUBSTR(
+			SUBSTRING_INDEX(offender_id, " ", 1),
+			1,
+			1
+		)
+	) = 'P'
+	OR SUBSTR(
+		SUBSTRING_INDEX(offender_id, " ", 1),
+		1,
+		1
+	) REGEXP '^[0-9]+$' = 1
+)
+GROUP BY
+	of_id
+) e ON e.of_id =
+IF (
+	UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+	SUBSTR(
+		q.${checkdata}_id,
+		2,
+		LENGTH(q.${checkdata}_id)
+	),
+	q.${checkdata}_id
+)
+WHERE
+	date BETWEEN '${val.date1}'
+  AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+AND ${checkdata}_id <> ''
+AND patientNO <> 'test' 
+${getsite.h}
+GROUP BY
+	${checkdata}_id
+`;
+    // console.log(sql);
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };
