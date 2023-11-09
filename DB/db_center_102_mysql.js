@@ -963,7 +963,7 @@ module.exports = function () {
       AND deleteID is null
         ORDER BY createDT desc`;
     }
-    console.log(sql);
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
