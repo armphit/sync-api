@@ -265,7 +265,7 @@ ORDER BY
       val.date +
       `
     AND m.pat_status = 'O'
-    AND m.site = 'W8'
+    AND m.site = '${val.site}'
     AND m.revFlag IS NULL 
         AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       val.allTimeOld +

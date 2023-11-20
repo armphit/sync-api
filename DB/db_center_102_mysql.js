@@ -16,13 +16,33 @@ module.exports = function () {
   });
 
   this.fill = function fill(val, DATA) {
+    let site =
+      val.site == "W8" ? `'PHAR_A2'` : val.site == "W18" ? `'PHAR_A3'` : `''`;
     var sql =
       `SELECT QN
       FROM hospitalq
       WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
-      AND SUBSTRING(QN, 1, 1) = 2
+      AND locationQ = ${site}
       AND patientNO = '` +
-      val +
+      val.hn.trim() +
+      `'
+      ORDER BY createDT DESC`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.queue = function fill(val, DATA) {
+    var sql =
+      `SELECT QN
+      FROM hospitalq
+      WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
+      AND locationQ = 'PHAR_A2'
+      AND patientNO = '` +
+      val.hn.trim() +
       `'
       ORDER BY createDT DESC`;
 

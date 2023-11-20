@@ -42,7 +42,7 @@ exports.syncOPDController = async (req, res, next) => {
 
     if (b.length > 0) {
       let drugarr = [];
-      let q = await center102.fill(b[0].hn.trim());
+      let q = await center102.fill(b[0]);
 
       let c = {
         hn: b[0].hn.trim(),
@@ -212,9 +212,9 @@ exports.syncOPDManualController = async (req, res, next) => {
     // data[i].location = pmpf102[0].checkLocation;
   }
 
-  let q = await center102.fill(patient.hn);
+  let q = await center102.queue(patient);
   patient.queue = q[0] ? q[0].QN : "";
-
+  console.log(q);
   console.log(patient);
 
   getdataHomc(drugarr, patient)
@@ -479,18 +479,26 @@ async function getdataHomc(data, etc) {
         let dateC = null;
         let date = new Date();
         date.setFullYear(date.getFullYear() + 1);
+        let warning = "*";
+        let r = /\d+/;
+        let s = data[i].freetext1;
 
-        let warning = "";
         // if (dataonCube[0].dateDiff && data[i].freetext1 && data[i].dosage) {
         //   if (
         //     dataonCube[0].dateDiff -
         //       data[i].Qty / (Number(s.match(r)) * Number(data[i].dosage)) <
         //     0
         //   ) {
-        //     warning = "";
+        //     warning = "*";
         //   }
         // }
 
+        // if (dataonCube[0].dateDiff) {
+        //   if (dataonCube[0].dateDiff < 365) {
+        //     warning = "*";
+        //   }
+        // }
+        // console.log(warning);
         if (dataonCube.length !== 0) {
           if (dataonCube[0].ExpiredDate) {
             dateC = moment(dataonCube[0].ExpiredDate)
@@ -552,7 +560,7 @@ async function getdataHomc(data, etc) {
             "|" +
             etc.hn +
             "|" +
-            etc.queue +
+            "2C-299" +
             " " +
             warning +
             "|";
@@ -668,6 +676,11 @@ async function getdataHomc(data, etc) {
   ex = Array.from(new Set(ex));
   arrJson.map(async function (item) {
     item.prescriptions.prescription.windowNo = ex.length > 4 ? 3 : 4;
+    if (etc.win1 && !etc.win2) {
+      item.prescriptions.prescription.windowNo = 3;
+    } else if (!etc.win1 && etc.win2) {
+      item.prescriptions.prescription.windowNo = 4;
+    }
     let xmlDrug = {
       xml: js2xmlparser.parse("outpOrderDispense", item),
     };
