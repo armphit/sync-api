@@ -19,8 +19,13 @@ exports.checkpatientController = async (req, res, next) => {
     let allTimeOld = "";
     let datasend = req.body;
     datasend.allTimeOld = `''`;
-    let q = await center102.fill(req.body.hn.trim());
-    datasend.queue = q[0] ? q[0].QN : "";
+    if (datasend.site == "W8" || datasend.site == "W18") {
+      let q = await center102.fill(datasend);
+      datasend.queue = q[0] ? q[0].QN : datasend.site;
+    } else {
+      datasend.queue = datasend.site;
+    }
+
     let checkpatientdruglength = await homc.checkmed(datasend);
     let dataPatient = await center102.checkdelete(datasend);
     if (!dataPatient.length && checkpatientdruglength.recordset.length) {
