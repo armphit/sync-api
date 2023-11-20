@@ -945,19 +945,44 @@ function mathSE(listDrugSE, data) {
         (v) =>
           v.zero_length === Math.max(...getArr.map((item) => item.zero_length))
       );
+      getArr = getArr.filter((v) => v.data_mod === 0);
 
-      if (getArr[0].data_mod) {
-        // let test = dataDrug.filter(
-        //   (d) =>
-        //     d.box_main === Math.max(...dataDrug.map((item) => item.box_main))
-        // );
-        // // .filter((d) => d.box_main === d.box_count);
-        // console.log(test);
-        listDrugSE = [];
+      if (!getArr.length) {
+        let getPack = listDrugSE.find((s) => s.lo == "main");
+        if (getPack.HisPackageRatio) {
+          let checkMain = dataDrug
+            .filter(
+              (d) =>
+                d.box_main ===
+                Math.max(...dataDrug.map((item) => item.box_main))
+            )
+            .filter((s) => s.data_mod === data.Qty % getPack.HisPackageRatio);
+          if (checkMain.length) {
+            listDrugSE = checkMain[0].drug;
+            data.Qty = checkMain[0].data_mod;
+          } else {
+            listDrugSE = [];
+          }
+        } else {
+          listDrugSE = [];
+        }
       } else {
         listDrugSE = getArr[0].drug;
         data.Qty = getArr[0].data_mod;
       }
+
+      // if (getArr[0].data_mod) {
+      //   // let test = dataDrug.filter(
+      //   //   (d) =>
+      //   //     d.box_main === Math.max(...dataDrug.map((item) => item.box_main))
+      //   // );
+      //   // // .filter((d) => d.box_main === d.box_count);
+      //   // console.log(test);
+      //   listDrugSE = [];
+      // } else {
+      //   listDrugSE = getArr[0].drug;
+      //   data.Qty = getArr[0].data_mod;
+      // }
     }
   } else {
     checkdrugmain[0].qty = data.Qty;
