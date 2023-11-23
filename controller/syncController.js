@@ -42,7 +42,10 @@ exports.syncOPDController = async (req, res, next) => {
 
     if (b.length > 0) {
       let drugarr = [];
-      let q = await center102.fill(b[0]);
+      if (check.sitew1) {
+      } else {
+        let q = await center102.fill(b[0]);
+      }
 
       let c = {
         hn: b[0].hn.trim(),

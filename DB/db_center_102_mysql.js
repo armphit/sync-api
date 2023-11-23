@@ -759,6 +759,7 @@ module.exports = function () {
     });
   };
   this.get_compiler = function fill(val, DATA) {
+    let q = val.queue ? `AND cmp.queue = '${val.queue}'` : ``;
     let sql =
       `SELECT
       cm.drugCode,
@@ -769,15 +770,15 @@ module.exports = function () {
     LEFT JOIN checkmed_log cml ON cml.cm_id = cm.id
     WHERE
       cmp.hn = '` +
-      val.hn +
+      val.hn.trim() +
       `'
     AND cmp.date = '` +
       val.date +
       `'
+    ${q}
     AND cmp.isDelete IS NULL
     GROUP BY
       cml.cm_id`;
-
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1174,12 +1175,19 @@ FROM
   this.check_moph = function fill(val, DATA) {
     var sql = `
     SELECT
-      *
-    FROM
-      moph_sync s
-    WHERE
-      CAST(s.updateDT AS date) = '${val.date}'
+			s.patientID,
+			s.CID,
+      COUNT(d.hospcode) num
+		FROM
+			moph_sync s
+		LEFT JOIN moph_drugs d ON s.CID = d.cid  AND d.hospcode <> '10666'
+		
+		WHERE
+			CAST(s.updateDT AS date) = '${val.date}'
     AND s.patientID = '${val.hn}' 
+   
+		GROUP BY
+			s.patientID 
     `;
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1212,7 +1220,7 @@ FROM
       val.check +
       `',
       CURRENT_TIMESTAMP()
-      )ON DUPLICATE KEY UPDATE updateDT = CURRENT_TIMESTAMP ()`;
+      )ON DUPLICATE KEY UPDATE updateDT = CURRENT_TIMESTAMP (),drugAllergy = '${val.check}'`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

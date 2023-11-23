@@ -52,9 +52,8 @@ exports.checkallergyController = async (req, res, next) => {
   let countDrug = 0;
   if (req.body.choice == 2) {
     let checkBase = await center102.check_moph(req.body);
-
     if (checkBase.length) {
-      countDrug = checkBase[0].drugAllergy == "Y" ? 1 : 0;
+      countDrug = checkBase[0].num;
     } else {
       let getCid = await homc.getCid(req.body.hn);
 
@@ -62,7 +61,6 @@ exports.checkallergyController = async (req, res, next) => {
         if (getCid[0].CardID) {
           cid = getCid[0].CardID.trim();
           let dataAllergic = await getAllergic(cid);
-          countDrug = dataAllergic.length ? 1 : 0;
 
           let stampDB = {
             hn: req.body.hn,
@@ -111,6 +109,12 @@ exports.checkallergyController = async (req, res, next) => {
               }
             }
           });
+          if (dataAllergic.length) {
+            checkBase = await center102.check_moph(req.body);
+            if (checkBase.length) {
+              countDrug = checkBase[0].num;
+            }
+          }
         }
       }
     }
