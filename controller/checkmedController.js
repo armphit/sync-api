@@ -368,6 +368,7 @@ exports.positionerrorController = async (req, res, next) => {
     key: key ? key.user + " " + key.name : "",
     check: getCheck.length ? getCheck[0].userName : "",
     dispend: getCheck.length ? getCheck[0].userDispen : "",
+    pe: dataKey.length ? dataKey[0].pe : "",
   };
 
   res.send(datasend);
