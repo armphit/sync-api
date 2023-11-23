@@ -244,7 +244,7 @@ module.exports = function () {
       val.queue +
       `'
         );`;
-    console.log(sql);
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -805,7 +805,11 @@ module.exports = function () {
         offender_name,
         note,
         location,
-        createDT
+        createDT,
+        level,
+        occurrence,
+        source,
+        error_type
       )
       VALUES
         (
@@ -855,7 +859,11 @@ module.exports = function () {
       '` +
       val.location +
       `',
-          CURRENT_TIMESTAMP
+          CURRENT_TIMESTAMP,
+      '${val.level}',
+      '${val.occurrence}',
+      '${val.source}',
+      '${val.error_type}'   
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -877,9 +885,30 @@ module.exports = function () {
     if (!val.choice) {
       sql =
         `SELECT
-      *
+        id,
+        hn,
+        hnDT,
+        med,
+        med_good,
+        med_wrong,
+        med_good_text,
+        med_wrong_text,
+        position_text,
+        if(name_type <> '',name_type,type_text) AS type_text,
+        interceptor_id,
+        interceptor_name,
+        offender_id,
+        offender_name,
+        note,
+        location,
+        createDT,
+        level,
+        occurrence,
+        source,
+        error_type
     FROM
       med_error
+    LEFT JOIN med_error_type on type_text = id_type
     WHERE
       hn = '` +
         val.hn.hn +
@@ -951,8 +980,28 @@ module.exports = function () {
     )`
         : ``;
       sql =
-        `SELECT
-      	med_error.*, (
+        `SELECT	id,
+        hn,
+        hnDT,
+        med,
+        med_good,
+        med_wrong,
+        med_good_text,
+        med_wrong_text,
+        position_text,
+        if(name_type <> '',name_type,type_text) AS type_text,
+        interceptor_id,
+        interceptor_name,
+        offender_id,
+        offender_name,
+        note,
+        location,
+        createDT,
+        level,
+        occurrence,
+        source,
+        error_type,
+        (
           SELECT
             drugName
           FROM
@@ -970,7 +1019,7 @@ module.exports = function () {
         ) med_wrong_name
     FROM
       med_error
-    
+    LEFT JOIN med_error_type on type_text = id_type
     WHERE
       CAST(hnDT AS Date)  BETWEEN '` +
         val.datestart +
@@ -984,7 +1033,7 @@ module.exports = function () {
       AND deleteID is null
         ORDER BY createDT desc`;
     }
-
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1068,7 +1117,11 @@ module.exports = function () {
         `',
        updateDT = CURRENT_TIMESTAMP,
        deleteDT = NULL,
-       deleteID = NULL
+       deleteID = NULL,
+       level = '${val.level}',
+        occurrence = '${val.occurrence}',
+        source = '${val.source}',
+        error_type = '${val.error_type}'
       WHERE
         (
           id = '` +

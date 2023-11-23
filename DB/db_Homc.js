@@ -464,11 +464,19 @@ ORDER BY
     mlh.hn,
     ml.inv_code,
     TRIM (pf.firstName) +' '+ TRIM (pf.lastName) name,
-    TRIM (pf.firstName) + TRIM (pf.lastName) maker
+    TRIM (pf.firstName) + TRIM (pf.lastName) maker,
+    TRIM (d.docName) + ' ' + TRIM (d.docLName) pe
     FROM
       Med_logh mlh
     LEFT JOIN Med_log ml ON mlh.batch_no = ml.batch_no
     LEFT JOIN profile pf ON ml.maker = pf.UserCode
+    LEFT JOIN Patmed p (NOLOCK) ON (
+      p.hn = mlh.hn
+      AND p.registNo = mlh.regNo
+      AND p.invCode = ml.inv_code
+      AND ml.quant_diff = p.runNo
+    )
+    LEFT JOIN DOCC d on d.docCode = p.orderDoc
   WHERE
     mlh.hn = '` +
       hn +
