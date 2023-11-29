@@ -51,6 +51,7 @@ module.exports = function () {
   };
 
   this.fill = async function fill(val, DATA) {
+    let site = val.check.sitew1 ? `W9` : `W8`;
     var sqlCommand =
       `SELECT
 	m.batch_no AS prescriptionno,
@@ -128,7 +129,7 @@ AND mh.invdate = '` +
       val.date +
       `'
 AND m.pat_status = 'O'
-AND m.site = 'W8'
+AND m.site = '${site}'
 AND m.revFlag IS NULL
 AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       val.allTimeOld +
@@ -137,9 +138,14 @@ ORDER BY
 	p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
 

@@ -79,38 +79,66 @@ module.exports = function () {
   };
 
   this.hn_moph_patient = function fill(val, DATA) {
-    var sql =
-      `SELECT
-      q.patientNO,
-      MAX(q.QN) AS QN,
-      c.timestamp,
-      s.cid,
-      s.createdDT,
-      s.drugAllergy,
-      d.drugcode
+    // var sql =
+    //   `SELECT
+    //   q.patientNO,
+    //   MAX(q.QN) AS QN,
+    //   c.timestamp,
+    //   s.cid,
+    //   s.createdDT,
+    //   s.drugAllergy,
+    //   d.drugcode
+    // FROM
+    //   hospitalq q
+    // LEFT JOIN (
+    //   SELECT
+    //     timestamp,
+    //     hn,
+    //     queue
+    //   FROM
+    //     moph_confirm
+    //   WHERE
+    //     CAST(timestamp AS Date) = CURDATE()
+    // ) c ON q.QN = c.queue
+    // LEFT JOIN moph_sync s ON s.patientID = q.patientNO
+    // LEFT JOIN moph_drugs d ON  s.cid = d.cid AND d.hospcode <> 10666
+    // WHERE
+    //   patientNO =  '` +
+    //   val +
+    //   `'
+    // AND date = CURDATE()
+    // AND QN LIKE '2%'
+
+    // GROUP BY
+    //   patientNO`;
+    let site = val.sitew1 ? `W9` : `W8`;
+    var sql = `SELECT
+      s.patientID,
+      GROUP_CONCAT(d.drugcode) drugcode,
+      c.timestamp
     FROM
-      hospitalq q
+      moph_sync s
+    LEFT JOIN moph_drugs d ON s.CID = d.cid
+    AND d.hospcode <> '10666'
     LEFT JOIN (
       SELECT
-        timestamp,
+        TIMESTAMP,
         hn,
-        queue
+        queue,
+        site
       FROM
         moph_confirm
       WHERE
-        CAST(timestamp AS Date) = CURDATE()
-    ) c ON q.QN = c.queue
-    LEFT JOIN moph_sync s ON s.patientID = q.patientNO
-    LEFT JOIN moph_drugs d ON  s.cid = d.cid AND d.hospcode <> 10666
+        CAST(TIMESTAMP AS Date) = CURDATE()
+      AND site = '${site}'
+    ) AS c ON TRIM(c.hn) = TRIM(s.patientID)
     WHERE
-      patientNO =  '` +
-      val +
-      `'
-    AND date = CURDATE()
-    AND QN LIKE '2%'
-    
+      CAST(s.updateDT AS Date) = CURDATE()
+    AND patientID = '${val.hn}'
     GROUP BY
-      patientNO`;
+      s.CID
+    ORDER BY
+      drugcode DESC`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -779,6 +807,7 @@ module.exports = function () {
     AND cmp.isDelete IS NULL
     GROUP BY
       cml.cm_id`;
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;

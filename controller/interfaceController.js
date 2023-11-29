@@ -39,7 +39,7 @@ exports.listDrugSyncController = async (req, res, next) => {
 
 exports.listPatientAllergicController = async (req, res, next) => {
   if (req.body) {
-    let moph_patient = await center102.hn_moph_patient(req.body.hn);
+    let moph_patient = await center102.hn_moph_patient(req.body);
 
     let data = {
       moph_patient: moph_patient,

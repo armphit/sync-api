@@ -452,7 +452,6 @@ module.exports = function () {
         AND '${val.time2}'
       GROUP BY
         queue`;
-    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -460,7 +459,30 @@ module.exports = function () {
       });
     });
   };
-
+  this.getsiteQ = function fill(val, DATA) {
+    var sql = `
+    SELECT
+    queue,
+    CONVERT (
+      SUBSTR(queue, 2, LENGTH(queue)),
+      UNSIGNED
+    ) num
+  FROM
+    prescription
+  WHERE
+    departmentcode = 'W9'
+  GROUP BY
+    queue
+  ORDER BY
+    num DESC
+  LIMIT 1`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
   String.prototype.padL = function padL(n) {
     var target = this;
     while (target.length < 7) {

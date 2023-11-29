@@ -39,12 +39,18 @@ exports.syncOPDController = async (req, res, next) => {
     let x = {};
     x = await homc.fill(data);
     let b = x.recordset;
+    let q = null;
 
     if (b.length > 0) {
       let drugarr = [];
       if (check.sitew1) {
+        q = await gd4unit101.getsiteQ();
+        q = q.length ? `P${Number(q[0].num) + 1}` : "P1";
       } else {
-        let q = await center102.fill(b[0]);
+        q = await center102.fill(b[0]);
+        console.log(q.length);
+        console.log(q[0].QN);
+        q = q.length ? q[0].QN : "";
       }
 
       let c = {
@@ -53,7 +59,7 @@ exports.syncOPDController = async (req, res, next) => {
         sex: b[0].sex.trim(),
         prescriptionno: b[0].prescriptionno.trim(),
         patientdob: b[0].patientdob.trim(),
-        queue: q[0] ? q[0].QN : "",
+        queue: q,
         jvm: check.jvm,
         dih: check.dih,
         win1: check.win1,
