@@ -6,7 +6,7 @@ module.exports = function () {
   this.config = {
     user: "robot",
     password: "57496208",
-    server: "192.168.44.1",
+    server: "192.168.41.1",
     database: "MHR",
     timezone: "utc",
     requestTimeout: 180000, // for timeout setting
