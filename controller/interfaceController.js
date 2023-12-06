@@ -203,3 +203,39 @@ async function getAllergic(cid) {
     return [];
   }
 }
+
+exports.drugQueuePController = async (req, res, next) => {
+  let data = req.body;
+  let checkq = await center102.checkqueue();
+  let permittedValues = checkq.map((value) => value.patientNO).join("','");
+  permittedValues = `'${permittedValues}'`;
+  data.hn = permittedValues;
+  data.datethai1 = moment(data.date1).add(543, "year").format("YYYYMMDD");
+  data.datethai2 = moment(data.date2).add(543, "year").format("YYYYMMDD");
+  checkq = await homc.getQP(data);
+  let datacut = await center102.get_cut_dispend_drug();
+  let datacon = await center102.get_moph_sync();
+  let qp = await gd4unit101.getqp(data);
+  checkq = checkq.map(function (emp) {
+    return {
+      ...emp,
+      ...(datacut.find(
+        (item) => item.patientNO.trim() === emp.patientNO.trim()
+      ) ?? { status: "N" }),
+      ...(datacon.find(
+        (item) => item.patientNO.trim() === emp.patientNO.trim()
+      ) ?? { check: "", timestamp: null }),
+      ...(qp.find((item) => item.patientNO.trim() === emp.patientNO.trim()) ?? {
+        QN: null,
+      }),
+    };
+  });
+  let gethospitalQ = await center102.listPatientQpost(data);
+  gethospitalQ = checkq.concat(gethospitalQ);
+  gethospitalQ.sort((a, b) => {
+    let da = new Date(a.createdDT),
+      db = new Date(b.createdDT);
+    return db - da;
+  });
+  res.send({ gethospitalQ, rowCount: gethospitalQ.length });
+};

@@ -100,6 +100,20 @@ module.exports = function () {
       });
     });
   };
+  this.checkqueue = function fill(val, DATA) {
+    var sql = `SELECT patientNO
+      FROM hospitalq
+      WHERE  date = CURRENT_DATE()
+      AND locationQ = 'PHAR_A2'
+      ORDER BY createDT DESC`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 
   this.hn_moph_patient = function fill(val, DATA) {
     // var sql =
@@ -830,7 +844,6 @@ module.exports = function () {
     AND cmp.isDelete IS NULL
     GROUP BY
       cml.cm_id`;
-    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -861,7 +874,8 @@ module.exports = function () {
         level,
         occurrence,
         source,
-        error_type
+        error_type,
+        site
       )
       VALUES
         (
@@ -915,7 +929,8 @@ module.exports = function () {
       '${val.level}',
       '${val.occurrence}',
       '${val.source}',
-      '${val.error_type}'   
+      '${val.error_type}',
+      '${val.site}'    
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -957,7 +972,8 @@ module.exports = function () {
         level,
         occurrence,
         source,
-        error_type
+        error_type,
+        site
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -1053,6 +1069,7 @@ module.exports = function () {
         occurrence,
         source,
         error_type,
+        site,
         (
           SELECT
             drugName
@@ -1173,7 +1190,8 @@ module.exports = function () {
        level = '${val.level}',
         occurrence = '${val.occurrence}',
         source = '${val.source}',
-        error_type = '${val.error_type}'
+        error_type = '${val.error_type}',
+        site = '${val.site}'
       WHERE
         (
           id = '` +
@@ -1390,8 +1408,6 @@ FROM
   this.getQGroupby = function fill(val, DATA) {
     let checkdata = val.choice == 1 ? "checker" : "dispenser";
     let position_text = val.choice == 1 ? "check" : "จ่าย";
-
-    val.site;
     let pharma = val.site
       ? val.site == "W8"
         ? "PHAR_A2"
@@ -1399,6 +1415,8 @@ FROM
         ? "PHAR_A1"
         : val.site == "W18"
         ? "PHAR_A3"
+        : val.site == "W19"
+        ? "PHAR_M-Park"
         : ""
       : "";
     let getsite = {
@@ -1519,7 +1537,127 @@ ${getsite.h}
 GROUP BY
 	${checkdata}_id
 `;
-    // console.log(sql);
+    console.log(sql);
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.get_cut_dispend_drug = function fill(val, DATA) {
+    var sql = `SELECT
+    hn as patientNO,
+    status
+FROM
+    cut_dispend_drug
+WHERE
+    STATUS = 'Y'
+AND deleteDT IS NULL
+AND departmentcode = 'W8'
+GROUP BY
+    hn`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.get_moph_sync = function fill(val, DATA) {
+    var sql = `SELECT
+    s.CID,
+    s.patientID 'patientNO',
+    'Y' AS 'check',
+    CAST(c.timestamp AS char) timestamp
+FROM
+    moph_sync s
+LEFT JOIN moph_drugs d ON s.CID = d.cid
+LEFT JOIN (
+    SELECT
+        TIMESTAMP,
+        hn,
+        queue,
+        site
+    FROM
+        moph_confirm
+    WHERE
+        CAST(TIMESTAMP AS Date) = CURDATE()
+    AND site = 'W8'
+) AS c ON TRIM(c.hn) = TRIM(s.patientID)
+WHERE
+    CAST(s.updateDT AS Date) = CURDATE()
+AND d.hospcode <> '10666'
+GROUP BY
+    s.CID `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.listPatientQpost = function fill(val, DATA) {
+    var sql = `SELECT
+    q.patientNO,
+    q.QN,
+    q.patientName,
+    CAST(q.createDT AS char)  createdDT,
+    CAST(c.timestamp AS char) timestamp,
+    s.cid,
+    s.check,
+    cdd. STATUS as status
+FROM
+    hospitalQ q
+    LEFT JOIN (
+            SELECT
+                s.CID,
+                s.patientID,
+                'Y' AS 'check'
+            FROM
+                moph_sync s
+            LEFT JOIN moph_drugs d ON s.CID = d.cid
+            WHERE
+                CAST(s.updateDT AS Date) = CURDATE()
+            AND d.hospcode <> '10666'
+            GROUP BY
+                s.CID
+        ) AS s ON q.patientNO = s.patientID
+LEFT JOIN (
+    SELECT
+        TIMESTAMP,
+        hn,
+        queue
+    FROM
+        moph_confirm
+    WHERE
+        CAST(TIMESTAMP AS Date) BETWEEN '${val.date1}'
+        AND '${val.date2}'
+) AS c ON q.qn = c.queue
+AND q.patientNO = c.hn
+LEFT JOIN (
+    SELECT
+        hn,
+        STATUS
+    FROM
+        cut_dispend_drug
+    WHERE
+        STATUS = 'Y'
+    AND deleteDT IS NULL
+    AND departmentcode = 'W8'
+    GROUP BY
+        hn
+) AS cdd ON trim(q.patientNO) = trim(cdd.hn)
+WHERE
+    q.date BETWEEN '${val.date1}'
+    AND '${val.date2}'
+AND locationQ = 'PHAR_A2'
+ORDER BY
+    q.createDT`;
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;

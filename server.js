@@ -34,6 +34,7 @@ var {
   listDrugSyncController,
   listPatientAllergicController,
   checkallergyController,
+  drugQueuePController,
 } = require("./controller/interfaceController");
 
 var {
@@ -41,6 +42,7 @@ var {
   doorreportController,
   onuspharController,
   dispendController,
+  drugController,
 } = require("./controller/msrController");
 
 app.use(bodyParser.json());
@@ -77,7 +79,8 @@ app.post("/manageError", manageerrorController);
 app.post("/onusPhar", onuspharController);
 app.post("/getDispend", dispendController);
 app.post("/checkAllergy", checkallergyController);
-
+app.get("/drugs", drugController);
+app.post("/queueP", drugQueuePController);
 module.exports = app;
 
 app.get("/", (req, res) => {

@@ -7,6 +7,9 @@ var GD4Unit_101 = new db_GD4Unit_101();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 
+var db_Homc = require("../DB/db_Homc");
+var homc = new db_Homc();
+
 exports.getDispenseDaterangeController = async (req, res, next) => {
   let getDispense = await pmpf.getDispense(req.body);
   res.send(getDispense);
@@ -85,4 +88,7 @@ exports.dispendController = async (req, res, next) => {
   let getdata = await GD4Unit_101.getDispend(req.body);
   res.send(getdata);
 };
-exports.scanallergyController = async (req, res, next) => {};
+exports.drugController = async (req, res, next) => {
+  let getdata = await homc.getDrugip2000();
+  res.send({ data: getdata });
+};

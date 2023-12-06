@@ -290,53 +290,7 @@ ORDER BY
     for (let i = 0; i < 7 - String(val.hn).length; i++) {
       hn = " " + hn;
     }
-    // var sqlCommand =
-    //   `SELECT
-    //     TRIM (pt.titleName) + ' ' + pa.firstName + ' ' + TRIM(pa.lastName) AS name_patient,
-    //     p.invCode,
-    //     la.lamed_name AS lamedName,
-    //     p.lamedQty AS dosage,
-    //     (
-    //         SELECT
-    //             lamed_name
-    //         FROM
-    //             Lamed lam
-    //         WHERE
-    //             lam.lamed_code = p.lamedUnit
-    //     ) AS freetext0,
-    //     p.lamedTimeText AS freetext1,
-    //     p.lastIssTime,
-    //     p.lamedText AS freetext2,
-    //     '( ' + (
-    //      SELECT
-    //        DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
-    //      FROM
-    //        Med_Info_Group mi
-    //      LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
-    //      WHERE
-    //        mif.Med_Inv_Code = '` +
-    //   val.code +
-    //   `'
-    //      AND (
-    //        mi.InfoGroup LIKE '%สี%'
-    //        OR mi.InfoGroup IS NULL
-    //      ) FOR XML PATH ('')
-    //    ) + ')' AS itemidentify
-    // FROM
-    //     Patmed p
-    // LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
-    // LEFT JOIN PATIENT pa ON p.hn = pa.hn
-    // LEFT JOIN PTITLE pt ON pa.titleCode = pt.titleCode
-    // WHERE
-    //     p.hn = '` +
-    //   hn +
-    //   `'
-    //     AND p.invCode = '` +
-    //   val.code +
-    //   `'
-    // AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
-    //   val.date +
-    //   `'`;
+
     let sqlCommand =
       `SELECT
       TRIM (ti.titleName) + ' ' + pt.firstName + ' ' + TRIM (pt.lastName) AS name_patient,
@@ -512,6 +466,176 @@ ORDER BY
       WHERE hn = ` +
       val +
       ``;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(cid);
+      resolve(result.recordset);
+    });
+  };
+
+  this.getDrugip2000 = async function fill(val, DATA) {
+    var cid = `SELECT
+      m.code AS orderitemcode,
+      m.name AS tradename,
+      NULL AS orderitemTHname,
+      NULL AS orderitemENname,
+      m.gen_name genericname,
+      CASE
+    WHEN m.hideSelect = ''
+    OR m.hideSelect = 'N'
+    OR m.hideSelect IS NULL THEN
+      'Y'
+    ELSE
+      'N'
+    END AS unused,
+     NULL AS barcode,
+     isnull(m.strgth, '') + isnull(m.strgth_u, '') AS Strength,
+     m.unit AS dosageunitcode,
+     NULL AS capacity,
+     NULL AS capacity_unit,
+     NULL AS capacity_orderunit,
+     m.unit AS orderunitcode,
+     NULL AS drugshape,
+     NULL AS description,
+     m.lastEditDate AS dateupdate,
+     NULL AS locationcode,
+     CASE
+    WHEN m.HAD = '1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS highalert,
+     NULL AS multidose,
+     NULL AS shelfzone,
+     NULL AS shelfname,
+     NULL AS shelfzone2,
+     NULL AS shelfname2,
+     CASE
+    WHEN m.charge_c IN ('ED', 'ED*') THEN
+      '0'
+    ELSE
+      '1'
+    END AS edned,
+     NULL AS stdcode,
+     NULL AS drugaccountcode,
+     d.dform_des dosegeform,
+     m.color AS displaycolour,
+     NULL AS GFMIScode,
+     NULL AS GPOcode,
+     m.code AS Inventorycode,
+     m.buy_prc AS cost,
+     m.ipd_prc AS IPDprice,
+     m.opd_prc AS OPDprice,
+     'Y' AS sendmachine,
+     NULL AS sendmix,
+     NULL AS print_ipd_injection_sticker,
+     NULL AS pharmacoindex,
+     NULL AS pharmacoindexaddition1,
+     NULL AS pharmacoindexaddition2,
+     NULL AS pharmacoindexaddition3,
+     m.def_dose AS instructioncode_ipd,
+     l.unit_lamed_c AS dispensedose_ipd,
+     l.code_unit AS dosageunitcode_ipd,
+     l.code_time AS frequencycode_ipd,
+     NULL AS timecode_ipd,
+     m.def_dose AS instructioncode_opd,
+     l.unit_lamed_c AS dispensedose_opd,
+     l.code_unit AS dosageunitcode_opd,
+     l.code_time AS frequencycode_opd,
+     NULL AS timecode_opd,
+     NULL AS notify_text,
+     NULL AS agestart,
+     NULL AS ageend,
+     NULL AS age_text,
+     NULL AS spesification_text,
+     NULL AS adverse_reaction_text,
+     NULL AS contraindications_text,
+     NULL AS precaution_text,
+     NULL AS storage_text,
+     NULL AS maxdoseperdose,
+     m.maxdose AS maxdoseperday,
+     NULL AS maxduration,
+     NULL AS mintimenextdose,
+     'Y' AS medicalsupplies,
+     NULL AS picname,
+     '1' AS drugtype,
+     NULL AS locationname1,
+     NULL AS locationname2,
+     NULL AS pricedoseunitstatus,
+     NULL AS priceunitstatus,
+     m.def_dose AS drugusagecodeIPD,
+     m.def_dose AS drugusagecodeOPD,
+     NULL AS diluentstatus,
+     NULL AS continuestatus,
+     NULL AS freezestatus,
+     NULL AS lightstatus,
+     NULL AS dispensedoseqty_opd,
+     NULL AS priceunittotalstatus,
+     NULL AS logstatus,
+     NULL AS paystatus,
+     d.dform_des AS drugform,
+     NULL AS orderqty_status,
+     NULL AS orderqty_ipd,
+     'Y' AS printstatus,
+     NULL AS pack,
+     NULL AS sendStore,
+     NULL AS sendF3F4
+    FROM
+      Med_inv m (NOLOCK)
+    LEFT JOIN Dform d (NOLOCK) ON (d.dform_key = m.dform)
+    LEFT JOIN Lamed_c l (NOLOCK) ON (m.def_dose = l.code_lamed)
+    WHERE
+      m.site = '1'`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(cid);
+      resolve(result.recordset);
+    });
+  };
+
+  this.getQP = async function fill(val, DATA) {
+    var cid = `SELECT
+    o.hn AS patientNO,
+    MIN (
+        Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName)
+    ) AS patientName,
+    CONVERT(varchar, MIN(p.lastIssTime), 20)  AS createdDT,
+    null AS QN,
+    null AS 'timestamp',
+    null AS cid,
+    null AS 'check',
+    null AS status
+FROM
+    OPD_H o
+LEFT JOIN Med_logh mh ON o.hn = mh.hn
+AND o.regNo = mh.regNo
+LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+LEFT JOIN Bill_h b ON b.hn = mh.hn
+AND b.regNo = mh.regNo
+LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
+LEFT JOIN Med_inv v ON (
+    v.code = m.inv_code
+    AND v.[site] = '1'
+)
+LEFT JOIN Patmed p (NOLOCK) ON (
+    p.hn = mh.hn
+    AND p.registNo = mh.regNo
+    AND p.invCode = m.inv_code
+    AND m.quant_diff = p.runNo
+)
+LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
+LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+LEFT JOIN Site si ON m.site = si.site_key
+WHERE
+mh.invdate  BETWEEN '${val.datethai1}' AND '${val.datethai2}'
+AND m.pat_status = 'O'
+AND m.site = 'W8'
+AND m.revFlag IS NULL
+AND TRIM(o.hn) NOT IN (${val.hn})
+GROUP BY
+    o.hn
+ORDER BY createdDT`;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(cid);

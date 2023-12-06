@@ -490,4 +490,36 @@ module.exports = function () {
     }
     return target;
   };
+
+  this.getqp = function fill(val, DATA) {
+    var sql = `
+    SELECT
+                hn 'patientNO',
+                queue 'QN'
+            FROM
+                prescription
+            WHERE
+                CAST(datetimestamp AS Date) BETWEEN '${val.date1}'
+            AND '${val.date2}'
+            AND queue LIKE 'P%'
+            GROUP BY QN
+            UNION
+                SELECT
+                hn 'patientNO',
+                queue 'QN'
+                FROM
+                    gd4unit_bk.prescription
+                WHERE
+                    CAST(datetimestamp AS Date) BETWEEN '${val.date1}'
+                    AND '${val.date2}'
+                AND queue LIKE 'P%'
+                GROUP BY QN`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };
