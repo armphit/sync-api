@@ -932,7 +932,7 @@ module.exports = function () {
       '${val.source}',
       '${val.error_type}',
       '${val.site}',
-      '${val.type_pre}'    
+      '${val.type_pre ? val.type_pre : ``}'    
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -1196,7 +1196,7 @@ module.exports = function () {
         source = '${val.source}',
         error_type = '${val.error_type}',
         site = '${val.site}',
-        type_pre = '${val.type_pre}'
+        type_pre = '${val.type_pre ? val.type_pre : ``}'
       WHERE
         (
           id = '` +
