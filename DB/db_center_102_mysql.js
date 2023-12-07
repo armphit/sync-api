@@ -875,7 +875,8 @@ module.exports = function () {
         occurrence,
         source,
         error_type,
-        site
+        site,
+        type_pre
       )
       VALUES
         (
@@ -930,7 +931,8 @@ module.exports = function () {
       '${val.occurrence}',
       '${val.source}',
       '${val.error_type}',
-      '${val.site}'    
+      '${val.site}',
+      '${val.type_pre}'    
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -973,7 +975,8 @@ module.exports = function () {
         occurrence,
         source,
         error_type,
-        site
+        site,
+        type_pre
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -1070,6 +1073,7 @@ module.exports = function () {
         source,
         error_type,
         site,
+        type_pre,
         (
           SELECT
             drugName
@@ -1191,7 +1195,8 @@ module.exports = function () {
         occurrence = '${val.occurrence}',
         source = '${val.source}',
         error_type = '${val.error_type}',
-        site = '${val.site}'
+        site = '${val.site}',
+        type_pre = '${val.type_pre}'
       WHERE
         (
           id = '` +
