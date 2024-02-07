@@ -824,7 +824,9 @@ module.exports = function () {
     });
   };
   this.get_compiler = function fill(val, DATA) {
+    val.queue = val.queue ? (val.queue.includes("P") ? "W8" : val.queue) : ``;
     let q = val.queue ? `AND cmp.queue = '${val.queue}'` : ``;
+
     let sql =
       `SELECT
       cm.drugCode,
@@ -881,9 +883,7 @@ module.exports = function () {
       VALUES
         (
           UUID(),
-          '` +
-      val.hn.hn +
-      `',
+          '${val.hn ? val.hn.hn.trim() : ``}',
           '` +
       val.hn.hnDT +
       `',
@@ -932,7 +932,7 @@ module.exports = function () {
       '${val.source}',
       '${val.error_type}',
       '${val.site}',
-      '${val.type_pre ? val.type_pre : ``}'    
+      '${val.type_pre ? val.type_pre : ``}'       
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -945,7 +945,7 @@ module.exports = function () {
   this.get_mederror = function fill(val, DATA) {
     let sql = "";
     let time = val.time1
-      ? `    AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+      ? `    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '` +
         val.time1 +
         `' AND '` +
         val.time2 +
@@ -956,7 +956,10 @@ module.exports = function () {
         `SELECT
         id,
         hn,
-        hnDT,
+        DATE_FORMAT(
+          hnDT,
+          '%Y-%m-%d %H:%i:%s'
+        ) hnDT,
         med,
         med_good,
         med_wrong,
@@ -970,7 +973,10 @@ module.exports = function () {
         offender_name,
         note,
         location,
-        createDT,
+        DATE_FORMAT(
+          createDT,
+          '%Y-%m-%d %H:%i:%s'
+        ) hnDT,
         level,
         occurrence,
         source,
@@ -1052,8 +1058,10 @@ module.exports = function () {
         : ``;
       sql =
         `SELECT	id,
-        hn,
-        hnDT,
+        DATE_FORMAT(
+          hnDT,
+          '%Y-%m-%d %H:%i:%s'
+        ) hnDT,
         med,
         med_good,
         med_wrong,
@@ -1067,11 +1075,14 @@ module.exports = function () {
         offender_name,
         note,
         location,
-        createDT,
+        DATE_FORMAT(
+          createDT,
+          '%Y-%m-%d %H:%i:%s'
+        ) createDT,
         level,
         occurrence,
         source,
-        error_type,
+        error_type,        
         site,
         type_pre,
         (
@@ -1094,7 +1105,7 @@ module.exports = function () {
       med_error
     LEFT JOIN med_error_type on type_text = id_type
     WHERE
-      CAST(hnDT AS Date)  BETWEEN '` +
+      CAST(createDT AS Date)  BETWEEN '` +
         val.datestart +
         `'
       AND '` +
@@ -1106,7 +1117,7 @@ module.exports = function () {
       AND deleteID is null
         ORDER BY createDT desc`;
     }
-    console.log(sql);
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1348,8 +1359,8 @@ FROM
       val.check +
       `',
       CURRENT_TIMESTAMP()
-      )ON DUPLICATE KEY UPDATE updateDT = CURRENT_TIMESTAMP (),drugAllergy = '${val.check}'`;
-
+      )ON DUPLICATE KEY UPDATE CID = ${val.cid},updateDT = CURRENT_TIMESTAMP (),drugAllergy = '${val.check}'`;
+    // console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1365,7 +1376,12 @@ FROM
         drugcode,
         drugname,
         daterecord,
-        createdDT
+        createdDT,
+        typedx,
+        allerglevelcode,
+        typedxcode,
+        allerglevelnum,
+        informat
       )
     VALUES
       (
@@ -1373,23 +1389,23 @@ FROM
       val.cid +
       `',
         '` +
-      val.hospcode +
+      val.hcode +
       `',
         '` +
-      val.drugcode +
+      (val.typedxcode ? val.typedxcode : "") +
       `',
         N'` +
-      val.drugname +
+      val.drugName +
       `',
-        '` +
-      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
-      `',
-      CURRENT_TIMESTAMP ()
+      CURRENT_TIMESTAMP (),
+      CURRENT_TIMESTAMP (),
+      '${val.typexxcode ? val.typexxcode : ""}',
+      '${val.allergyLevel ? val.allergyLevel : ""}',
+      '${val.typedxcode ? val.typedxcode : ""}',
+      '${val.allergyCode ? val.allergyCode : ""}',
+      '${val.information ? val.information : ""}'
       )ON DUPLICATE KEY UPDATE drugname = '` +
       val.drugname +
-      `',
-       daterecord = '` +
-      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
       `',
       createdDT = CURRENT_TIMESTAMP ()`;
 
@@ -1613,24 +1629,24 @@ GROUP BY
     CAST(q.createDT AS char)  createdDT,
     CAST(c.timestamp AS char) timestamp,
     s.cid,
-    s.check,
+    d.check,
     cdd. STATUS as status
 FROM
     hospitalQ q
+    LEFT JOIN moph_sync s ON q.patientNO = s.patientID
+    AND CAST(s.updateDT AS Date) = CURDATE()
+    AND s.drugAllergy = 'Y'
     LEFT JOIN (
-            SELECT
-                s.CID,
-                s.patientID,
-                'Y' AS 'check'
-            FROM
-                moph_sync s
-            LEFT JOIN moph_drugs d ON s.CID = d.cid
-            WHERE
-                CAST(s.updateDT AS Date) = CURDATE()
-            AND d.hospcode <> '10666'
-            GROUP BY
-                s.CID
-        ) AS s ON q.patientNO = s.patientID
+      SELECT
+        cid,
+        'Y' as 'check'
+      FROM
+        moph_drugs d
+      WHERE
+        d.hospcode <> '10666'
+      GROUP BY
+        cid
+    ) AS d ON s.CID = d.cid
 LEFT JOIN (
     SELECT
         TIMESTAMP,
@@ -1662,7 +1678,7 @@ WHERE
 AND locationQ = 'PHAR_A2'
 ORDER BY
     q.createDT`;
-
+    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;

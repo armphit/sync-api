@@ -278,6 +278,7 @@ ORDER BY
       `)
     ORDER BY
       p.lastIssTime`;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlCommand);
@@ -466,6 +467,7 @@ ORDER BY
       WHERE hn = ` +
       val +
       ``;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(cid);

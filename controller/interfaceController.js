@@ -118,7 +118,7 @@ exports.checkallergyController = async (req, res, next) => {
 
       if (getCid.length) {
         if (getCid[0].CardID) {
-          cid = getCid[0].CardID.trim();
+          const cid = getCid[0].CardID.trim();
           let dataAllergic = await getAllergic(cid);
 
           let stampDB = {
@@ -126,6 +126,7 @@ exports.checkallergyController = async (req, res, next) => {
             cid: cid,
             check: dataAllergic ? (dataAllergic.length ? "Y" : "N") : "N",
           };
+
           center102.insertSync(stampDB).then(async (insertSync) => {
             if (insertSync.affectedRows) {
               // console.log(stampDB.hn + " : " + stampDB.check);
@@ -135,6 +136,7 @@ exports.checkallergyController = async (req, res, next) => {
                   .then(async (result) => {
                     // console.log(stampDB.hn + " : " + "Delete Success");
                     for (let k = 0; k < dataAllergic.length; k++) {
+                      dataAllergic[k].cid = stampDB.cid;
                       center102
                         .insertDrugAllergy(dataAllergic[k])
                         .then(async (insert_md) => {
@@ -183,25 +185,43 @@ exports.checkallergyController = async (req, res, next) => {
 };
 
 async function getAllergic(cid) {
-  let a = await axios.get(
-    "http://164.115.23.100/test_token_php/index6.php?cid=" +
-      cid +
-      "&format=json"
-  );
+  // let a = await axios.get(
+  //   "http://164.115.23.100/test_token_php/index6.php?cid=" +
+  //     cid +
+  //     "&format=json"
+  // );
 
-  try {
-    let dataDrug = html2json(a.data).child[0].child[3].child[5].text;
-    let dataDrug2 = html2json(a.data).child[0].child[3].child[6].text;
-    if (dataDrug) {
-      return JSON.parse(dataDrug).data;
-    } else if (dataDrug2) {
-      return JSON.parse(dataDrug2).data;
-    } else {
-      return [];
+  // try {
+  //   let dataDrug = html2json(a.data).child[0].child[3].child[5].text;
+  //   let dataDrug2 = html2json(a.data).child[0].child[3].child[6].text;
+  //   if (dataDrug) {
+  //     return JSON.parse(dataDrug).data;
+  //   } else if (dataDrug2) {
+  //     return JSON.parse(dataDrug2).data;
+  //   } else {
+  //     return [];
+  //   }
+  // } catch (error) {
+  //   return [];
+  // }
+  let a = await axios.get(
+    `http://164.115.23.100/test_token_php/index77.php?cid=${cid}`
+  );
+  let b = html2json(a.data).child;
+  let c = [];
+
+  for (let index = 0; index < b.length; index++) {
+    if (b[index].node == "text") {
+      try {
+        let d = JSON.parse(b[index].text);
+        if ("drugName" in d) {
+          c.push(d);
+        }
+      } catch (e) {}
     }
-  } catch (error) {
-    return [];
   }
+
+  return c;
 }
 
 exports.drugQueuePController = async (req, res, next) => {
@@ -231,6 +251,19 @@ exports.drugQueuePController = async (req, res, next) => {
     };
   });
   let gethospitalQ = await center102.listPatientQpost(data);
+  // checkq = checkq
+  //   .concat(gethospitalQ)
+  //   .filter(
+  //     (item) =>
+  //       checkq.patientNO.trim() !== item.patientNO.trim() ||
+  //       gethospitalQ.patientNO.trim() !== item.patientNO.trim()
+  //   );
+  checkq = checkq.filter(
+    (obj1) =>
+      !gethospitalQ.some(
+        (obj2) => obj2.patientNO.trim() === obj1.patientNO.trim()
+      )
+  );
   gethospitalQ = checkq.concat(gethospitalQ);
   gethospitalQ.sort((a, b) => {
     let da = new Date(a.createdDT),
