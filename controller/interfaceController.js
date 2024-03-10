@@ -109,9 +109,10 @@ exports.listPatientAllergicController = async (req, res, next) => {
 
 exports.checkallergyController = async (req, res, next) => {
   let countDrug = 0;
+
   if (req.body.choice == 2) {
     let checkBase = await center102.check_moph(req.body);
-    if (checkBase.length) {
+    if (!checkBase.length) {
       countDrug = checkBase[0].num;
     } else {
       let getCid = await homc.getCid(req.body.hn);
@@ -126,6 +127,7 @@ exports.checkallergyController = async (req, res, next) => {
             cid: cid,
             check: dataAllergic ? (dataAllergic.length ? "Y" : "N") : "N",
           };
+
           center102.insertSync(stampDB).then(async (insertSync) => {
             if (insertSync.affectedRows) {
               // console.log(stampDB.hn + " : " + stampDB.check);
@@ -170,6 +172,7 @@ exports.checkallergyController = async (req, res, next) => {
           });
           if (dataAllergic.length) {
             checkBase = await center102.check_moph(req.body);
+
             if (checkBase.length) {
               countDrug = checkBase[0].num;
             }
@@ -178,30 +181,48 @@ exports.checkallergyController = async (req, res, next) => {
       }
     }
   }
+  console.log(countDrug);
   let getData = await center102.get_moph(req.body);
   res.send({ getData, countDrug });
 };
 
 async function getAllergic(cid) {
+  // let a = await axios.get(
+  //   "http://164.115.23.100/test_token_php/index6.php?cid=" +
+  //     cid +
+  //     "&format=json"
+  // );
+  // try {
+  //   let dataDrug = html2json(a.data).child[0].child[3].child[5].text;
+  //   let dataDrug2 = html2json(a.data).child[0].child[3].child[6].text;
+  //   if (dataDrug) {
+  //     return JSON.parse(dataDrug).data;
+  //   } else if (dataDrug2) {
+  //     return JSON.parse(dataDrug2).data;
+  //   } else {
+  //     return [];
+  //   }
+  // } catch (error) {
+  //   return [];
+  // }
+
   let a = await axios.get(
-    "http://164.115.23.100/test_token_php/index6.php?cid=" +
+    "http://164.115.23.100/test_token_php/index7_ipd.php?cid=" +
       cid +
       "&format=json"
   );
 
+  let b = html2json(a.data).child;
+  let c = [];
+  // console.log(b);
   try {
-    let dataDrug = html2json(a.data).child[0].child[3].child[5].text;
-    let dataDrug2 = html2json(a.data).child[0].child[3].child[6].text;
-    if (dataDrug) {
-      return JSON.parse(dataDrug).data;
-    } else if (dataDrug2) {
-      return JSON.parse(dataDrug2).data;
-    } else {
-      return [];
-    }
-  } catch (error) {
-    return [];
+    c = JSON.parse(b[0].child[3].child[3].text).data;
+    console.log(c);
+  } catch (e) {
+    c = [];
+    console.log("allergy ipd : " + e);
   }
+  return c;
 }
 
 exports.drugQueuePController = async (req, res, next) => {

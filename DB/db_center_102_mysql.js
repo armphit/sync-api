@@ -1357,6 +1357,49 @@ FROM
       });
     });
   };
+  // this.insertDrugAllergy = function fill(val, DATA) {
+  //   var sql =
+  //     `INSERT INTO moph_drugs (
+  //       cid,
+  //       hospcode,
+  //       drugcode,
+  //       drugname,
+  //       daterecord,
+  //       createdDT
+  //     )
+  //   VALUES
+  //     (
+  //       '` +
+  //     val.cid +
+  //     `',
+  //       '` +
+  //     val.hospcode +
+  //     `',
+  //       '` +
+  //     val.drugcode +
+  //     `',
+  //       N'` +
+  //     val.drugname +
+  //     `',
+  //       '` +
+  //     val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+  //     `',
+  //     CURRENT_TIMESTAMP ()
+  //     )ON DUPLICATE KEY UPDATE drugname = '` +
+  //     val.drugname +
+  //     `',
+  //      daterecord = '` +
+  //     val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+  //     `',
+  //     createdDT = CURRENT_TIMESTAMP ()`;
+
+  //   return new Promise(function (resolve, reject) {
+  //     connection.query(sql, function (err, result, fields) {
+  //       if (err) throw err;
+  //       resolve(result);
+  //     });
+  //   });
+  // };
   this.insertDrugAllergy = function fill(val, DATA) {
     var sql =
       `INSERT INTO moph_drugs (
@@ -1365,7 +1408,13 @@ FROM
         drugcode,
         drugname,
         daterecord,
-        createdDT
+        createdDT,
+        typedx,
+        allerglevelcode,
+        typedxcode,
+        allerglevelnum,
+        informat,
+        allergsymptom
       )
     VALUES
       (
@@ -1384,7 +1433,13 @@ FROM
         '` +
       val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
       `',
-      CURRENT_TIMESTAMP ()
+      CURRENT_TIMESTAMP (),
+      '${val.typedx ? val.typedx : ""}',
+      '${val.allerglevel ? val.allerglevel : ""}',
+      '${val.typedxcode ? val.typedxcode : ""}',
+      '${val.allerglevelcode ? val.allerglevelcode : ""}',
+      '${val.informat ? val.informat : ""}',
+      '${val.allergsymptom ? val.allergsymptom : ""}'
       )ON DUPLICATE KEY UPDATE drugname = '` +
       val.drugname +
       `',
