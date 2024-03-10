@@ -31,15 +31,15 @@ exports.syncOPDController = async (req, res, next) => {
 
     if (!checkAllergic) {
       let allTimeOld = "''";
-      // let time = await gd4unit101.checkPatient(hn);
-      // if (time.length != 0) {
-      //   for (let d of time) {
-      //     allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
-      //   }
-      //   allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
-      // } else {
-      //   allTimeOld = `''`;
-      // }
+      let time = await gd4unit101.checkPatient(hn);
+      if (time.length != 0) {
+        for (let d of time) {
+          allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
+        }
+        allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
+      } else {
+        allTimeOld = `''`;
+      }
       data.allTimeOld = allTimeOld;
       let x = {};
       x = await homc.fill(data);

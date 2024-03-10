@@ -15,45 +15,43 @@ var GD4Unit_101 = new db_GD4Unit_101();
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };
-    console.log(xmlDrug);
-    // var url =
-    //   "http://192.168.185.102:8788/axis2/services/DIHPMPFWebservice?wsdl";
-    // var client = await soap.createClientAsync(url);
-    // var result = await client.drugDictAsync(xmlDrug);
-    // var val = await transform(result[0].return, { data: "//code" });
-    // if (val.data !== "0") {
-    //   res.send("error");
-    // } else {
-    //   let datadrug = await pmpf.druginsert(req.body.drug.code);
-    //   datadrug[0].drugName = datadrug[0].HISDrugName;
-    //   let keys = Object.keys(datadrug[0]);
-    //   let value = Object.values(datadrug[0]);
-    //   value[36] = moment(value[36]).format("YYYY-MM-DD HH:mm:ss");
-    //   value[37] = moment(value[37]).format("YYYY-MM-DD HH:mm:ss");
-    //   let arrSql = [];
-    //   let valSql = [];
-    //   for (let index = 0; index < keys.length; index++) {
-    //     arrSql[index] = `${keys[index]} = N'${
-    //       value[index] == null ? "" : value[index]
-    //     }'`;
-    //     valSql[index] = `N'${value[index] == null ? "" : value[index]}'`;
-    //   }
+    var url =
+      "http://192.168.185.102:8788/axis2/services/DIHPMPFWebservice?wsdl";
+    var client = await soap.createClientAsync(url);
+    var result = await client.drugDictAsync(xmlDrug);
+    var val = await transform(result[0].return, { data: "//code" });
+    if (val.data !== "0") {
+      res.send("error");
+    } else {
+      let datadrug = await pmpf.druginsert(req.body.drug.code);
+      datadrug[0].drugName = datadrug[0].HISDrugName;
+      let keys = Object.keys(datadrug[0]);
+      let value = Object.values(datadrug[0]);
+      value[36] = moment(value[36]).format("YYYY-MM-DD HH:mm:ss");
+      value[37] = moment(value[37]).format("YYYY-MM-DD HH:mm:ss");
+      let arrSql = [];
+      let valSql = [];
+      for (let index = 0; index < keys.length; index++) {
+        arrSql[index] = `${keys[index]} = N'${
+          value[index] == null ? "" : value[index]
+        }'`;
+        valSql[index] = `N'${value[index] == null ? "" : value[index]}'`;
+      }
 
-    //   let send = {
-    //     update: arrSql.join(","),
-    //     insert: valSql.join(","),
-    //     code: req.body.drug.code,
-    //   };
+      let send = {
+        update: arrSql.join(","),
+        insert: valSql.join(","),
+        code: req.body.drug.code,
+      };
 
-    //   await Xmed.updateDicdrug(send);
-    //   await GD4Unit_101.updatePack101(req.body);
-
-    res.status(200).json({
-      // Authorization: Bearer,
-      status: "success",
-    });
+      await Xmed.updateDicdrug(send);
+      await GD4Unit_101.updatePack101(req.body);
+      res.status(200).json({
+        // Authorization: Bearer,
+        status: "success",
+      });
+    }
   }
-  // }
 };
 
 exports.prinstickerDataController = async (req, res, next) => {
