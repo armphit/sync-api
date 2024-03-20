@@ -40,66 +40,68 @@ exports.listDrugSyncController = async (req, res, next) => {
 exports.listPatientAllergicController = async (req, res, next) => {
   if (req.body) {
     let moph_patient = await center102.hn_moph_patient(req.body);
-    if (!moph_patient.length) {
-      let getCid = await homc.getCid(req.body.hn);
+    // if (!moph_patient.length) {
+    let getCid = await homc.getCid(req.body.hn);
 
-      if (getCid.length) {
-        if (getCid[0].CardID) {
-          cid = getCid[0].CardID.trim();
-          let dataAllergic = await getAllergic(cid);
+    if (getCid.length) {
+      if (getCid[0].CardID) {
+        const cid = getCid[0].CardID.trim();
+        let dataAllergic = await getAllergic(cid);
 
-          let stampDB = {
-            hn: req.body.hn,
-            cid: cid,
-            check: dataAllergic ? (dataAllergic.length ? "Y" : "N") : "N",
-          };
-          center102.insertSync(stampDB).then(async (insertSync) => {
-            if (insertSync.affectedRows) {
-              // console.log(stampDB.hn + " : " + stampDB.check);
-              if (dataAllergic.length) {
-                center102
-                  .deleteAllgerlic(stampDB.cid)
-                  .then(async (result) => {
-                    // console.log(stampDB.hn + " : " + "Delete Success");
-                    for (let k = 0; k < dataAllergic.length; k++) {
-                      center102
-                        .insertDrugAllergy(dataAllergic[k])
-                        .then(async (insert_md) => {
-                          // if (insert_md.affectedRows) {
-                          //   console.log(
-                          //     stampDB.hn +
-                          //       " : " +
-                          //       dataAllergic[k].drugname +
-                          //       " : " +
-                          //       "Success"
-                          //   );
-                          //   console.log(
-                          //     "---------------------------------------"
-                          //   );
-                          // } else {
-                          //   console.log(stampDB.hn + " : " + "Failed");
-                          //   console.log(
-                          //     "---------------------------------------"
-                          //   );
-                          // }
-                        })
+        let stampDB = {
+          hn: req.body.hn,
+          cid: cid,
+          check: dataAllergic ? (dataAllergic.length ? "Y" : "N") : "N",
+        };
 
-                        .catch((err) => {
-                          console.log(err);
-                        });
-                    }
-                  })
-                  .catch((err) => {
-                    console.log(err);
-                  });
-              }
+        center102.insertSync(stampDB).then(async (insertSync) => {
+          if (insertSync.affectedRows) {
+            // console.log(stampDB.hn + " : " + stampDB.check);
+            if (dataAllergic.length) {
+              center102
+                .deleteAllgerlic(stampDB.cid)
+                .then(async (result) => {
+                  // console.log(stampDB.hn + " : " + "Delete Success");
+                  for (let k = 0; k < dataAllergic.length; k++) {
+                    dataAllergic[k].cid = stampDB.cid;
+                    center102
+                      .insertDrugAllergy(dataAllergic[k])
+                      .then(async (insert_md) => {
+                        // if (insert_md.affectedRows) {
+                        //   console.log(
+                        //     stampDB.hn +
+                        //       " : " +
+                        //       dataAllergic[k].drugname +
+                        //       " : " +
+                        //       "Success"
+                        //   );
+                        //   console.log(
+                        //     "---------------------------------------"
+                        //   );
+                        // } else {
+                        //   console.log(stampDB.hn + " : " + "Failed");
+                        //   console.log(
+                        //     "---------------------------------------"
+                        //   );
+                        // }
+                      })
+
+                      .catch((err) => {
+                        console.log(err);
+                      });
+                  }
+                })
+                .catch((err) => {
+                  console.log(err);
+                });
             }
-          });
-        }
+          }
+        });
       }
-
-      moph_patient = await center102.hn_moph_patient(req.body);
     }
+
+    moph_patient = await center102.hn_moph_patient(req.body);
+    // }
     let data = {
       moph_patient: moph_patient,
     };
@@ -119,7 +121,7 @@ exports.checkallergyController = async (req, res, next) => {
 
       if (getCid.length) {
         if (getCid[0].CardID) {
-          cid = getCid[0].CardID.trim();
+          const cid = getCid[0].CardID.trim();
           let dataAllergic = await getAllergic(cid);
 
           let stampDB = {
@@ -137,6 +139,7 @@ exports.checkallergyController = async (req, res, next) => {
                   .then(async (result) => {
                     // console.log(stampDB.hn + " : " + "Delete Success");
                     for (let k = 0; k < dataAllergic.length; k++) {
+                      dataAllergic[k].cid = stampDB.cid;
                       center102
                         .insertDrugAllergy(dataAllergic[k])
                         .then(async (insert_md) => {
@@ -252,6 +255,19 @@ exports.drugQueuePController = async (req, res, next) => {
     };
   });
   let gethospitalQ = await center102.listPatientQpost(data);
+  // checkq = checkq
+  //   .concat(gethospitalQ)
+  //   .filter(
+  //     (item) =>
+  //       checkq.patientNO.trim() !== item.patientNO.trim() ||
+  //       gethospitalQ.patientNO.trim() !== item.patientNO.trim()
+  //   );
+  checkq = checkq.filter(
+    (obj1) =>
+      !gethospitalQ.some(
+        (obj2) => obj2.patientNO.trim() === obj1.patientNO.trim()
+      )
+  );
   gethospitalQ = checkq.concat(gethospitalQ);
   gethospitalQ.sort((a, b) => {
     let da = new Date(a.createdDT),

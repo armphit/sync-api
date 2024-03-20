@@ -10,6 +10,7 @@ var {
 var {
   syncOPDController,
   syncOPDManualController,
+  testController,
 } = require("./controller/syncController");
 
 var {
@@ -81,6 +82,7 @@ app.post("/getDispend", dispendController);
 app.post("/checkAllergy", checkallergyController);
 app.get("/drugs", drugController);
 app.post("/queueP", drugQueuePController);
+app.get("/test", testController);
 module.exports = app;
 
 app.get("/", (req, res) => {

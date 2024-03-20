@@ -86,6 +86,41 @@ exports.onuspharController = async (req, res, next) => {
 
 exports.dispendController = async (req, res, next) => {
   let getdata = await GD4Unit_101.getDispend(req.body);
+  let val = getdata.find((v) => v.phar == "รวม");
+  let concat = [
+    {
+      phar: "ร้อยละ",
+      numHN: "DRPs รวม ต่อจํานวนรายการยา",
+      drungCount: ((val.num_drp / val.drungCount) * 100).toFixed(2),
+    },
+    {
+      phar: "ร้อยละ",
+      numHN: "DRP รวม ต่อจํานวนครั้งที่ประเมิน",
+      drungCount: ((val.num_drp / val.numHN) * 100).toFixed(2),
+    },
+    {
+      phar: "ร้อยละ",
+      numHN: "%ปัญหาในการใช้ยาที่เกิดจากผู้ป่วยต่อรายการยา",
+      drungCount: (
+        ((val.drp8_1 + val.drp8_2 + val.drp8_3 + val.drp8_4 + val.drp8_5) /
+          val.drungCount) *
+        100
+      ).toFixed(2),
+    },
+    {
+      phar: "ร้อยละ",
+      numHN: "%ความเข้าใจในการใช้ยา",
+      drungCount:
+        100 -
+        (
+          ((val.drp8_1 + val.drp8_2 + val.drp8_3 + val.drp8_4 + val.drp8_5) /
+            val.drungCount) *
+          100
+        ).toFixed(2),
+    },
+  ];
+
+  getdata = getdata.concat(concat);
   res.send(getdata);
 };
 exports.drugController = async (req, res, next) => {

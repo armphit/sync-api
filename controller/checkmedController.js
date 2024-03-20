@@ -118,6 +118,7 @@ exports.checkpatientController = async (req, res, next) => {
         }
       }
       let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
+
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -147,9 +148,9 @@ exports.checkpatientController = async (req, res, next) => {
       //     typeNum: null,
       //   }),
       // }));
+
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
-
       if (datadrugpatient.length) {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
         if (checkTime && !dataPatient.checkComplete) {
@@ -167,6 +168,15 @@ exports.checkpatientController = async (req, res, next) => {
         }
       }
 
+      if (datasend.check) {
+        let ab = datadrugpatient
+          .filter((item) => item.device.includes("M2"))
+          .every((item) => item.checkqty === 0);
+
+        if (ab) {
+          await gd4unit_101_mysql.updateDrugL(datasend);
+        }
+      }
       datasend.PrescriptionNo =
         datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
@@ -252,12 +262,12 @@ exports.reportcheckmedController = async (req, res, next) => {
     let getname = [];
     if (get_mederror.length) {
       for (let data of get_mederror) {
-        data.createDT = data.createDT
-          ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
-          : "";
-        data.hnDT = data.hnDT
-          ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
-          : "";
+        // data.createDT = data.createDT
+        //   ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
+        //   : "";
+        // data.hnDT = data.hnDT
+        //   ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
+        //   : "";
         if (!data.med_wrong_name) {
           getname = await homc.getDrugstar(data.med_wrong);
           if (getname.length) {

@@ -52,6 +52,7 @@ module.exports = function () {
 
   this.fill = async function fill(val, DATA) {
     let site = val.check.sitew1 ? `W9` : `W8`;
+
     var sqlCommand =
       `SELECT
 	m.batch_no AS prescriptionno,
@@ -136,7 +137,7 @@ AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       `)
 ORDER BY
 	p.lastIssTime`;
-
+    console.log(sqlCommand);
     return new Promise(async (resolve, reject) => {
       try {
         const pool = await poolPromise;
@@ -278,6 +279,7 @@ ORDER BY
       `)
     ORDER BY
       p.lastIssTime`;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlCommand);
@@ -466,6 +468,7 @@ ORDER BY
       WHERE hn = ` +
       val +
       ``;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(cid);

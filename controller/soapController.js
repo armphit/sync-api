@@ -46,7 +46,6 @@ exports.soapDIHController = async (req, res, next) => {
 
       await Xmed.updateDicdrug(send);
       await GD4Unit_101.updatePack101(req.body);
-
       res.status(200).json({
         // Authorization: Bearer,
         status: "success",

@@ -462,6 +462,27 @@ module.exports = function () {
   this.getsiteQ = function fill(val, DATA) {
     var sql = `
     SELECT
+    hn,
+    queue,
+    CONVERT (
+     SUBSTR(queue, 2, LENGTH(queue)),
+     UNSIGNED
+   ) num
+FROM
+	queue_p
+ORDER BY
+	createDT DESC
+LIMIT 1`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getsiteQhn = function fill(val, DATA) {
+    var sql = `
+    SELECT
     queue,
     CONVERT (
       SUBSTR(queue, 2, LENGTH(queue)),
@@ -470,7 +491,8 @@ module.exports = function () {
   FROM
     prescription
   WHERE
-    departmentcode = 'W9'
+    departmentcode = 'W8'
+  AND hn = ${val.hn.trim()}
   GROUP BY
     queue
   ORDER BY
@@ -514,6 +536,74 @@ module.exports = function () {
                     AND '${val.date2}'
                 AND queue LIKE 'P%'
                 GROUP BY QN`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.insertQ = function insertQ(val, DATA) {
+    var sql = `
+    INSERT INTO queue_p (hn, queue, createDT)
+VALUES
+	(
+		'${val.hn}',
+		'${val.queue}',
+		CURRENT_TIMESTAMP
+	)`;
+
+    return new Promise(async function (resolve, reject) {
+      // try {
+      //   const result = await connection.query(sql);
+      //   console.log(result);
+      //   resolve(result);
+      // } catch (e) {
+      //   console.log(sql);
+      //   console.log(e);
+      // }
+
+      connection.query(sql, function (err, result, fields) {
+        if (err) {
+          resolve([]);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  };
+  this.addDrugL = function fill(val, DATA) {
+    var sql = `INSERT INTO center.liquid_medicine (
+      hn,
+      queue,
+      date_key,
+      status_c,
+      createDT
+    )
+    VALUES
+      (
+        '${val.hn}',
+        '${val.queue}',
+        CURDATE(),
+        'N',
+        CURRENT_TIMESTAMP ()
+      )`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.updateDrugL = function fill(val, DATA) {
+    var sql = `UPDATE center.liquid_medicine
+    SET status_c = 'Y'
+    WHERE
+      (hn = '${val.hn}')
+    AND (queue = '${val.queue}')
+    AND (date_key = CURDATE ())`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
