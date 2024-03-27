@@ -28,154 +28,179 @@ exports.syncOPDController = async (req, res, next) => {
 
   if (parseInt(hn) != NaN) {
     let checkAllergic = await listPatientAllergicController({ hn: hn });
-
     if (!checkAllergic) {
-      let allTimeOld = "''";
-      let time = await gd4unit101.checkPatient(hn);
-      if (time.length != 0) {
-        for (let d of time) {
-          allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
-        }
-        allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
-      } else {
-        allTimeOld = `''`;
-      }
-      data.allTimeOld = allTimeOld;
-      let x = {};
-      x = await homc.fill(data);
-      let b = x.recordset;
-
-      if (b.length > 0) {
-        let drugarr = [];
-        let q = null;
-        q = await center102.queue(b[0]);
-        if (q.length) {
-          q = q[0].QN;
-        } else {
-          q = checkQ(b[0]);
-        }
-
-        let c = {
-          hn: b[0].hn.trim(),
-          name: b[0].patientname.trim(),
-          sex: b[0].sex.trim(),
-          prescriptionno: b[0].prescriptionno.trim(),
-          patientdob: b[0].patientdob.trim(),
-          queue: q,
-          jvm: check.jvm,
-          dih: check.dih,
-          win1: check.win1,
-          win2: check.win2,
-          user: check.user,
-        };
-        for (let i = 0; i < b.length; i++) {
-          if (b[i].orderitemname) {
-            b[i].orderitemname = b[i].orderitemname.replace(
-              /[\/\\#,+$~.'":?<>{}]/g,
-              " "
-            );
-          }
-
-          let pmpf102 = await pmpf.getDrug(b[i].orderitemcode);
-
-          if (pmpf102.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
-            let drug = {
-              Name: b[i].orderitemname.trim(),
-              Qty: b[i].orderqty.trim(),
-              alias: "",
-              code: b[i].orderitemcode.trim(),
-              firmName: pmpf102[0].firmname,
-              method: "",
-              note: "",
-              spec: pmpf102[0].Strength,
-              type: "",
-              unit: pmpf102[0].dosageunitcode,
-              pack: pmpf102[0].pack,
-              location: pmpf102[0].checkLocation,
-              device: pmpf102[0].deviceCode,
-            };
-
-            drugarr.push(drug);
-          }
-        }
-
-        let drugFilter = drugarr.filter((val) => val.device.includes("M2"));
-        if (drugFilter.length) {
-          await gd4unit101.addDrugL(c);
-        }
-
-        let val = {
-          prescriptionno: b[0].prescriptionno,
-          hn: b[0].hn,
-          date: moment(data.date).subtract(543, "year").format("YYYY-MM-DD"),
-          allTimeOld: allTimeOld,
-        };
-        gd4unit101.fill(val).then((result) => {
-          if (result.affectedRows > 0) {
-            b.forEach(async function (b) {
-              b.lastmodified = b.lastmodified
-                ? b.lastmodified
-                    .toISOString()
-                    .replace(/T/, " ")
-                    .replace(/\..+/, "")
-                : "";
-              b.ordercreatedate = b.ordercreatedate
-                ? b.ordercreatedate
-                    .toISOString()
-                    .replace(/T/, " ")
-                    .replace(/\..+/, "")
-                : "";
-              b.takedate = b.takedate
-                ? b.takedate.toISOString().substr(0, 10)
-                : "";
-              b.queue = c.queue;
-              // if (etc.win1 && !etc.win2) {
-              //   item.prescriptions.prescription.windowNo = 3;
-              // } else if (!etc.win1 && etc.win2) {
-              //   item.prescriptions.prescription.windowNo = 4;
-              // }
-              await gd4unit101.insertDrug(b);
-            });
-            // console.log("HN : " + b[0].hn.trim() + " :success");
-            // console.log("successDT : " + new Date().toLocaleString());
-            // console.log(
-            //   "-------------------------------------------------"
-            // );
-            // res.status(200).json({
-            //   // Authorization: Bearer,
-            //   status: 1,
-            // });
-            getdataHomc(drugarr, c)
-              .then((value) => {
-                if (value.dih === 1 && value.jvm === 1) {
-                  console.log("HN : " + b[0].hn.trim() + " :success");
-                  console.log("successDT : " + new Date().toLocaleString());
-                  console.log(
-                    "-------------------------------------------------"
-                  );
-                  res.status(200).json({
-                    // Authorization: Bearer,
-                    status: 1,
-                  });
-                } else {
-                  sendv.status = 2;
-                  res.send(sendv);
-                }
-              })
-              .catch((err) => {
-                console.log(err);
-                sendv.status = err;
-                res.send(sendv);
-              });
+     
+      let moph_patient = await center102.hn_moph_patient({ hn: hn });
+    
+      if (moph_patient.length) {
+        if (
+          moph_patient[0].timestamp === null &&
+          moph_patient[0].drugcode !== null
+        ) {
+          sendv.status = {
+            err: 6,
+          };
+          res.send(sendv);
+        } 
+        else {
+          let allTimeOld = "";
+          let time = await gd4unit101.checkPatient(hn);
+          if (time.length != 0) {
+            for (let d of time) {
+              if(d.ordertime){
+                allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
+              }
+         
+            }
+            allTimeOld = allTimeOld.substring(0, allTimeOld.length - 1);
           } else {
-            sendv.status = 0;
+            allTimeOld = `''`;
+          }  
+        
+          data.allTimeOld = allTimeOld;
+          let x = {};
+          x = await homc.fill(data);
+          let b = x.recordset;
+          if (b.length > 0) {
+            let drugarr = [];
+            let q = null;
+            q = await center102.queue(b[0]);
+            if (q.length) {
+              q = q[0].QN;
+            } else {
+              q = checkQ(b[0]);
+            }
+            q='P18'
+            let c = {
+              hn: b[0].hn.trim(),
+              name: b[0].patientname.trim(),
+              sex: b[0].sex.trim(),
+              prescriptionno: b[0].prescriptionno.trim(),
+              patientdob: b[0].patientdob.trim(),
+              queue: q,
+              jvm: check.jvm,
+              dih: check.dih,
+              win1: check.win1,
+              win2: check.win2,
+              user: check.user,
+            };
+            for (let i = 0; i < b.length; i++) {
+              if (b[i].orderitemname) {
+                b[i].orderitemname = b[i].orderitemname.replace(
+                  /[\/\\#,+$~.'":?<>{}]/g,
+                  " "
+                );
+              }
+
+              let pmpf102 = await pmpf.getDrug(b[i].orderitemcode);
+
+              if (pmpf102.length !== 0 && Number(b[i].orderqty.trim()) > 0) {
+                let drug = {
+                  Name: b[i].orderitemname.trim(),
+                  Qty: b[i].orderqty.trim(),
+                  alias: "",
+                  code: b[i].orderitemcode.trim(),
+                  firmName: pmpf102[0].firmname,
+                  method: "",
+                  note: "",
+                  spec: pmpf102[0].Strength,
+                  type: "",
+                  unit: pmpf102[0].dosageunitcode,
+                  pack: pmpf102[0].pack,
+                  location: pmpf102[0].checkLocation,
+                  device: pmpf102[0].deviceCode,
+                };
+
+                drugarr.push(drug);
+              }
+            }
+
+            // let drugFilter = drugarr.filter((val) => val.device.includes("M2"));
+            // if (drugFilter.length) {
+            //   await gd4unit101.addDrugL(c);
+            // }
+
+            let val = {
+              prescriptionno: b[0].prescriptionno,
+              hn: b[0].hn,
+              date: moment(data.date)
+                .subtract(543, "year")
+                .format("YYYY-MM-DD"),
+              allTimeOld: allTimeOld,
+            };
+            gd4unit101.fill(val).then((result) => {
+              if (result.affectedRows > 0) {
+                b.forEach(async function (b) {
+                  b.lastmodified = b.lastmodified
+                    ? b.lastmodified
+                        .toISOString()
+                        .replace(/T/, " ")
+                        .replace(/\..+/, "")
+                    : "";
+                  b.ordercreatedate = b.ordercreatedate
+                    ? b.ordercreatedate
+                        .toISOString()
+                        .replace(/T/, " ")
+                        .replace(/\..+/, "")
+                    : "";
+                  b.takedate = b.takedate
+                    ? b.takedate.toISOString().substr(0, 10)
+                    : "";
+                  b.queue = c.queue;
+                  // if (etc.win1 && !etc.win2) {
+                  //   item.prescriptions.prescription.windowNo = 3;
+                  // } else if (!etc.win1 && etc.win2) {
+                  //   item.prescriptions.prescription.windowNo = 4;
+                  // }
+                  await gd4unit101.insertDrug(b);
+                });
+                // console.log("HN : " + b[0].hn.trim() + " :success");
+                // console.log("successDT : " + new Date().toLocaleString());
+                // console.log(
+                //   "-------------------------------------------------"
+                // );
+                // res.status(200).json({
+                //   // Authorization: Bearer,
+                //   status: 1,
+                // });
+                getdataHomc(drugarr, c)
+                  .then((value) => {
+                    if (value.dih === 1 && value.jvm === 1) {
+                      console.log("HN : " + b[0].hn.trim() + " :success");
+                      console.log("successDT : " + new Date().toLocaleString());
+                      console.log(
+                        "-------------------------------------------------"
+                      );
+                      res.status(200).json({
+                        // Authorization: Bearer,
+                        status: 1,
+                      });
+                    } else {
+                      sendv.status = 2;
+                      res.send(sendv);
+                    }
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    sendv.status = err;
+                    res.send(sendv);
+                  });
+              } else {
+                sendv.status = 0;
+                res.send(sendv);
+              }
+            });
+          } else {
+            sendv.status = {
+              err: 3,
+              time: allTimeOld,
+            };
             res.send(sendv);
           }
-        });
+        }
       } else {
         sendv.status = {
-          err: 3,
-          time: allTimeOld,
+          err: 7,
         };
         res.send(sendv);
       }

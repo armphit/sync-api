@@ -5,8 +5,8 @@ module.exports = function () {
   // จริง
   const connection = mysql.createConnection({
     user: "root",
-    password: "Admin@gd4",
-    host: "192.168.185.101",
+    password: "cretem",
+    host: "192.168.185.102",
     database: "gd4unit",
   });
 

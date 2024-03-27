@@ -137,7 +137,7 @@ AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
       `)
 ORDER BY
 	p.lastIssTime`;
-    console.log(sqlCommand);
+
     return new Promise(async (resolve, reject) => {
       try {
         const pool = await poolPromise;

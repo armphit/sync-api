@@ -176,7 +176,7 @@ module.exports = function () {
       s.CID
     ORDER BY
       drugcode DESC`;
-
+   
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1739,7 +1739,7 @@ WHERE
 AND locationQ = 'PHAR_A2'
 ORDER BY
     q.createDT`;
-    console.log(sql);
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
