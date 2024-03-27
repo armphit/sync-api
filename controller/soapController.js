@@ -12,6 +12,7 @@ var db_Xmed = require("../DB/db_Xed_102_sqlserver");
 var Xmed = new db_Xmed();
 var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
 var GD4Unit_101 = new db_GD4Unit_101();
+
 exports.soapDIHController = async (req, res, next) => {
   if (req.body) {
     let xmlDrug = { xml: js2xmlparser.parse("drugDict", req.body) };

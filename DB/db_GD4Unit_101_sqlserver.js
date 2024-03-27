@@ -43,7 +43,6 @@ module.exports = function () {
       resolve(result);
     });
   };
-
   this.updatePack101 = async function fill(val, DATA) {
     var sqlgetdrug =
       `UPDATE ms_drug
@@ -223,7 +222,7 @@ module.exports = function () {
   LEFT JOIN ZKAccess.dbo.DEPARTMENTS d ON d.DEPTID = u.DEFAULTDEPTID
   WHERE
       u.Badgenumber IS NOT NULL
-  AND u.Badgenumber NOT IN (68,70,29252,69,72,208,212,29237)
+      AND u.Badgenumber NOT IN (68,70,29252,69,72,208,212,29237)
   GROUP BY
       a.pin,
       a.device_id
@@ -236,7 +235,6 @@ module.exports = function () {
       resolve(result);
     });
   };
-
   this.getDispend = async function fill(val, DATA) {
     var sqlgetdrug = `SELECT
     *, (

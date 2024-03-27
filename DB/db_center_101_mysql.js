@@ -5,9 +5,9 @@ module.exports = function () {
   // จริง
   const connection = mysql.createConnection({
     user: "root",
-    password: "Admin@gd4",
-    host: "192.168.185.101",
-    database: "center",
+    password: "cretem",
+    host: "192.168.185.102",
+    database: "center_db",
   });
 
   connection.connect(function (err) {

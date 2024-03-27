@@ -1,8 +1,9 @@
 const moment = require("moment");
-var db_mysql101center = require("../DB/db_center_101_mysql");
-var center101 = new db_mysql101center();
+// var db_mysql101center = require("../DB/db_center_101_mysql");
+// var center101 = new db_mysql101center();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
+
 var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
 var jimp = require("jimp");
@@ -11,9 +12,8 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
-var gd4unit_101_mysql = new db_gd4unit_101_mysql();
-
+// const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
+// var gd4unit_101_mysql = new db_gd4unit_101_mysql();
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
@@ -25,14 +25,15 @@ exports.checkpatientController = async (req, res, next) => {
     } else {
       datasend.queue = datasend.site;
     }
-
     let checkpatientdruglength = await homc.checkmed(datasend);
     let dataPatient = await center102.checkdelete(datasend);
+
     if (!dataPatient.length && checkpatientdruglength.recordset.length) {
       await center102.insertPatient(datasend);
       dataPatient = await center102.checkdelete(datasend);
     }
-
+    console.log(checkpatientdruglength.recordset.length);
+    console.log(dataPatient);
     if (dataPatient.length) {
       dataPatient = dataPatient[0];
 
@@ -53,7 +54,7 @@ exports.checkpatientController = async (req, res, next) => {
       x = await homc.checkmed(datasend);
 
       let b = x.recordset;
-
+      console.log(b);
       if (b.length) {
         let datecurrent = moment().format("YYYY-MM-DD HH:mm:ss");
         for (let data of b) {
@@ -118,7 +119,6 @@ exports.checkpatientController = async (req, res, next) => {
         }
       }
       let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
-
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -130,7 +130,6 @@ exports.checkpatientController = async (req, res, next) => {
       let drugjoin = Array.prototype.map
         .call(datadrugpatient, (s) => s.drugCode.trim())
         .join("','");
-      // let imgDrug = await pmpf.drugImage(drugjoin);
       datadrugpatient.map((item) => {
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
@@ -138,19 +137,9 @@ exports.checkpatientController = async (req, res, next) => {
           return item;
         }
       });
-
-      // datadrugpatient = datadrugpatient.map((emp) => ({
-      //   ...emp,
-      //   ...(imgDrug.find(
-      //     (item) => item.drugCode.trim() === emp.drugCode.trim()
-      //   ) ?? {
-      //     pathImage: null,
-      //     typeNum: null,
-      //   }),
-      // }));
-
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
+
       if (datadrugpatient.length) {
         let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
         if (checkTime && !dataPatient.checkComplete) {
@@ -167,20 +156,25 @@ exports.checkpatientController = async (req, res, next) => {
           await center102.updatePatient(data);
         }
       }
+      // if (datasend.check) {
+      //   let ab = datadrugpatient
+      //     .filter((item) => item.device.includes("M2"))
+      //     .every((item) => item.checkqty === 0);
 
-      if (datasend.check) {
-        let ab = datadrugpatient
-          .filter((item) => item.device.includes("M2"))
-          .every((item) => item.checkqty === 0);
-
-        if (ab) {
-          await gd4unit_101_mysql.updateDrugL(datasend);
-        }
-      }
+      //   if (ab) {
+      //     await gd4unit_101_mysql.updateDrugL(datasend);
+      //   }
+      // }
       datasend.PrescriptionNo =
         datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
-      let insertOpenled = await center104.insertLED(datasend);
+      try {
+        await center104.insertLED(datasend);
+      } catch (e) {
+        console.log("insertLED");
+        console.log(datasend);
+        console.error(e);
+      }
     } else {
       res.send({ datadrugpatient: [], patientDrug: [] });
     }
@@ -202,10 +196,6 @@ exports.updatecheckmedController = async (req, res, next) => {
     );
     if (insertloginsertlogcheckmed.affectedRows) {
       let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
-      // let drugjoin = Array.prototype.map
-      //   .call(datadrugpatient, (s) => s.drugCode.trim())
-      //   .join("','");
-      // let imgDrug = await pmpf.drugImage(drugjoin);
       datadrugpatient.map((item) => {
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
@@ -214,15 +204,6 @@ exports.updatecheckmedController = async (req, res, next) => {
         }
       });
 
-      // datadrugpatient = datadrugpatient.map((emp) => ({
-      //   ...emp,
-      //   ...(imgDrug.find(
-      //     (item) => item.drugCode.trim() === emp.drugCode.trim()
-      //   ) ?? {
-      //     pathImage: null,
-      //     typeNum: null,
-      //   }),
-      // }));
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -232,7 +213,13 @@ exports.updatecheckmedController = async (req, res, next) => {
           : "";
       }
       if (req.body.currentqty == 0) {
-        let sed_led = await center104.update_led(req.body);
+        try {
+          await center104.update_led(req.body);
+        } catch (e) {
+          console.log("update_led");
+          console.log(datasend);
+          console.error(e);
+        }
       }
       res.send({ datadrugpatient });
       if (datadrugpatient.length) {
@@ -253,21 +240,29 @@ exports.updatecheckmedController = async (req, res, next) => {
     res.send({ datadrugpatient: [] });
   }
 };
-
 exports.reportcheckmedController = async (req, res, next) => {
   let datadrugcheck = [];
   if (req.body.choice == "1") {
-    let get_mederror = await center102.get_mederror(req.body);
+    // let countcheck = await center102.getCountcheck(req.body);
+    // let user = await center101.getUser();
 
+    // if (countcheck.length) {
+    //   datadrugcheck = countcheck.map((emp) => ({
+    //     ...emp,
+    //     ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
+    //   }));
+
+    // }
+    let get_mederror = await center102.get_mederror(req.body);
     let getname = [];
     if (get_mederror.length) {
       for (let data of get_mederror) {
-        // data.createDT = data.createDT
-        //   ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
-        //   : "";
-        // data.hnDT = data.hnDT
-        //   ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
-        //   : "";
+        data.createDT = data.createDT
+          ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
+        data.hnDT = data.hnDT
+          ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
         if (!data.med_wrong_name) {
           getname = await homc.getDrugstar(data.med_wrong);
           if (getname.length) {
@@ -297,52 +292,52 @@ exports.reportcheckmedController = async (req, res, next) => {
 
       datadrugcheck = get_mederror;
     }
-
     res.send({ datadrugcheck });
   } else {
-    let data101 = await gd4unit_101_mysql.getDrug101(req.body);
-    let data = await center102.getQ(req.body);
+    res.send({ datadrugcheck: [] });
+    //   let data101 = await gd4unit_101_mysql.getDrug101(req.body);
+    //   let data = await center102.getQ(req.body);
 
-    let result = data.map((val) => {
-      return {
-        ...val,
-        ...data101.find((dt) => dt.queue == val.QN && dt.date == val.date),
-      };
-    });
-    result = result.filter((val) => val.queue);
+    //   let result = data.map((val) => {
+    //     return {
+    //       ...val,
+    //       ...data101.find((dt) => dt.queue == val.QN && dt.date == val.date),
+    //     };
+    //   });
+    //   result = result.filter((val) => val.queue);
 
-    datadrugcheck = result
-      .map((val) => {
-        return {
-          ...val,
-          time: get_time_difference(val.timestamp, val.checkComplete),
-        };
-      })
-      .sort((a, b) => {
-        let da = new Date(a.timestamp),
-          db = new Date(b.timestamp);
-        return db - da;
-      });
-    arr = datadrugcheck
-      .map(({ time }) => time)
-      .filter((t) => t !== null)
-      .filter((i) => !i.includes("-"));
+    //   datadrugcheck = result
+    //     .map((val) => {
+    //       return {
+    //         ...val,
+    //         time: get_time_difference(val.timestamp, val.checkComplete),
+    //       };
+    //     })
+    //     .sort((a, b) => {
+    //       let da = new Date(a.timestamp),
+    //         db = new Date(b.timestamp);
+    //       return db - da;
+    //     });
+    //   arr = datadrugcheck
+    //     .map(({ time }) => time)
+    //     .filter((t) => t !== null)
+    //     .filter((i) => !i.includes("-"));
 
-    let average = null;
-    if (arr.length) {
-      average = arr.reduce(function (a, b) {
-        return a + +new Date("1970T" + b + "Z");
-      }, 0);
-      average = new Date(average / arr.length + 500).toJSON().slice(11, 19);
-    }
+    //   let average = null;
+    //   if (arr.length) {
+    //     average = arr.reduce(function (a, b) {
+    //       return a + +new Date("1970T" + b + "Z");
+    //     }, 0);
+    //     average = new Date(average / arr.length + 500).toJSON().slice(11, 19);
+    //   }
 
-    res.send({ datadrugcheck, average });
+    //   res.send({ datadrugcheck, average });
   }
 };
-
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
-  let user_list = await center101.getUser();
+  // let user_list = await center101.getUser();
+  let user_list = [];
   let drug_list = await homc.getDrughomc();
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
@@ -368,7 +363,8 @@ exports.positionerrorController = async (req, res, next) => {
   let dataKey = await homc.getMaker(data);
 
   if (dataKey.length) {
-    let dataUser = await center101.getUser();
+    // let dataUser = await center101.getUser();
+    let dataUser = [];
     key = dataUser.find(
       (val) => val.name.replace(" ", "").trim() === dataKey[0].maker.trim()
     ) ?? { user: "", name: dataKey[0].name };

@@ -29,43 +29,9 @@ module.exports = function () {
     );
 
   this.dataDrugSize = async function fill(val, DATA) {
-    // var sqlgetdrug =
-    //   `SELECT
-    //   val.Code,
-    //   dd.drugName,
-    //   dd.HISPackageRatio AS pack,
-    //   FLOOR(
-    //     (Length / 100) * (Width / 100) * (Height / 100)
-    //   ) AS Item,
-    //   Quantity
-    // FROM
-    //   (
-    //     SELECT
-    //       MAX (xm.Code) Code,
-    //       MAX (xm.Length) Length,
-    //       MAX (xm.Width) Width,
-    //       MAX (xm.Height) Height,
-    //       SUM (sp.Quantity) AS Quantity
-    //     FROM
-    //       XMed.dbo.Spaces sp
-    //     LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
-    //     WHERE
-    //       xm.Length IS NOT NULL
-    //     AND sp.ProductId IS NOT NULL
-    //     GROUP BY
-    //       sp.ProductId
-    //   ) AS val
-    // LEFT JOIN center.dbo.dictdrug dd ON val.Code = dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS
-    // WHERE
-    //   val.Code = '` +
-    //   val +
-    //   `'`;
-
     var sqlgetdrug =
       `SELECT
       val.Code,
-      dd.drugName,
-      dd.HISPackageRatio,
       FLOOR(
         (Length / 100) * (Width / 100) * (Height / 100)
       ) AS Item,
@@ -87,8 +53,7 @@ module.exports = function () {
         GROUP BY
           sp.ProductId
       ) AS val
-    LEFT JOIN center.dbo.dictdrug dd ON val.Code = dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS
-    WHERE
+       WHERE
       val.Code = '` +
       val +
       `'`;
@@ -104,6 +69,138 @@ module.exports = function () {
       }
     });
   };
+
+  this.dataDrugSizePre = async function fill(val, DATA) {
+    var sqlgetdrug =
+      `SELECT
+      drugCode,
+      FLOOR(
+        (Length / 100) * (Width / 100) * (Height / 100)
+      ) AS Item,
+      Quantity
+    FROM
+      (
+        SELECT
+          MAX (dd.drugID) drugID,
+          MAX (dd.drugCode) drugCode,
+          MAX (dd.drugName) drugName,
+          MAX (xm.Code) Code,
+          MAX (xm.Length) Length,
+          MAX (xm.Width) Width,
+          MAX (xm.Height) Height
+        FROM
+          XMed.dbo.Spaces sp
+        LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
+        LEFT JOIN dictdrug_102mySQL dd ON dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS = xm.Code COLLATE SQL_Latin1_General_CP1_CI_AS
+        WHERE
+          xm.Length IS NOT NULL
+        AND sp.ProductId IS NOT NULL
+        GROUP BY
+          sp.ProductId
+      ) AS val
+      WHERE drugCode  LIKE '` +
+      val +
+      `%'`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      try {
+        const request = await pool.request();
+        const result = await request.query(sqlgetdrug);
+        resolve(result.recordset);
+      } catch (error) {
+        // await pool.close();
+        console.log("XMed:" + error);
+      }
+    });
+  };
+
+  // this.dataDrugMain = async function fill(val, DATA) {
+  //   var sqlgetdrug =
+  //     `SELECT
+  //     MAX (dd.drugID) drugID,
+  //     MAX (dd.drugCode) drugCode,
+  //     MAX (dd.drugName) drugName,
+  //     MAX (dd.HisPackageRatio) HisPackageRatio,
+  //     CASE
+  //   WHEN CHARINDEX('-', MAX(dd.drugCode)) > 0
+  //   AND MAX (dd.drugCode) <> 'CYCL-'
+  //   AND MAX (dd.drugCode) <> 'DEX-O'
+  //   AND MAX (dd.drugCode) <> 'POLY-1' THEN
+  //     'Y'
+  //   ELSE
+  //     'N'
+  //   END AS isPrepack
+  //   FROM
+  //     XMed.dbo.Spaces sp
+  //   LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
+  //   LEFT JOIN center.dbo.dictdrug dd ON dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS = xm.Code
+  //   WHERE
+  //     xm.Length IS NOT NULL
+  //   AND sp.ProductId IS NOT NULL
+  //   AND sp.State <> 0
+  //   AND dd.drugCode = '` +
+  //     val.code +
+  //     `'
+  //   GROUP BY
+  //     sp.ProductId
+  //   ORDER BY
+  //     CONVERT(int, MAX(dd.HisPackageRatio)) DESC`;
+  //   return new Promise(async (resolve, reject) => {
+  //     const pool = await poolPromise;
+  //     try {
+  //       const request = await pool.request();
+  //       const result = await request.query(sqlgetdrug);
+  //       resolve(result.recordset);
+  //     } catch (error) {
+  //       // await pool.close();
+  //       console.log("XMed:" + error);
+  //     }
+  //   });
+  // };
+
+  // this.datadrugX = async function fill(val, DATA) {
+  //   var sqlgetdrug =
+  //     `SELECT
+  //     MAX (dd.drugID) drugID,
+  //     MAX (dd.drugCode) drugCode,
+  //     MAX (dd.drugName) drugName,
+  //     MAX (dd.HisPackageRatio) HisPackageRatio,
+  //     CASE
+  //   WHEN CHARINDEX('-', MAX(dd.drugCode)) > 0
+  //   AND MAX (dd.drugCode) <> 'CYCL-'
+  //   AND MAX (dd.drugCode) <> 'DEX-O'
+  //   AND MAX (dd.drugCode) <> 'POLY-1' THEN
+  //     'Y'
+  //   ELSE
+  //     'N'
+  //   END AS isPrepack
+  //   FROM
+  //     XMed.dbo.Spaces sp
+  //   LEFT JOIN XMed.dbo.Products xm ON sp.ProductId = xm.Id
+  //   LEFT JOIN center.dbo.dictdrug dd ON dd.drugID COLLATE SQL_Latin1_General_CP1_CI_AS = xm.Code
+  //   WHERE
+  //     xm.Length IS NOT NULL
+  //   AND sp.ProductId IS NOT NULL
+  //   AND sp.State <> 0
+  //   AND dd.drugCode LIKE '` +
+  //     val.code +
+  //     `%'
+  //   GROUP BY
+  //     sp.ProductId
+  //   ORDER BY
+  //     CONVERT(int, MAX(dd.HisPackageRatio)) DESC`;
+  //   return new Promise(async (resolve, reject) => {
+  //     const pool = await poolPromise;
+  //     try {
+  //       const request = await pool.request();
+  //       const result = await request.query(sqlgetdrug);
+  //       resolve(result.recordset);
+  //     } catch (error) {
+  //       // await pool.close();
+  //       console.log("XMed:" + error);
+  //     }
+  //   });
+  // };
 
   this.dataDrugMain = async function fill(val, DATA) {
     // var sqlgetdrug =
@@ -291,8 +388,7 @@ WHERE
         UPDATE dictdrug
       SET ` +
       val.update +
-      `,
-      checkPrint = NULL
+      `
       WHERE
         drugCode = N'` +
       val.code +

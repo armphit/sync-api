@@ -58,66 +58,10 @@ module.exports = function () {
       });
     });
   };
-  this.queue = function fill(val, DATA) {
-    var sql =
-      `SELECT QN
-      FROM hospitalq
-      WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
-      AND locationQ = 'PHAR_A2'
-      AND patientNO = '` +
-      val.hn.trim() +
-      `'
-      ORDER BY createDT DESC`;
-
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
-    });
-  };
-
-  this.dataQ = function fill(val, DATA) {
-    var sql =
-      `SELECT
-      patientNO,QN,patientName,createDT,timestamp
-  FROM
-      hospitalQ LEFT JOIN moph_confirm on qn = queue and patientNO = hn
-  
-  WHERE
-  date = '` +
-      val.date +
-      `'
-  AND patientNO = '` +
-      val.hn +
-      `'
-  ORDER BY createDT`;
-
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
-    });
-  };
-  this.checkqueue = function fill(val, DATA) {
-    var sql = `SELECT patientNO
-      FROM hospitalq
-      WHERE  date = CURRENT_DATE()
-      AND locationQ = 'PHAR_A2'
-      ORDER BY createDT DESC`;
-
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
-    });
-  };
 
   this.hn_moph_patient = function fill(val, DATA) {
-    // var sql =
-    //   `SELECT
+    //   var sql =
+    //     `SELECT
     //   q.patientNO,
     //   MAX(q.QN) AS QN,
     //   c.timestamp,
@@ -141,8 +85,8 @@ module.exports = function () {
     // LEFT JOIN moph_drugs d ON  s.cid = d.cid AND d.hospcode <> 10666
     // WHERE
     //   patientNO =  '` +
-    //   val +
-    //   `'
+    //     val +
+    //     `'
     // AND date = CURDATE()
     // AND QN LIKE '2%'
 
@@ -150,33 +94,33 @@ module.exports = function () {
     //   patientNO`;
     let site = val.sitew1 ? `W9` : `W8`;
     var sql = `SELECT
-      s.patientID,
-      GROUP_CONCAT(d.drugcode) drugcode,
-      c.timestamp
+    s.patientID,
+    GROUP_CONCAT(d.drugcode) drugcode,
+    c.timestamp
+  FROM
+    moph_sync s
+  LEFT JOIN moph_drugs d ON s.CID = d.cid
+  AND d.hospcode <> '10666'
+  LEFT JOIN (
+    SELECT
+      TIMESTAMP,
+      hn,
+      queue,
+      site
     FROM
-      moph_sync s
-    LEFT JOIN moph_drugs d ON s.CID = d.cid
-    AND d.hospcode <> '10666'
-    LEFT JOIN (
-      SELECT
-        TIMESTAMP,
-        hn,
-        queue,
-        site
-      FROM
-        moph_confirm
-      WHERE
-        CAST(TIMESTAMP AS Date) = CURDATE()
-      AND site = '${site}'
-    ) AS c ON TRIM(c.hn) = TRIM(s.patientID)
+      moph_confirm
     WHERE
-      CAST(s.updateDT AS Date) = CURDATE()
-    AND patientID = '${val.hn}'
-    GROUP BY
-      s.CID
-    ORDER BY
-      drugcode DESC`;
-   
+      CAST(TIMESTAMP AS Date) = CURDATE()
+    AND site = '${site}'
+  ) AS c ON TRIM(c.hn) = TRIM(s.patientID)
+  WHERE
+    CAST(s.updateDT AS Date) = CURDATE()
+  AND patientID = '${val.hn}'
+  GROUP BY
+    s.CID
+  ORDER BY
+    drugcode DESC`;
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -265,7 +209,7 @@ module.exports = function () {
       `'
   ` +
       checkq +
-      `
+      `    
   AND isDelete IS NULL`;
 
     return new Promise(function (resolve, reject) {
@@ -309,7 +253,6 @@ module.exports = function () {
       val.queue +
       `'
         );`;
-
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -318,6 +261,7 @@ module.exports = function () {
     });
   };
   this.getpatient = function fill(val, DATA) {
+    let checkq = val.queue ? `AND queue = '` + val.queue + `'` : ``;
     var sql =
       `SELECT
       *
@@ -330,6 +274,9 @@ module.exports = function () {
     AND date = '` +
       val.dateEN +
       `'
+      ` +
+      checkq +
+      ` 
     AND isDelete IS NULL`;
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -396,7 +343,7 @@ module.exports = function () {
       checkqty,
       scantimestamp
       )
-      VALUES(uuid(),'${val.cmp_id}',${val.count},${val.comma},null,'${val.qty}','${val.date}' )
+      VALUES(uuid(),'${val.cmp_id}',${val.count},${val.comma},null,'${val.qty}',CURRENT_TIMESTAMP() )
        
       `;
 
@@ -411,161 +358,161 @@ module.exports = function () {
   this.selectcheckmed = function fill(val, DATA) {
     let sql =
       `SELECT
-      (
-        SELECT
-          MAX(seq)
-        FROM
-          checkmed
-        WHERE
-          cmp_id = '` +
-      val +
-      `'
-        GROUP BY
-          hn
-      ) AS countDrug,
-    
-    IF (
-      TRIM(pc.drugCode) IN (
-        'CYCLO3',
-        'TDF+2',
-        'LEVO25',
-        'DESOX',
-        'ISOSO3',
-        'TRIA5'
-      ),
-      1,
-      0
-    ) checkLength,
-     pc.id,
-     pc.cmp_id,
-     pc.rowNum,
-     pc.prescriptionno,
-     pc.seq,
-     pc.hn,
-     pc.patientname,
-     pc.sex,
-     pc.patientdob,
-     pc.drugCode,
-    
-    IF (
-      TRIM(pc.drugCode) IN ('OLAZA'),
-      CONCAT(
-        SUBSTRING(pc.drugName, 1, 36),
-        '...'
-      ),
-      pc.drugName
-    ) drugName,
-     pc.drugNameTh,
-     pc.qty,
-     pc.unitCode,
-     pc.departmentcode,
-     pc.righttext1,
-     pc.righttext2,
-     pc.righttext3,
-     pc.lamedName,
-     pc.dosage,
-     pc.freetext0,
-     pc.freetext1,
-     pc.freetext2,
-     pc.itemidentify,
-     pc.indication,
-     pc.qrCode,
-     pc.ordercreatedate,
-     pc.lastmodified,
-     pc.lamedEng,
-     pc.freetext1Eng,
-     pc.checkstamp,
-     pc.checkqty,
-     pc.scantimestamp,
-    
-    IF (
-      sortDrug.sortOrder IS NULL,
-      (
-        SELECT
-          MAX(sortOrder)
-        FROM
-          pmpf_thailand_mnrh.devicedescription
-      ),
-      sortDrug.sortOrder
-    ) sortOrder,
-     GROUP_CONCAT(
-      img.pathImage
-      ORDER BY
-        img.typeNum ASC
-    ) pathImage,
-     GROUP_CONCAT(
-      img.typeNum
-      ORDER BY
-        img.typeNum ASC
-    ) typeNum,
-     bdg.barCode,
-     sortDrug.device,
-     mp.drugCode checkDrug
-    FROM
-      checkmed pc
-    LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
-    LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
-    LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
-    LEFT JOIN (
+    (
       SELECT
-        drugCode,
-        drugName,
-        device,
-        sortOrder
+        MAX(seq)
       FROM
-        (
-          SELECT
-            dd.drugCode,
-            dd.drugName,
-            dv.deviceCode AS device,
-            pd.sortOrder
-          FROM
-            pmpf_thailand_mnrh.devicedrugsetting ds
-          LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
-          LEFT JOIN pmpf_thailand_mnrh.dictdrug dd ON ds.drugID = dd.drugID
-          LEFT JOIN pmpf_thailand_mnrh.devicedescription pd ON pd.shortName =
-          IF (
-            dv.deviceCode = 'CDMed1',
-            'C',
-            dv.deviceCode
-          )
-          WHERE
-            ds.drugID IS NOT NULL
-          AND (
-            dv.deviceCode NOT IN (
-              'AP',
-              'CDMed2',
-              'Xmed1',
-              'ตู้ฉร',
-              'C',
-              'CATV'
-            )
-            AND dv.deviceCode NOT LIKE 'INJ%'
-          )
-          AND dv.deviceCode NOT LIKE 'H%'
-          AND dd.drugCode IS NOT NULL
-          AND dv.pharmacyCode <> 'IPD'
-          GROUP BY
-            dd.drugCode,
-            dv.deviceCode
-        ) sortDrug
-      GROUP BY
-        sortDrug.drugCode
-      ORDER BY
-        sortDrug.sortOrder
-    ) sortDrug ON sortDrug.drugCode = pc.drugCode
-    WHERE
-      cmp_id = '` +
+        checkmed
+      WHERE
+        cmp_id = '` +
       val +
       `'
-    GROUP BY
-      pc.drugCode,
-      pc.seq,
-      pc.lastmodified
+      GROUP BY
+        hn
+    ) AS countDrug,
+  
+  IF (
+    TRIM(pc.drugCode) IN (
+      'CYCLO3',
+      'TDF+2',
+      'LEVO25',
+      'DESOX',
+      'ISOSO3',
+      'TRIA5'
+    ),
+    1,
+    0
+  ) checkLength,
+   pc.id,
+   pc.cmp_id,
+   pc.rowNum,
+   pc.prescriptionno,
+   pc.seq,
+   pc.hn,
+   pc.patientname,
+   pc.sex,
+   pc.patientdob,
+   pc.drugCode,
+  
+  IF (
+    TRIM(pc.drugCode) IN ('OLAZA'),
+    CONCAT(
+      SUBSTRING(pc.drugName, 1, 36),
+      '...'
+    ),
+    pc.drugName
+  ) drugName,
+   pc.drugNameTh,
+   pc.qty,
+   pc.unitCode,
+   pc.departmentcode,
+   pc.righttext1,
+   pc.righttext2,
+   pc.righttext3,
+   pc.lamedName,
+   pc.dosage,
+   pc.freetext0,
+   pc.freetext1,
+   pc.freetext2,
+   pc.itemidentify,
+   pc.indication,
+   pc.qrCode,
+   pc.ordercreatedate,
+   pc.lastmodified,
+   pc.lamedEng,
+   pc.freetext1Eng,
+   pc.checkstamp,
+   pc.checkqty,
+   pc.scantimestamp,
+  
+  IF (
+    sortDrug.sortOrder IS NULL,
+    (
+      SELECT
+        MAX(sortOrder)
+      FROM
+        pmpf_thailand_mnrh.devicedescription
+    ),
+    sortDrug.sortOrder
+  ) sortOrder,
+   GROUP_CONCAT(
+    img.pathImage
     ORDER BY
+      img.typeNum ASC
+  ) pathImage,
+   GROUP_CONCAT(
+    img.typeNum
+    ORDER BY
+      img.typeNum ASC
+  ) typeNum,
+   bdg.barCode,
+   sortDrug.device,
+   mp.drugCode checkDrug
+  FROM
+    checkmed pc
+  LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
+  LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
+  LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
+  LEFT JOIN (
+    SELECT
+      drugCode,
+      drugName,
+      device,
       sortOrder
-       
-      `;
+    FROM
+      (
+        SELECT
+          dd.drugCode,
+          dd.drugName,
+          dv.deviceCode AS device,
+          pd.sortOrder
+        FROM
+          pmpf_thailand_mnrh.devicedrugsetting ds
+        LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
+        LEFT JOIN pmpf_thailand_mnrh.dictdrug dd ON ds.drugID = dd.drugID
+        LEFT JOIN pmpf_thailand_mnrh.devicedescription pd ON pd.shortName =
+        IF (
+          dv.deviceCode = 'CDMed1',
+          'C',
+          dv.deviceCode
+        )
+        WHERE
+          ds.drugID IS NOT NULL
+        AND (
+          dv.deviceCode NOT IN (
+            'AP',
+            'CDMed2',
+            'Xmed1',
+            'ตู้ฉร',
+            'C',
+            'CATV'
+          )
+          AND dv.deviceCode NOT LIKE 'INJ%'
+        )
+        AND dv.deviceCode NOT LIKE 'H%'
+        AND dd.drugCode IS NOT NULL
+        AND dv.pharmacyCode <> 'IPD'
+        GROUP BY
+          dd.drugCode,
+          dv.deviceCode
+      ) sortDrug
+    GROUP BY
+      sortDrug.drugCode
+    ORDER BY
+      sortDrug.sortOrder
+  ) sortDrug ON sortDrug.drugCode = pc.drugCode
+  WHERE
+    cmp_id = '` +
+      val +
+      `'
+  GROUP BY
+    pc.drugCode,
+    pc.seq,
+    pc.lastmodified
+  ORDER BY
+    sortOrder
+     
+    `;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -656,7 +603,6 @@ module.exports = function () {
       });
     });
   };
-
   this.getCountcheck = function fill(val, DATA) {
     let sql =
       `SELECT
@@ -712,7 +658,6 @@ module.exports = function () {
       });
     });
   };
-
   this.getTimecheck = function fill(val, DATA) {
     // let sql =
     //   `SELECT
@@ -826,7 +771,6 @@ module.exports = function () {
   this.get_compiler = function fill(val, DATA) {
     val.queue = val.queue ? (val.queue.includes("P") ? "W8" : val.queue) : ``;
     let q = val.queue ? `AND cmp.queue = '${val.queue}'` : ``;
-
     let sql =
       `SELECT
       cm.drugCode,
@@ -883,7 +827,9 @@ module.exports = function () {
       VALUES
         (
           UUID(),
-          '${val.hn ? val.hn.hn.trim() : ``}',
+          '` +
+      val.hn.hn +
+      `',
           '` +
       val.hn.hnDT +
       `',
@@ -932,7 +878,7 @@ module.exports = function () {
       '${val.source}',
       '${val.error_type}',
       '${val.site}',
-      '${val.type_pre ? val.type_pre : ``}'       
+      '${val.type_pre ? val.type_pre : ``}'    
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -976,7 +922,7 @@ module.exports = function () {
         DATE_FORMAT(
           createDT,
           '%Y-%m-%d %H:%i:%s'
-        ) hnDT,
+        ) createDT,
         level,
         occurrence,
         source,
@@ -1058,6 +1004,7 @@ module.exports = function () {
         : ``;
       sql =
         `SELECT	id,
+        hn,
         DATE_FORMAT(
           hnDT,
           '%Y-%m-%d %H:%i:%s'
@@ -1082,7 +1029,7 @@ module.exports = function () {
         level,
         occurrence,
         source,
-        error_type,        
+        error_type,
         site,
         type_pre,
         (
@@ -1117,7 +1064,6 @@ module.exports = function () {
       AND deleteID is null
         ORDER BY createDT desc`;
     }
-
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1129,8 +1075,8 @@ module.exports = function () {
   this.dataCheckQ = function fill(val, DATA) {
     var sql =
       `SELECT
-      CONCAT(checker_id, " ", checker_name) AS userName ,
-      CONCAT(dispenser_id, " ", dispenser_name) AS userDispen
+      CONCAT(checker_id, " ", checker_name) AS userName,
+      CONCAT(dispenser_id, " ", dispenser_name) AS userDispen 
   FROM
       hospitalQ
   
@@ -1160,9 +1106,7 @@ module.exports = function () {
       SET id = '` +
         val.id +
         `',
-       hn = '` +
-        val.hn +
-        `',
+       hn = '${val.hn ? val.hn.trim() : ""}',
        med = '` +
         val.med +
         `',
@@ -1242,6 +1186,7 @@ module.exports = function () {
       });
     });
   };
+
   this.getQ = function fill(val, DATA) {
     var sql =
       `
@@ -1275,7 +1220,150 @@ AND h.locationQ = 'PHAR_A2'`;
       });
     });
   };
+  this.getQGroupby = function fill(val, DATA) {
+    let checkdata = val.choice == 1 ? "checker" : "dispenser";
+    let position_text = val.choice == 1 ? "check" : "จ่าย";
+    let pharma = val.site
+      ? val.site == "W8"
+        ? "PHAR_A2"
+        : val.site == "W9"
+        ? "PHAR_A1"
+        : val.site == "W18"
+        ? "PHAR_A3"
+        : val.site == "W19"
+        ? "PHAR_M-Park"
+        : ""
+      : "";
+    let getsite = {
+      h: "",
+      l: "",
+      s: "",
+    };
+    if (pharma) {
+      getsite.l = `AND location = '${val.site}'`;
+      getsite.h = `AND locationQ =  '${pharma}'`;
+      getsite.s = `AND site = '${val.site}'`;
+    }
+    var sql = `
+    SELECT
+	${checkdata}_id,
+  ${checkdata}_name,
+	a.order,
+	SUM(h.item) item,
+	e.error
+FROM
+	hospitalq q
+LEFT JOIN (
+	SELECT
+		hn,
+		COUNT(hn) item,
+    createDate
+	FROM
+		hospital_order_his
+	WHERE
+		createDate BETWEEN '${val.date1}'
+    AND '${val.date2}' 
+    ${getsite.s}
+	GROUP BY
+  createDate,hn
+) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
+LEFT JOIN (
+	SELECT
+		${checkdata}_id AS id,
+		COUNT(${checkdata}_id) 'order'
+	FROM
+		hospitalq
+	WHERE
+  date BETWEEN '${val.date1}'
+  AND '${val.date2}'
+  AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  AND '${val.time2}'
+	AND ${checkdata}_id <> '' 
+  AND ${checkdata}_id <> 'M' 
+  ${getsite.h}
+	GROUP BY
+		${checkdata}_id
+) a ON a.id = q.${checkdata}_id
+LEFT JOIN (
+	SELECT
+		offender_id,
+		SUBSTRING_INDEX(offender_id, " ", 1),
 
+	IF (
+		UPPER(
+			SUBSTR(
+				SUBSTRING_INDEX(offender_id, " ", 1),
+				1,
+				1
+			)
+		) = 'P',
+		SUBSTR(
+			SUBSTRING_INDEX(offender_id, " ", 1),
+			2,
+			LENGTH(
+				SUBSTRING_INDEX(offender_id, " ", 1)
+			)
+		),
+		SUBSTRING_INDEX(offender_id, " ", 1)
+	) of_id,
+	COUNT(*) error
+FROM
+	med_error
+WHERE
+	position_text = '${position_text}'
+AND deleteDT IS NULL
+AND CAST(hnDT AS Date) BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}' 
+${getsite.l}
+AND (
+	UPPER(
+		SUBSTR(
+			SUBSTRING_INDEX(offender_id, " ", 1),
+			1,
+			1
+		)
+	) = 'P'
+	OR SUBSTR(
+		SUBSTRING_INDEX(offender_id, " ", 1),
+		1,
+		1
+	) REGEXP '^[0-9]+$' = 1
+)
+GROUP BY
+	of_id
+) e ON e.of_id =
+IF (
+	UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+	SUBSTR(
+		q.${checkdata}_id,
+		2,
+		LENGTH(q.${checkdata}_id)
+	),
+	q.${checkdata}_id
+)
+WHERE
+	date BETWEEN '${val.date1}'
+  AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+AND ${checkdata}_id <> ''
+AND ${checkdata}_id <> 'M' 
+
+AND patientNO <> 'test' 
+${getsite.h}
+GROUP BY
+	${checkdata}_id
+`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
   this.get_moph = function fill(val, DATA) {
     var sql = `
     SELECT
@@ -1328,6 +1416,7 @@ FROM
 		GROUP BY
 			s.patientID 
     `;
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1359,8 +1448,7 @@ FROM
       val.check +
       `',
       CURRENT_TIMESTAMP()
-      )ON DUPLICATE KEY UPDATE CID = ${val.cid},updateDT = CURRENT_TIMESTAMP (),drugAllergy = '${val.check}'`;
-    // console.log(sql);
+      )ON DUPLICATE KEY UPDATE CID = '${val.cid}',updateDT = CURRENT_TIMESTAMP (),drugAllergy = '${val.check}'`;
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1368,6 +1456,7 @@ FROM
       });
     });
   };
+
   // this.insertDrugAllergy = function fill(val, DATA) {
   //   var sql =
   //     `INSERT INTO moph_drugs (
@@ -1376,7 +1465,12 @@ FROM
   //       drugcode,
   //       drugname,
   //       daterecord,
-  //       createdDT
+  //       createdDT,
+  //       typedx,
+  //       allerglevelcode,
+  //       typedxcode,
+  //       allerglevelnum,
+  //       informat
   //     )
   //   VALUES
   //     (
@@ -1384,23 +1478,23 @@ FROM
   //     val.cid +
   //     `',
   //       '` +
-  //     val.hospcode +
+  //     val.hcode +
   //     `',
   //       '` +
-  //     val.drugcode +
+  //     (val.typedxcode ? val.typedxcode : "") +
   //     `',
   //       N'` +
-  //     val.drugname +
+  //     val.drugName +
   //     `',
-  //       '` +
-  //     val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
-  //     `',
-  //     CURRENT_TIMESTAMP ()
+  //     CURRENT_TIMESTAMP (),
+  //     CURRENT_TIMESTAMP (),
+  //     '${val.typexxcode ? val.typexxcode : ""}',
+  //     '${val.allergyLevel ? val.allergyLevel : ""}',
+  //     '${val.typedxcode ? val.typedxcode : ""}',
+  //     '${val.allergyCode ? val.allergyCode : ""}',
+  //     '${val.information ? val.information : ""}'
   //     )ON DUPLICATE KEY UPDATE drugname = '` +
   //     val.drugname +
-  //     `',
-  //      daterecord = '` +
-  //     val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
   //     `',
   //     createdDT = CURRENT_TIMESTAMP ()`;
 
@@ -1411,6 +1505,7 @@ FROM
   //     });
   //   });
   // };
+
   this.insertDrugAllergy = function fill(val, DATA) {
     var sql =
       `INSERT INTO moph_drugs (
@@ -1424,12 +1519,8 @@ FROM
         allerglevelcode,
         typedxcode,
         allerglevelnum,
-<<<<<<< HEAD
         informat,
         allergsymptom
-=======
-        informat
->>>>>>> 8e466b7e5646220810e5b362a1d3bd2d479b5338
       )
     VALUES
       (
@@ -1437,15 +1528,14 @@ FROM
       val.cid +
       `',
         '` +
-      val.hcode +
+      val.hospcode +
       `',
         '` +
-      (val.typedxcode ? val.typedxcode : "") +
+      val.drugcode +
       `',
         N'` +
-      val.drugName +
+      val.drugname +
       `',
-<<<<<<< HEAD
         '` +
       val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
       `',
@@ -1456,17 +1546,66 @@ FROM
       '${val.allerglevelcode ? val.allerglevelcode : ""}',
       '${val.informat ? val.informat : ""}',
       '${val.allergsymptom ? val.allergsymptom : ""}'
-=======
-      CURRENT_TIMESTAMP (),
-      CURRENT_TIMESTAMP (),
-      '${val.typexxcode ? val.typexxcode : ""}',
-      '${val.allergyLevel ? val.allergyLevel : ""}',
-      '${val.typedxcode ? val.typedxcode : ""}',
-      '${val.allergyCode ? val.allergyCode : ""}',
-      '${val.information ? val.information : ""}'
->>>>>>> 8e466b7e5646220810e5b362a1d3bd2d479b5338
       )ON DUPLICATE KEY UPDATE drugname = '` +
       val.drugname +
+      `',
+       daterecord = '` +
+      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+      `',
+      createdDT = CURRENT_TIMESTAMP ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.insertDrugAllergy = function fill(val, DATA) {
+    var sql =
+      `INSERT INTO moph_drugs (
+        cid,
+        hospcode,
+        drugcode,
+        drugname,
+        daterecord,
+        createdDT,
+        typedx,
+        allerglevelcode,
+        typedxcode,
+        allerglevelnum,
+        informat,
+        allergsymptom
+      )
+    VALUES
+      (
+        '` +
+      val.cid +
+      `',
+        '` +
+      val.hospcode +
+      `',
+        '` +
+      val.drugcode +
+      `',
+        N'` +
+      val.drugname +
+      `',
+        '` +
+      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+      `',
+      CURRENT_TIMESTAMP (),
+      '${val.typedx ? val.typedx : ""}',
+      '${val.allerglevel ? val.allerglevel : ""}',
+      '${val.typedxcode ? val.typedxcode : ""}',
+      '${val.allerglevelcode ? val.allerglevelcode : ""}',
+      '${val.informat ? val.informat : ""}',
+      '${val.allergsymptom ? val.allergsymptom : ""}'
+      )ON DUPLICATE KEY UPDATE drugname = '` +
+      val.drugname +
+      `',
+       daterecord = '` +
+      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
       `',
       createdDT = CURRENT_TIMESTAMP ()`;
 
@@ -1487,139 +1626,31 @@ FROM
       });
     });
   };
-  this.getQGroupby = function fill(val, DATA) {
-    let checkdata = val.choice == 1 ? "checker" : "dispenser";
-    let position_text = val.choice == 1 ? "check" : "จ่าย";
-    let pharma = val.site
-      ? val.site == "W8"
-        ? "PHAR_A2"
-        : val.site == "W9"
-        ? "PHAR_A1"
-        : val.site == "W18"
-        ? "PHAR_A3"
-        : val.site == "W19"
-        ? "PHAR_M-Park"
-        : ""
-      : "";
-    let getsite = {
-      h: "",
-      l: "",
-      s: "",
-    };
-    if (pharma) {
-      getsite.l = `AND location = '${val.site}'`;
-      getsite.h = `AND locationQ =  '${pharma}'`;
-      getsite.s = `AND site = '${val.site}'`;
-    }
+  this.queue = function fill(val, DATA) {
+    var sql =
+      `SELECT QN
+      FROM hospitalq
+      WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
+      AND locationQ = 'PHAR_A2'
+      AND patientNO = '` +
+      val.hn.trim() +
+      `'
+      ORDER BY createDT DESC`;
 
-    var sql = `
-    SELECT
-	${checkdata}_id,
-  ${checkdata}_name,
-	a.order,
-	SUM(h.item) item,
-	e.error
-FROM
-	hospitalq q
-LEFT JOIN (
-	SELECT
-		hn,
-		COUNT(hn) item
-	FROM
-		hospital_order_his
-	WHERE
-		createDate BETWEEN '${val.date1}'
-    AND '${val.date2}' 
-    ${getsite.s}
-	GROUP BY
-		hn
-) AS h ON h.hn = q.patientNO
-LEFT JOIN (
-	SELECT
-		${checkdata}_id AS id,
-		COUNT(${checkdata}_id) 'order'
-	FROM
-		hospitalq
-	WHERE
-  date BETWEEN '${val.date1}'
-  AND '${val.date2}'
-  AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-  AND '${val.time2}'
-	AND ${checkdata}_id <> '' 
-  ${getsite.h}
-	GROUP BY
-		${checkdata}_id
-) a ON a.id = q.${checkdata}_id
-LEFT JOIN (
-	SELECT
-		offender_id,
-		SUBSTRING_INDEX(offender_id, " ", 1),
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.checkqueue = function fill(val, DATA) {
+    var sql = `SELECT patientNO
+      FROM hospitalq
+      WHERE  date = CURRENT_DATE()
+      AND locationQ = 'PHAR_A2'
+      ORDER BY createDT DESC`;
 
-	IF (
-		UPPER(
-			SUBSTR(
-				SUBSTRING_INDEX(offender_id, " ", 1),
-				1,
-				1
-			)
-		) = 'P',
-		SUBSTR(
-			SUBSTRING_INDEX(offender_id, " ", 1),
-			2,
-			LENGTH(
-				SUBSTRING_INDEX(offender_id, " ", 1)
-			)
-		),
-		SUBSTRING_INDEX(offender_id, " ", 1)
-	) of_id,
-	COUNT(*) error
-FROM
-	med_error
-WHERE
-	position_text = '${position_text}'
-AND CAST(hnDT AS Date) BETWEEN '${val.date1}'
-AND '${val.date2}'
-AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '${val.time1}'
-AND '${val.time2}' 
-${getsite.l}
-AND (
-	UPPER(
-		SUBSTR(
-			SUBSTRING_INDEX(offender_id, " ", 1),
-			1,
-			1
-		)
-	) = 'P'
-	OR SUBSTR(
-		SUBSTRING_INDEX(offender_id, " ", 1),
-		1,
-		1
-	) REGEXP '^[0-9]+$' = 1
-)
-GROUP BY
-	of_id
-) e ON e.of_id =
-IF (
-	UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
-	SUBSTR(
-		q.${checkdata}_id,
-		2,
-		LENGTH(q.${checkdata}_id)
-	),
-	q.${checkdata}_id
-)
-WHERE
-	date BETWEEN '${val.date1}'
-  AND '${val.date2}'
-AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-AND '${val.time2}'
-AND ${checkdata}_id <> ''
-AND patientNO <> 'test' 
-${getsite.h}
-GROUP BY
-	${checkdata}_id
-`;
-    console.log(sql);
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1696,7 +1727,7 @@ FROM
     hospitalQ q
     LEFT JOIN moph_sync s ON q.patientNO = s.patientID
     AND CAST(s.updateDT AS Date) = CURDATE()
-    AND s.drugAllergy = 'Y'
+    
     LEFT JOIN (
       SELECT
         cid,
@@ -1718,8 +1749,8 @@ LEFT JOIN (
     WHERE
         CAST(TIMESTAMP AS Date) BETWEEN '${val.date1}'
         AND '${val.date2}'
-) AS c ON q.qn = c.queue
-AND q.patientNO = c.hn
+        AND site = 'W8'
+) AS c ON q.patientNO = c.hn
 LEFT JOIN (
     SELECT
         hn,

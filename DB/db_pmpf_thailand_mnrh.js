@@ -259,47 +259,18 @@ GROUP BY
     } else {
       sql = `SELECT
       CASE
-      WHEN dd.drugCode = 'CYCL-' THEN
-        'CYCL-'
-      WHEN dd.drugCode = 'DEX-O' THEN
-        'DEX-O'
-      WHEN dd.drugCode = 'DEX-E' THEN
-        'DEX-E'
-      WHEN dd.drugCode = 'POLY-1' THEN
-        'POLY-1'
-      WHEN dd.drugCode = 'CO-TR3' THEN
-        'CO-TR3'
-      WHEN dd.drugCode = 'CO-TR2' THEN
-        'CO-TR2'
-      WHEN dd.drugCode = 'CO-TR1' THEN
-        'CO-TR1'
-      WHEN dd.drugCode = 'L-ASPA' THEN
-        'L-ASPA'
-      WHEN dd.drugCode = 'RIS-1' THEN
-        'RIS-1'
-      WHEN dd.drugCode = 'RIS-2' THEN
-        'RIS-2'
-      WHEN dd.drugCode = 'N-ACE' THEN
-        'N-ACE'
-      WHEN dd.drugCode = 'ANTI-D' THEN
-        'ANTI-D'
-      WHEN dd.drugCode = 'CIS-P2' THEN
-        'CIS-P2'
-      WHEN dd.drugCode = 'CO-TR3-1' THEN
-        'CO-TR3'
-      WHEN dd.drugCode = 'CO-TR3-2' THEN
-        'CO-TR3'
-      ELSE
-        SUBSTRING_INDEX(dd.drugCode, '-', 1)
+    WHEN dd.drugCode = 'CYCL-' THEN
+      'CYCL-'
+    WHEN dd.drugCode = 'DEX-O' THEN
+      'DEX-O'
+    WHEN dd.drugCode = 'DEX-E' THEN
+      'DEX-E'
+    WHEN dd.drugCode = 'POLY-1' THEN
+      'LPOLY-1'
+    ELSE
+      SUBSTRING_INDEX(dd.drugCode, '-', 1)
     END AS code,
-      (
-	SELECT
-		drugName
-	FROM
-		pmpf_thailand_mnrh.dictdrug
-	WHERE
-		drugCode = code
-) AS Name,
+     dd.drugName AS Name,
      dd.miniSpec AS spec,
      dd.HISPackageRatio AS pack,
      dd.firmName AS firmName,
@@ -327,7 +298,6 @@ GROUP BY
       });
     });
   };
-
   this.drugSEPack = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -483,56 +453,6 @@ GROUP BY
       '` +
       val.date2 +
       `' )`;
-
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
-    });
-  };
-  this.onusphar = function fill(val, DATA) {
-    var sql =
-      `SELECT
-  a.userCheck staff,
-  '' AS 'staffName',
-  '' AS 'order',
-  COUNT(*) AS item
-FROM
-  (
-      SELECT
-          cmp.id,
-          cm.id cm_id,
-          cm.drugCode,
-          cml.user userCheck
-      FROM
-          center.checkmedpatient cmp
-      LEFT JOIN center.checkmed cm ON cm.cmp_id = cmp.id
-      LEFT JOIN center.checkmed_log cml ON cml.cm_id = cm.id
-      WHERE
-          cmp.timestamp BETWEEN '` +
-      val.date1 +
-      `` +
-      " " +
-      val.time1 +
-      `'
-          AND '` +
-      val.date2 +
-      `` +
-      " " +
-      val.time2 +
-      `'
-      AND cmp.isDelete IS NULL
-      AND cml.user IS NOT NULL
-      GROUP BY
-          cml.cm_id,
-          cml.user
-      ORDER BY
-          cml.cm_id,
-          cm.drugCode
-  ) AS a
-GROUP BY
-  a.userCheck`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

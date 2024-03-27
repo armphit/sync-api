@@ -16,6 +16,7 @@ module.exports = function () {
   });
 
   this.fill = function fill(val, DATA) {
+  
     var sql =
       `INSERT INTO synclastupdate_opd (
         prescriptionno,
@@ -72,6 +73,9 @@ module.exports = function () {
     let itemidentify = val.itemidentify
       ? val.itemidentify.replace("'", " ")
       : val.itemidentify;
+    let orderitemname = val.orderitemname
+      ? val.orderitemname.trim()
+      : val.orderitemname;
     var sql =
       `INSERT INTO  prescription  (
         prescriptionno ,
@@ -130,7 +134,7 @@ module.exports = function () {
       val.orderitemcode.trim() +
       `',
          '` +
-      val.orderitemname.trim() +
+      orderitemname +
       `',
          '` +
       val.orderqty.trim() +
@@ -197,6 +201,29 @@ module.exports = function () {
     });
   };
 
+  this.checkPatientcheckmed = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      hn,
+      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+   FROM
+      center_db.checkmed p
+   WHERE
+      date_format(p.lastmodified, '%Y-%m-%d') = CURRENT_DATE
+   AND p.hn = '` +
+      val +
+      `'
+   GROUP BY
+      date_format(p.lastmodified, '%H:%i')`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
   this.getPatientSync = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -240,7 +267,7 @@ module.exports = function () {
         prescription AS pre
       WHERE
         syn.hn = pre.hn
-      AND syn.realdate = '` +
+      AND CAST(syn.readdatetime AS Date) = '` +
       val +
       `'
       GROUP BY
@@ -277,7 +304,7 @@ module.exports = function () {
           gd4unit_bk.prescription AS pre2
         WHERE
           syn2.hn = pre2.hn
-        AND syn2.realdate = '` +
+          AND CAST(syn2.readdatetime AS Date) = '` +
       val +
       `'
         GROUP BY
@@ -297,6 +324,7 @@ module.exports = function () {
   };
 
   this.getDrugSync = function fill(val, DATA) {
+ 
     var sql =
       `SELECT
       prescriptionno,
@@ -370,6 +398,293 @@ module.exports = function () {
     });
   };
 
+  String.prototype.padL = function padL(n) {
+    var target = this;
+    while (target.length < 7) {
+      target = n + target;
+    }
+    return target;
+  };
+
+  this.datadrugX = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      dd.drugID,
+      dd.drugCode,
+      dd.drugName,
+      dd.HisPackageRatio,
+      GROUP_CONCAT(de.deviceCode) AS deviceCode,
+      CASE
+    WHEN locate('-', drugCode) > 0
+    AND dd.drugCode <> 'CYCL-'
+    AND dd.drugCode <> 'DEX-O'
+    AND dd.drugCode <> 'POLY-1'
+    AND de.deviceCode = 'Xmed1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS isPrepack
+    FROM
+    center_db.devicedrugsetting ds
+    INNER JOIN center_db.device de ON ds.deviceID = de.deviceID
+    LEFT JOIN center_db.dictdrug dd ON dd.drugID = ds.drugID
+    WHERE
+      dd.drugCode IS NOT NULL
+      AND de.deviceCode = '` +
+      val.lo +
+      `'
+  AND dd.drugCode like '` +
+      val.code +
+      `%'
+    GROUP BY
+      dd.drugCode
+    ORDER BY
+      dd.HisPackageRatio DESC`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.datadrugMain = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      dd.drugID,
+      dd.drugCode,
+      dd.drugName,
+      dd.HisPackageRatio,
+      GROUP_CONCAT(de.deviceCode) AS deviceCode
+  FROM
+  center_db.devicedrugsetting ds
+  INNER JOIN center_db.device de ON ds.deviceID = de.deviceID
+  LEFT JOIN center_db.dictdrug dd ON dd.drugID = ds.drugID
+  WHERE
+  (
+    dd.drugCode NOT LIKE '%-1%'
+      AND dd.drugCode NOT LIKE '%-2%'
+      AND dd.drugCode NOT LIKE '%-3%'
+      AND dd.drugCode NOT LIKE '%-4%'
+      AND dd.drugCode NOT LIKE '%-5%'
+      OR dd.drugCode = 'poly-1'
+  )
+  AND    dd.drugCode IS NOT NULL
+  AND de.deviceCode = '` +
+      val.lo +
+      `'
+  AND dd.drugCode = '` +
+      val.code +
+      `'
+  GROUP BY
+      dd.drugCode`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.insertDrugcheck = function fill(val, DATA) {
+    let sql = `INSERT INTO center_db.checkmed (
+      rowNum,
+      prescriptionno,
+      seq,
+      hn,
+      patientname,
+      sex,
+      patientdob,
+      drugCode,
+      drugName,
+      drugNameTh,
+      qty,
+      unitCode,
+      departmentcode,
+      righttext1,
+      righttext2,
+      righttext3,
+      lamedName,
+      dosage,
+      freetext0,
+      freetext1,
+      freetext2,
+      itemidentify,
+      qrCode,
+      ordercreatedate,
+      lastmodified,
+      checkstamp,
+      checkqty,
+      scantimestamp
+      )
+      VALUES(${val.count},${val.comma},null,'${val.qty}','${val.date}' )
+       
+      `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.selectcheckmed = function fill(val, DATA) {
+    let sql =
+      `SELECT
+      (SELECT
+        MAX(seq) 
+            FROM
+            center_db.checkmed
+        
+            WHERE
+              hn = '` +
+      val +
+      `'
+        GROUP BY hn) AS countDrug,
+      pc.*,img.pathImage
+FROM
+    center_db.checkmed pc
+LEFT JOIN (
+    SELECT
+        drugCode,
+        MIN(pathImage) AS pathImage
+    FROM
+        center_db.drug_image
+    GROUP BY
+        drugCode
+) img ON TRIM(pc.drugCode) = TRIM(img.drugCode)
+WHERE hn = '` +
+      val +
+      `'
+AND CAST(pc.ordercreatedate AS Date) = CURDATE()      
+ORDER BY checkstamp
+       
+      `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.insertPatient = function fill(val, DATA) {
+    var sql =
+      `
+      INSERT INTO center_db.checkmedpatient (hn, STATUS, date, TIMESTAMP)
+      VALUES
+        (
+          '` +
+      val +
+      `',
+          NULL,
+          CURRENT_DATE (),
+          CURRENT_TIMESTAMP ()
+        ) ON DUPLICATE KEY UPDATE TIMESTAMP = CURRENT_TIMESTAMP ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.dataPatient = function fill(val, DATA) {
+    var sql =
+      `SELECT
+			*
+		FROM
+			center_db.checkmedpatient_copy
+	WHERE
+		hn = '` +
+      val +
+      `'
+	AND date = CURRENT_DATE ()`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.insertPatient_copy = function fill(val, DATA) {
+    var sql =
+      `INSERT INTO center_db.checkmedpatient_copy (
+        id,
+        hn,
+        userCheck,
+        date,
+        timestamp,
+        isDelete,
+        userDelete
+      )
+      VALUES
+        (
+          uuid(),
+              '` +
+      val +
+      `',
+          'admin',
+          CURRENT_DATE (),
+          CURRENT_TIMESTAMP (),
+          NULL,
+          NULL
+        )`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getpatient = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      *
+    FROM
+      center_db.checkmedpatient_copy
+    WHERE
+      hn = '` +
+      val +
+      `'
+    AND date = CURRENT_DATE ()
+    AND isDelete IS NULL`;
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+
+  this.checkPatientcheckmed_copy = function fill(val, DATA) {
+    var sql =
+      `SELECT
+      hn,
+      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+   FROM
+      center_db.checkmed_copy p
+   WHERE
+      date_format(p.lastmodified, '%Y-%m-%d') = CURRENT_DATE
+   AND p.cmp_id = '` +
+      val +
+      `'
+   GROUP BY
+      date_format(p.lastmodified, '%H:%i')`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
   this.getDrug101 = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -393,7 +708,7 @@ module.exports = function () {
       val.time1 +
       `' AND '` +
       val.time2 +
-      `'
+      `'    
   UNION
     SELECT
       queue,
@@ -426,32 +741,24 @@ module.exports = function () {
     });
   };
 
-  this.getDrugQ = function fill(val, DATA) {
-    var sql = `SELECT
-      queue,
-      COUNT(*) item
-    FROM
-      prescription
-    WHERE
-      CAST(lastmodified AS DATE) BETWEEN '${val.date1}'
-      AND '${val.date2}'
-      AND TIME_FORMAT(lastmodified, '%H:%i:%s') BETWEEN '${val.time1}'
-      AND '${val.time2}'
-    GROUP BY
-      queue
-    UNION
-      SELECT
-        queue,
-        COUNT(*)
-      FROM
-        gd4unit_bk.prescription
-      WHERE
-        CAST(lastmodified AS DATE) BETWEEN '${val.date1}'
-        AND '${val.date2}'
-        AND TIME_FORMAT(lastmodified, '%H:%i:%s') BETWEEN '${val.time1}'
-        AND '${val.time2}'
-      GROUP BY
-        queue`;
+  this.getsiteQ = function fill(val, DATA) {
+    var sql = `
+    SELECT
+    queue,
+    CONVERT (
+      SUBSTR(queue, 2, LENGTH(queue)),
+      UNSIGNED
+    ) num
+  FROM
+    prescription
+  WHERE
+  departmentcode = 'W8'
+	AND queue LIKE 'P%'
+  GROUP BY
+    queue
+  ORDER BY
+    num DESC
+  LIMIT 1`;
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -459,20 +766,30 @@ module.exports = function () {
       });
     });
   };
-  this.getsiteQ = function fill(val, DATA) {
+  this.getqp = function fill(val, DATA) {
     var sql = `
     SELECT
-    hn,
-    queue,
-    CONVERT (
-     SUBSTR(queue, 2, LENGTH(queue)),
-     UNSIGNED
-   ) num
-FROM
-	queue_p
-ORDER BY
-	createDT DESC
-LIMIT 1`;
+                hn 'patientNO',
+                queue 'QN'
+            FROM
+                prescription
+            WHERE
+                CAST(datetimestamp AS Date) BETWEEN '${val.date1}'
+            AND '${val.date2}'
+            AND queue LIKE 'P%'
+            GROUP BY QN
+            UNION
+                SELECT
+                hn 'patientNO',
+                queue 'QN'
+                FROM
+                    gd4unit_bk.prescription
+                WHERE
+                    CAST(datetimestamp AS Date) BETWEEN '${val.date1}'
+                    AND '${val.date2}'
+                AND queue LIKE 'P%'
+                GROUP BY QN`;
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -505,76 +822,8 @@ LIMIT 1`;
       });
     });
   };
-  String.prototype.padL = function padL(n) {
-    var target = this;
-    while (target.length < 7) {
-      target = n + target;
-    }
-    return target;
-  };
-
-  this.getqp = function fill(val, DATA) {
-    var sql = `
-    SELECT
-                hn 'patientNO',
-                queue 'QN'
-            FROM
-                prescription
-            WHERE
-                CAST(datetimestamp AS Date) BETWEEN '${val.date1}'
-            AND '${val.date2}'
-            AND queue LIKE 'P%'
-            GROUP BY QN
-            UNION
-                SELECT
-                hn 'patientNO',
-                queue 'QN'
-                FROM
-                    gd4unit_bk.prescription
-                WHERE
-                    CAST(datetimestamp AS Date) BETWEEN '${val.date1}'
-                    AND '${val.date2}'
-                AND queue LIKE 'P%'
-                GROUP BY QN`;
-
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
-    });
-  };
-  this.insertQ = function insertQ(val, DATA) {
-    var sql = `
-    INSERT INTO queue_p (hn, queue, createDT)
-VALUES
-	(
-		'${val.hn}',
-		'${val.queue}',
-		CURRENT_TIMESTAMP
-	)`;
-
-    return new Promise(async function (resolve, reject) {
-      // try {
-      //   const result = await connection.query(sql);
-      //   console.log(result);
-      //   resolve(result);
-      // } catch (e) {
-      //   console.log(sql);
-      //   console.log(e);
-      // }
-
-      connection.query(sql, function (err, result, fields) {
-        if (err) {
-          resolve([]);
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  };
   this.addDrugL = function fill(val, DATA) {
-    var sql = `INSERT INTO center.liquid_medicine (
+    var sql = `INSERT INTO center_db.liquid_medicine (
       hn,
       queue,
       date_key,
@@ -598,7 +847,7 @@ VALUES
     });
   };
   this.updateDrugL = function fill(val, DATA) {
-    var sql = `UPDATE center.liquid_medicine
+    var sql = `UPDATE center_db.liquid_medicine
     SET status_c = 'Y'
     WHERE
       (hn = '${val.hn}')

@@ -40,12 +40,34 @@ module.exports = function () {
         console.log("Database Connection Failed! Bad Config: ", err);
         setTimeout(() => {
           if (num <= 5) {
-            console.log("OnCube Error: " + num);
+            let todayDate = formatDate(new Date());
+            console.log(todayDate + " OnCube Error: " + num);
+
             connectDB();
           }
         }, 60000);
       });
   }
+  function padTo2Digits(num) {
+    return num.toString().padStart(2, "0");
+  }
+
+  function formatDate(date) {
+    return (
+      [
+        date.getFullYear(),
+        padTo2Digits(date.getMonth() + 1),
+        padTo2Digits(date.getDate()),
+      ].join("-") +
+      " " +
+      [
+        padTo2Digits(date.getHours()),
+        padTo2Digits(date.getMinutes()),
+        padTo2Digits(date.getSeconds()),
+      ].join(":")
+    );
+  }
+
   this.datadrug = function fill(val, DATA) {
     var sql =
       `SELECT

@@ -5,6 +5,7 @@ module.exports = function () {
   //จริง
   this.config = {
     user: "robot",
+    // password: "Robot@MNRH2022",
     password: "57496208",
     server: "192.168.41.1",
     database: "MHR",
@@ -37,17 +38,6 @@ module.exports = function () {
       target = n + target;
     }
     return target;
-  };
-
-  this.fill = function fill(CMD, DATA) {
-    // // create Request object
-    new this.sql.Request(this.connection).query(CMD, function (err, recordset) {
-      if (err) console.log("ERROR: " + err);
-
-      // send records as a response
-      // res.send(recordset);
-      DATA(recordset);
-    });
   };
 
   this.fill = async function fill(val, DATA) {
@@ -152,10 +142,14 @@ ORDER BY
 
   this.dataDrug = async function fill(CMD, DATA) {
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(CMD);
-
-      resolve(result);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(CMD);
+        resolve(result);
+      } catch (error) {
+        console.log(CMD);
+        console.log(error);
+      }
     });
   };
 
@@ -225,7 +219,7 @@ ORDER BY
       LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
       WHERE
         mif.Med_Inv_Code = m.inv_code
-      AND mi.Description <> ''
+        AND mi.Description <> ''
       AND mi.InfoGroup = 'Indication' FOR XML PATH ('')
     ) AS indication,
     qr.QRCode,
@@ -268,7 +262,7 @@ ORDER BY
       mh.hn = '` +
       hn +
       `'
-    AND mh.invdate = ` +
+      AND mh.invdate = ` +
       val.date +
       `
     AND m.pat_status = 'O'
@@ -281,9 +275,14 @@ ORDER BY
       p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
 
@@ -292,7 +291,53 @@ ORDER BY
     for (let i = 0; i < 7 - String(val.hn).length; i++) {
       hn = " " + hn;
     }
-
+    // var sqlCommand =
+    //   `SELECT
+    //     TRIM (pt.titleName) + ' ' + pa.firstName + ' ' + TRIM(pa.lastName) AS name_patient,
+    //     p.invCode,
+    //     la.lamed_name AS lamedName,
+    //     p.lamedQty AS dosage,
+    //     (
+    //         SELECT
+    //             lamed_name
+    //         FROM
+    //             Lamed lam
+    //         WHERE
+    //             lam.lamed_code = p.lamedUnit
+    //     ) AS freetext0,
+    //     p.lamedTimeText AS freetext1,
+    //     p.lastIssTime,
+    //     p.lamedText AS freetext2,
+    //     '( ' + (
+    //      SELECT
+    //        DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
+    //      FROM
+    //        Med_Info_Group mi
+    //      LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+    //      WHERE
+    //        mif.Med_Inv_Code = '` +
+    //   val.code +
+    //   `'
+    //      AND (
+    //        mi.InfoGroup LIKE '%สี%'
+    //        OR mi.InfoGroup IS NULL
+    //      ) FOR XML PATH ('')
+    //    ) + ')' AS itemidentify
+    // FROM
+    //     Patmed p
+    // LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
+    // LEFT JOIN PATIENT pa ON p.hn = pa.hn
+    // LEFT JOIN PTITLE pt ON pa.titleCode = pt.titleCode
+    // WHERE
+    //     p.hn = '` +
+    //   hn +
+    //   `'
+    //     AND p.invCode = '` +
+    //   val.code +
+    //   `'
+    // AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
+    //   val.date +
+    //   `'`;
     let sqlCommand =
       `SELECT
       TRIM (ti.titleName) + ' ' + pt.firstName + ' ' + TRIM (pt.lastName) AS name_patient,
@@ -368,26 +413,32 @@ ORDER BY
       p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
   this.getDrugstar = async function fill(val, DATA) {
     var sqlCommand =
       `SELECT
+      TRIM (code) code,
+      TRIM (name) name,
       IIF (
         SUBSTRING (
           gen_name,
           LEN(TRIM(gen_name)),
           LEN(TRIM(gen_name))
-        ) = '*',
+        ) = '*' OR code IN ('DEXTR3','NORTR2'),
         1,
         0
-      ) val,     
+      ) val,
       TRIM (code) code,
-      TRIM (name) name,
-      TRIM (gen_name) gen_name
+      TRIM (name) name
     FROM
       Med_inv
     WHERE
@@ -396,9 +447,14 @@ ORDER BY
       `'`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
   this.getDrughomc = async function fill(val, DATA) {
@@ -408,12 +464,18 @@ ORDER BY
     FROM
       Med_inv
     WHERE
-      site = '1'`;
+      site = '1'
+    AND hideSelect = 'N'`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
   this.getMaker = async function fill(val, DATA) {
@@ -455,27 +517,35 @@ ORDER BY
       val.drugCode +
       `')`;
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
-
   this.getCid = async function fill(val, DATA) {
     var cid =
       `SELECT CardID
       FROM PatSS
-      WHERE hn = ` +
+      WHERE TRIM(hn) = '` +
       val +
-      ``;
-
+      `'`;
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(cid);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(cid);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(hn);
+        console.log(cid);
+        console.log(error);
+      }
     });
   };
-
   this.getDrugip2000 = async function fill(val, DATA) {
     var cid = `SELECT
       m.code AS orderitemcode,
@@ -595,7 +665,6 @@ ORDER BY
       resolve(result.recordset);
     });
   };
-
   this.getQP = async function fill(val, DATA) {
     var cid = `SELECT
     o.hn AS patientNO,

@@ -1,5 +1,3 @@
-const db = require("../db/db_Homc");
-
 class SyncModel {
   constructor() {}
 
