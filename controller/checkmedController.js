@@ -12,8 +12,8 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-// const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
-// var gd4unit_101_mysql = new db_gd4unit_101_mysql();
+const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
+var gd4unit_101_mysql = new db_gd4unit_101_mysql();
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
@@ -21,7 +21,16 @@ exports.checkpatientController = async (req, res, next) => {
     datasend.allTimeOld = `''`;
     if (datasend.site == "W8" || datasend.site == "W18") {
       let q = await center102.fill(datasend);
-      datasend.queue = q[0] ? q[0].QN : datasend.site;
+      let checkhn = await gd4unit_101_mysql.getsiteQhn(dataPatient.hn);
+      if (checkhn.length) {
+        if (q[0].QN != checkhn[0].queue) {
+          datasend.queue = checkhn[0].queue;
+        } else {
+          datasend.queue = q[0] ? q[0].QN : datasend.site;
+        }
+      } else {
+        datasend.queue = q[0] ? q[0].QN : datasend.site;
+      }
     } else {
       datasend.queue = datasend.site;
     }
@@ -32,8 +41,7 @@ exports.checkpatientController = async (req, res, next) => {
       await center102.insertPatient(datasend);
       dataPatient = await center102.checkdelete(datasend);
     }
-    console.log(checkpatientdruglength.recordset.length);
-    console.log(dataPatient);
+
     if (dataPatient.length) {
       dataPatient = dataPatient[0];
 
@@ -54,7 +62,7 @@ exports.checkpatientController = async (req, res, next) => {
       x = await homc.checkmed(datasend);
 
       let b = x.recordset;
-      console.log(b);
+
       if (b.length) {
         let datecurrent = moment().format("YYYY-MM-DD HH:mm:ss");
         for (let data of b) {
@@ -119,6 +127,24 @@ exports.checkpatientController = async (req, res, next) => {
         }
       }
       let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
+      if (datadrugpatient.length) {
+        let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
+        if (checkTime && !dataPatient.checkComplete) {
+          let data = {
+            status: 1,
+            patient: dataPatient.id,
+          };
+          await center102.updatePatient(data);
+        } else if (!checkTime && dataPatient.checkComplete) {
+          let data = {
+            status: 0,
+            patient: dataPatient.id,
+          };
+          await center102.updatePatient(data);
+        }
+      }
+
+      //  datadrugpatient = await center102.selectcheckmed(dataPatient.id);
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -140,31 +166,6 @@ exports.checkpatientController = async (req, res, next) => {
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
 
-      if (datadrugpatient.length) {
-        let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
-        if (checkTime && !dataPatient.checkComplete) {
-          let data = {
-            status: 1,
-            patient: dataPatient.id,
-          };
-          await center102.updatePatient(data);
-        } else if (!checkTime && dataPatient.checkComplete) {
-          let data = {
-            status: 0,
-            patient: dataPatient.id,
-          };
-          await center102.updatePatient(data);
-        }
-      }
-      // if (datasend.check) {
-      //   let ab = datadrugpatient
-      //     .filter((item) => item.device.includes("M2"))
-      //     .every((item) => item.checkqty === 0);
-
-      //   if (ab) {
-      //     await gd4unit_101_mysql.updateDrugL(datasend);
-      //   }
-      // }
       datasend.PrescriptionNo =
         datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
