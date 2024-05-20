@@ -5,7 +5,6 @@ module.exports = function () {
   //จริง
   this.config = {
     user: "robot",
-    // password: "Robot@MNRH2022",
     password: "57496208",
     server: "192.168.41.1",
     database: "MHR",
@@ -25,7 +24,11 @@ module.exports = function () {
   const poolPromise = new sql.ConnectionPool(this.config)
     .connect()
     .then((pool) => {
-      console.log("Connected to Homc");
+      console.log(
+        `Connected to Homc ${new Date().toLocaleString("en-GB", {
+          hour12: false,
+        })}`
+      );
       return pool;
     })
     .catch((err) =>
@@ -38,6 +41,17 @@ module.exports = function () {
       target = n + target;
     }
     return target;
+  };
+
+  this.fill = function fill(CMD, DATA) {
+    // // create Request object
+    new this.sql.Request(this.connection).query(CMD, function (err, recordset) {
+      if (err) console.log("ERROR: " + err);
+
+      // send records as a response
+      // res.send(recordset);
+      DATA(recordset);
+    });
   };
 
   this.fill = async function fill(val, DATA) {
@@ -142,14 +156,10 @@ ORDER BY
 
   this.dataDrug = async function fill(CMD, DATA) {
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(CMD);
-        resolve(result);
-      } catch (error) {
-        console.log(CMD);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(CMD);
+
+      resolve(result);
     });
   };
 
@@ -219,7 +229,7 @@ ORDER BY
       LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
       WHERE
         mif.Med_Inv_Code = m.inv_code
-        AND mi.Description <> ''
+      AND mi.Description <> ''
       AND mi.InfoGroup = 'Indication' FOR XML PATH ('')
     ) AS indication,
     qr.QRCode,
@@ -262,7 +272,7 @@ ORDER BY
       mh.hn = '` +
       hn +
       `'
-      AND mh.invdate = ` +
+    AND mh.invdate = ` +
       val.date +
       `
     AND m.pat_status = 'O'
@@ -275,14 +285,9 @@ ORDER BY
       p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(sqlCommand);
-        resolve(result);
-      } catch (error) {
-        console.log(sqlCommand);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result);
     });
   };
 
@@ -291,53 +296,7 @@ ORDER BY
     for (let i = 0; i < 7 - String(val.hn).length; i++) {
       hn = " " + hn;
     }
-    // var sqlCommand =
-    //   `SELECT
-    //     TRIM (pt.titleName) + ' ' + pa.firstName + ' ' + TRIM(pa.lastName) AS name_patient,
-    //     p.invCode,
-    //     la.lamed_name AS lamedName,
-    //     p.lamedQty AS dosage,
-    //     (
-    //         SELECT
-    //             lamed_name
-    //         FROM
-    //             Lamed lam
-    //         WHERE
-    //             lam.lamed_code = p.lamedUnit
-    //     ) AS freetext0,
-    //     p.lamedTimeText AS freetext1,
-    //     p.lastIssTime,
-    //     p.lamedText AS freetext2,
-    //     '( ' + (
-    //      SELECT
-    //        DISTINCT(Rtrim(LTRIM(mi.Description))) + ' '
-    //      FROM
-    //        Med_Info_Group mi
-    //      LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
-    //      WHERE
-    //        mif.Med_Inv_Code = '` +
-    //   val.code +
-    //   `'
-    //      AND (
-    //        mi.InfoGroup LIKE '%สี%'
-    //        OR mi.InfoGroup IS NULL
-    //      ) FOR XML PATH ('')
-    //    ) + ')' AS itemidentify
-    // FROM
-    //     Patmed p
-    // LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
-    // LEFT JOIN PATIENT pa ON p.hn = pa.hn
-    // LEFT JOIN PTITLE pt ON pa.titleCode = pt.titleCode
-    // WHERE
-    //     p.hn = '` +
-    //   hn +
-    //   `'
-    //     AND p.invCode = '` +
-    //   val.code +
-    //   `'
-    // AND TRY_CONVERT (DATE, p.firstIssDate) = '` +
-    //   val.date +
-    //   `'`;
+
     let sqlCommand =
       `SELECT
       TRIM (ti.titleName) + ' ' + pt.firstName + ' ' + TRIM (pt.lastName) AS name_patient,
@@ -413,32 +372,26 @@ ORDER BY
       p.lastIssTime`;
 
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(sqlCommand);
-        resolve(result.recordset);
-      } catch (error) {
-        console.log(sqlCommand);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
     });
   };
   this.getDrugstar = async function fill(val, DATA) {
     var sqlCommand =
       `SELECT
-      TRIM (code) code,
-      TRIM (name) name,
       IIF (
         SUBSTRING (
           gen_name,
           LEN(TRIM(gen_name)),
           LEN(TRIM(gen_name))
-        ) = '*' OR code IN ('DEXTR3','NORTR2'),
+        ) = '*',
         1,
         0
-      ) val,
+      ) val,     
       TRIM (code) code,
-      TRIM (name) name
+      TRIM (name) name,
+      TRIM (gen_name) gen_name
     FROM
       Med_inv
     WHERE
@@ -447,14 +400,9 @@ ORDER BY
       `'`;
 
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(sqlCommand);
-        resolve(result.recordset);
-      } catch (error) {
-        console.log(sqlCommand);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
     });
   };
   this.getDrughomc = async function fill(val, DATA) {
@@ -464,18 +412,12 @@ ORDER BY
     FROM
       Med_inv
     WHERE
-      site = '1'
-    AND hideSelect = 'N'`;
+      site = '1'`;
 
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(sqlCommand);
-        resolve(result.recordset);
-      } catch (error) {
-        console.log(sqlCommand);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
     });
   };
   this.getMaker = async function fill(val, DATA) {
@@ -517,35 +459,27 @@ ORDER BY
       val.drugCode +
       `')`;
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(sqlCommand);
-        resolve(result.recordset);
-      } catch (error) {
-        console.log(sqlCommand);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(sqlCommand);
+      resolve(result.recordset);
     });
   };
+
   this.getCid = async function fill(val, DATA) {
     var cid =
       `SELECT CardID
       FROM PatSS
-      WHERE TRIM(hn) = '` +
+      WHERE hn = ` +
       val +
-      `'`;
+      ``;
+
     return new Promise(async (resolve, reject) => {
-      try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(cid);
-        resolve(result.recordset);
-      } catch (error) {
-        console.log(hn);
-        console.log(cid);
-        console.log(error);
-      }
+      const pool = await poolPromise;
+      const result = await pool.request().query(cid);
+      resolve(result.recordset);
     });
   };
+
   this.getDrugip2000 = async function fill(val, DATA) {
     var cid = `SELECT
       m.code AS orderitemcode,
@@ -665,20 +599,73 @@ ORDER BY
       resolve(result.recordset);
     });
   };
+
   this.getQP = async function fill(val, DATA) {
     var cid = `SELECT
-    o.hn AS patientNO,
-    MIN (
-        Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName)
-    ) AS patientName,
-    CONVERT(varchar, MIN(p.lastIssTime), 20)  AS createdDT,
-    null AS QN,
-    null AS 'timestamp',
-    null AS cid,
-    null AS 'check',
-    null AS status
+      o.hn AS patientNO,
+      MIN (
+          Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName)
+      ) AS patientName,
+      CONVERT(varchar, MIN(p.lastIssTime), 20)  AS createdDT,
+      null AS QN,
+      null AS 'timestamp',
+      null AS cid,
+      null AS 'check',
+      null AS status
+  FROM
+      OPD_H o
+  LEFT JOIN Med_logh mh ON o.hn = mh.hn
+  AND o.regNo = mh.regNo
+  LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+  LEFT JOIN Bill_h b ON b.hn = mh.hn
+  AND b.regNo = mh.regNo
+  LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
+  LEFT JOIN Med_inv v ON (
+      v.code = m.inv_code
+      AND v.[site] = '1'
+  )
+  LEFT JOIN Patmed p (NOLOCK) ON (
+      p.hn = mh.hn
+      AND p.registNo = mh.regNo
+      AND p.invCode = m.inv_code
+      AND m.quant_diff = p.runNo
+  )
+  LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
+  LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+  LEFT JOIN Site si ON m.site = si.site_key
+  WHERE
+  mh.invdate  BETWEEN '${val.datethai1}' AND '${val.datethai2}'
+  AND m.pat_status = 'O'
+  AND m.site = 'W8'
+  AND m.revFlag IS NULL
+  AND TRIM(o.hn) NOT IN (${val.hn})
+  GROUP BY
+      o.hn
+  ORDER BY createdDT`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(cid);
+      resolve(result.recordset);
+    });
+  };
+  this.getQPatient = async function fill(val, DATA) {
+    let hn = String(val.data);
+    while (hn.length < 7) {
+      hn = " " + hn;
+    }
+    var cid =
+      `SELECT
+	'' AS QN,
+	o.hn AS patientNO,
+	Rtrim(MAX(ti.titleName)) + ' ' + Rtrim(MAX(pt.firstName)) + ' ' + Rtrim(MAX(pt.lastName)) AS patientName,
+  CONVERT (
+		VARCHAR (10),
+		MAX (p.lastIssTime),
+		120
+	) AS date
 FROM
-    OPD_H o
+	OPD_H o
 LEFT JOIN Med_logh mh ON o.hn = mh.hn
 AND o.regNo = mh.regNo
 LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
@@ -686,28 +673,35 @@ LEFT JOIN Bill_h b ON b.hn = mh.hn
 AND b.regNo = mh.regNo
 LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
 LEFT JOIN Med_inv v ON (
-    v.code = m.inv_code
-    AND v.[site] = '1'
+	v.code = m.inv_code
+	AND v.[site] = '1'
 )
 LEFT JOIN Patmed p (NOLOCK) ON (
-    p.hn = mh.hn
-    AND p.registNo = mh.regNo
-    AND p.invCode = m.inv_code
-    AND m.quant_diff = p.runNo
+	p.hn = mh.hn
+	AND p.registNo = mh.regNo
+	AND p.invCode = m.inv_code
+	AND m.quant_diff = p.runNo
 )
 LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
 LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
 LEFT JOIN Site si ON m.site = si.site_key
+LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
+LEFT JOIN DynPriceGroup dy ON t.medGroupCode = dy.priceGroupCode
+LEFT JOIN Med_QRCode qr ON m.inv_code = qr.inv_code
 WHERE
-mh.invdate  BETWEEN '${val.datethai1}' AND '${val.datethai2}'
+	o.hn = '` +
+      hn +
+      `'
+AND mh.invdate = '` +
+      val.date +
+      `'
 AND m.pat_status = 'O'
 AND m.site = 'W8'
-AND m.revFlag IS NULL
-AND TRIM(o.hn) NOT IN (${val.hn})
-GROUP BY
-    o.hn
-ORDER BY createdDT`;
-
+AND m.revFlag IS NULL 
+GROUP BY  o.hn 
+ORDER BY
+	MAX(p.lastIssTime)`;
+    console.log(cid);
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(cid);

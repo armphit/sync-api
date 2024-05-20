@@ -1,6 +1,6 @@
 const moment = require("moment");
-// var db_mysql101center = require("../DB/db_center_101_mysql");
-// var center101 = new db_mysql101center();
+var db_mysql101center = require("../DB/db_center_101_mysql");
+var center101 = new db_mysql101center();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 
@@ -337,9 +337,11 @@ exports.reportcheckmedController = async (req, res, next) => {
 };
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
-  // let user_list = await center101.getUser();
-  let user_list = [];
+  let user_list = await center101.getUser();
+  // let user_list = [];
   let drug_list = await homc.getDrughomc();
+  let a = drug_list.find((val) => val.code == "LANSO1");
+  console.log(a);
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 
@@ -385,6 +387,32 @@ exports.manageerrorController = async (req, res, next) => {
   let data = req.body;
   let manage_error = await center102.manage_mederror(data);
   manage_error.affectedRows ? res.send([1]) : [];
+};
+
+exports.timedispendController = async (req, res, next) => {
+  let data = req.body;
+  let gettime = await center102.getTimecheck(data);
+  let averageTime = null;
+  if (gettime.length) {
+    const times = gettime.map((v) => v.time);
+
+    // Helper function to convert "HH:MM:SS" to total seconds
+    const timeToSeconds = (time) =>
+      time.split(":").reduce((acc, time) => 60 * acc + +time, 0);
+
+    // Helper function to convert total seconds to "HH:MM:SS"
+    const secondsToTime = (seconds) =>
+      new Date(seconds * 1000).toISOString().substr(11, 8);
+
+    // Convert all times to seconds, sum them, and calculate the average
+    const averageSeconds =
+      times.map(timeToSeconds).reduce((a, b) => a + b) / times.length;
+
+    // Convert the average time back to "HH:MM:SS"
+    averageTime = secondsToTime(averageSeconds);
+  }
+
+  res.send({ gettime, averageTime: averageTime });
 };
 
 function get_time_difference(date1, date2) {

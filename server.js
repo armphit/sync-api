@@ -22,6 +22,7 @@ var {
   mederrorController,
   positionerrorController,
   manageerrorController,
+  timedispendController,
 } = require("./controller/checkmedController");
 
 var {
@@ -82,6 +83,7 @@ app.post("/getDispend", dispendController);
 app.post("/checkAllergy", checkallergyController);
 app.get("/drugs", drugController);
 app.post("/queueP", drugQueuePController);
+app.post("/getTimedispenddrug", timedispendController);
 // app.get("/test", testController);
 module.exports = app;
 
