@@ -109,14 +109,32 @@ exports.listPatientAllergicController = async (req, res, next) => {
 exports.checkallergyController = async (req, res, next) => {
   let countDrug = 0;
   if (req.body.choice == 2) {
-    let checkBase = await center102.check_moph(req.body);
+    let getCid = await homc.getCid(req.body.hn.trim());
 
-    if (checkBase.length) {
-      countDrug = checkBase[0].num;
-    } else {
-      let getCid = await homc.getCid(req.body.hn);
+    if (getCid.length) {
+      if (req.body.select) {
+        let q = "";
+        if (req.body.select == "W18") {
+          q = await center102.queue(req.body);
+          q = q.length ? q[0].QN : req.body.select;
+        } else {
+          q = req.body.select;
+        }
+        let send = {
+          QN: q,
+          patientNO: req.body.hn,
+          patientName: getCid[0].patientName,
+          date: req.body.date,
+        };
+        await center102.addQP(send);
+      }
+      let checkBase = await center102.check_moph(req.body);
 
-      if (getCid.length) {
+      if (checkBase.length) {
+        countDrug = checkBase[0].num;
+        let getData = await center102.get_moph(req.body);
+        res.send({ getData, countDrug });
+      } else {
         if (getCid[0].CardID) {
           const cid = getCid[0].CardID.trim();
           let dataAllergic = await getAllergic(cid);
@@ -141,6 +159,76 @@ exports.checkallergyController = async (req, res, next) => {
                         center102
                           .insertDrugAllergy(dataAllergic[k])
                           .then(async (insert_md) => {
+                            try {
+                              let hosp = await center102.getHosp(
+                                dataAllergic[k].hospcode
+                                  ? dataAllergic[k].hospcode
+                                  : ""
+                              );
+                              let sendata = {
+                                hosp_code: `${
+                                  dataAllergic[k].hospcode
+                                    ? dataAllergic[k].hospcode
+                                    : ""
+                                }`,
+                                hosp_name: `${
+                                  hosp[0].hospname ? hosp[0].hospname : ""
+                                }`,
+                                pid: Buffer.from(
+                                  `${
+                                    dataAllergic[k].cid
+                                      ? dataAllergic[k].cid
+                                      : ""
+                                  }`
+                                ).toString("base64"),
+                                med_code: `${
+                                  dataAllergic[k].drugcode
+                                    ? dataAllergic[k].drugcode
+                                    : ""
+                                }`,
+                                med_name: `${
+                                  dataAllergic[k].drugname
+                                    ? dataAllergic[k].drugname
+                                    : ""
+                                }`,
+                                adr_level: `${
+                                  dataAllergic[k].allerglevelcode
+                                    ? dataAllergic[k].allerglevelcode
+                                    : ""
+                                }`,
+                                data_source: "10666",
+                              };
+
+                              const headers = {
+                                "Content-Type":
+                                  "application/x-www-form-urlencoded",
+                              };
+
+                              let resultapi = await axios.post(
+                                "http://164.115.61.30/post_adr.php",
+                                sendata,
+                                {
+                                  headers,
+                                }
+                              );
+                              // console.log(sendata);
+                              // console.log("send to api ");
+                              // console.log(resultapi);
+                              // console.log(
+                              //   resultapi.data
+                              //     ? resultapi.data.replace(/(\r\n|\r|\n)/g, "")
+                              //     : "result err"
+                              // );
+                              resultapi = null;
+                              hosp = null;
+                              sendata = null;
+                            } catch (error) {
+                              console.log(
+                                "error to connect apiAllergy\r\n\r\n\r\n"
+                              );
+                              console.log(error);
+                            }
+
                             // if (insert_md.affectedRows) {
                             //   console.log(
                             //     stampDB.hn +
@@ -213,6 +301,9 @@ exports.checkallergyController = async (req, res, next) => {
           res.send({ getData, countDrug });
         }
       }
+    } else {
+      let getData = await center102.get_moph(req.body);
+      res.send({ getData, countDrug });
     }
   } else {
     let getData = await center102.get_moph(req.body);
@@ -323,4 +414,9 @@ exports.drugQueuePController = async (req, res, next) => {
   //   return db - da;
   // });
   res.send({ gethospitalQ, rowCount: gethospitalQ.length });
+};
+exports.getUserController = async (req, res, next) => {
+  let data = await gd4unit101.getUser2();
+
+  res.send({ result: data });
 };

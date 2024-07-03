@@ -461,4 +461,37 @@ GROUP BY
       });
     });
   };
+  this.cutbarmanual = function fill(val, DATA) {
+    let sql = `SELECT
+        b.barCode,
+        b.drugCode,
+        d.drugName,
+      
+      IF (
+        (
+          b.drugCode <> 'CYCL-'
+          AND b.drugCode <> 'DEX-O'
+          AND b.drugCode <> 'POLY-1'
+          AND SUBSTRING(
+            b.drugCode,
+            LOCATE('-', b.drugCode),
+            1
+          ) = '-'
+        ),
+        'Y',
+        'N'
+      ) AS isPrepack
+      FROM
+        center.barcode_drug b
+      LEFT JOIN pmpf_thailand_mnrh.dictdrug d ON d.drugCode = b.drugCode
+      WHERE
+        b.barCode = '${val.barcode}'`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

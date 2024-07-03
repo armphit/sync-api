@@ -23,6 +23,7 @@ var {
   positionerrorController,
   manageerrorController,
   timedispendController,
+  cutqtyController,
 } = require("./controller/checkmedController");
 
 var {
@@ -37,6 +38,7 @@ var {
   listPatientAllergicController,
   checkallergyController,
   drugQueuePController,
+  getUserController,
 } = require("./controller/interfaceController");
 
 var {
@@ -84,6 +86,8 @@ app.post("/checkAllergy", checkallergyController);
 app.get("/drugs", drugController);
 app.post("/queueP", drugQueuePController);
 app.post("/getTimedispenddrug", timedispendController);
+app.post("/getUser", getUserController);
+app.post("/cutqty", cutqtyController);
 // app.get("/test", testController);
 module.exports = app;
 

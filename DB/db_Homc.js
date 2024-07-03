@@ -467,11 +467,14 @@ ORDER BY
 
   this.getCid = async function fill(val, DATA) {
     var cid =
-      `SELECT CardID
-      FROM PatSS
-      WHERE hn = ` +
+      `SELECT s.CardID,
+      Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientName
+      FROM PatSS s
+        LEFT JOIN PATIENT pt ON (pt.hn = s.hn)
+        LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+      WHERE TRIM(s.hn) = TRIM('` +
       val +
-      ``;
+      `')`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -650,57 +653,21 @@ ORDER BY
     });
   };
   this.getQPatient = async function fill(val, DATA) {
-    let hn = String(val.data);
-    while (hn.length < 7) {
-      hn = " " + hn;
-    }
-    var cid =
-      `SELECT
-	'' AS QN,
-	o.hn AS patientNO,
-	Rtrim(MAX(ti.titleName)) + ' ' + Rtrim(MAX(pt.firstName)) + ' ' + Rtrim(MAX(pt.lastName)) AS patientName,
-  CONVERT (
-		VARCHAR (10),
-		MAX (p.lastIssTime),
-		120
-	) AS date
-FROM
-	OPD_H o
-LEFT JOIN Med_logh mh ON o.hn = mh.hn
-AND o.regNo = mh.regNo
-LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
-LEFT JOIN Bill_h b ON b.hn = mh.hn
-AND b.regNo = mh.regNo
-LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
-LEFT JOIN Med_inv v ON (
-	v.code = m.inv_code
-	AND v.[site] = '1'
-)
-LEFT JOIN Patmed p (NOLOCK) ON (
-	p.hn = mh.hn
-	AND p.registNo = mh.regNo
-	AND p.invCode = m.inv_code
-	AND m.quant_diff = p.runNo
-)
-LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
-LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
-LEFT JOIN Site si ON m.site = si.site_key
-LEFT JOIN Lamed la ON p.lamedHow = la.lamed_code
-LEFT JOIN DynPriceGroup dy ON t.medGroupCode = dy.priceGroupCode
-LEFT JOIN Med_QRCode qr ON m.inv_code = qr.inv_code
-WHERE
-	o.hn = '` +
-      hn +
-      `'
-AND mh.invdate = '` +
-      val.date +
-      `'
-AND m.pat_status = 'O'
-AND m.site = 'W8'
-AND m.revFlag IS NULL 
-GROUP BY  o.hn 
-ORDER BY
-	MAX(p.lastIssTime)`;
+    var cid = `SELECT
+    '' AS QN,
+    TRIM(s.hn) AS patientNO,
+    Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientName,
+    CONVERT (
+      VARCHAR (10),
+       GETDATE(),
+      120
+    ) AS date
+  FROM
+    PatSS s
+  LEFT JOIN PATIENT pt ON (pt.hn = s.hn)
+  LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+  WHERE
+  TRIM (s.hn) = TRIM ('${val.data}')`;
     console.log(cid);
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

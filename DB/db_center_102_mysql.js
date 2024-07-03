@@ -18,15 +18,41 @@ module.exports = function () {
   this.fill = function fill(val, DATA) {
     let site =
       val.site == "W8" ? `'PHAR_A2'` : val.site == "W18" ? `'PHAR_A3'` : `''`;
-    var sql =
-      `SELECT QN
-      FROM hospitalq
-      WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
-      AND locationQ = ${site}
-      AND patientNO = '` +
-      val.hn.trim() +
-      `'
-      ORDER BY createDT DESC`;
+    var sql = ``;
+    if (val.site == "W8") {
+      sql = `SELECT
+        p.queue QN
+      FROM
+        gd4unit.prescription p
+      WHERE
+        p.takedate = '${val.dateEN}'
+          AND hn = '${val.hn.trim()}'
+      GROUP BY
+        p.takedate,
+        p.hn,p.queue
+      UNION
+        SELECT
+          p.queue QN
+        FROM
+          gd4unit_bk.prescription p
+        WHERE
+          p.takedate   = '${val.dateEN}'
+            AND hn = '${val.hn.trim()}'
+        GROUP BY
+          p.takedate,
+          p.hn,p.queue`;
+    } else {
+      sql = `SELECT
+            QN
+          FROM
+            hospitalq
+          WHERE
+            date = '${val.dateEN}'
+          AND locationQ = ${site}
+          AND patientNO = '${val.hn.trim()}'
+      ORDER BY
+        createDT DESC`;
+    }
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -660,7 +686,7 @@ module.exports = function () {
   };
 
   this.get_compiler = function fill(val, DATA) {
-    val.queue = val.queue ? (val.queue.includes("P") ? "W8" : val.queue) : ``;
+    val.queue = val.queue ? val.queue : "";
     let q = val.queue ? `AND cmp.queue = '${val.queue}'` : ``;
     let sql =
       `SELECT
@@ -788,6 +814,7 @@ module.exports = function () {
         val.time2 +
         `' `
       : ``;
+
     if (!val.choice) {
       sql =
         `SELECT
@@ -819,7 +846,8 @@ module.exports = function () {
         source,
         error_type,
         site,
-        type_pre
+        type_pre,
+        IF(cause, cause, '') cause
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -930,15 +958,20 @@ module.exports = function () {
             pmpf_thailand_mnrh.dictdrug
           WHERE
             drugCode = med_good
+          GROUP BY
+            drugCode
         ) med_good_name,
-        (
+         (
           SELECT
             drugName
           FROM
             pmpf_thailand_mnrh.dictdrug
           WHERE
             drugCode = med_wrong
-        ) med_wrong_name
+          GROUP BY
+            drugCode
+        ) med_wrong_name,
+         IF(cause, cause, '') cause
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -955,6 +988,7 @@ module.exports = function () {
       AND deleteID is null
         ORDER BY createDT desc`;
     }
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1283,6 +1317,7 @@ FROM
 			s.updateDT DESC
 	) AS a,
 	(SELECT @rownum := 0) r`;
+
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
         if (err) throw err;
@@ -1397,61 +1432,61 @@ FROM
   //   });
   // };
 
-  this.insertDrugAllergy = function fill(val, DATA) {
-    var sql =
-      `INSERT INTO moph_drugs (
-        cid,
-        hospcode,
-        drugcode,
-        drugname,
-        daterecord,
-        createdDT,
-        typedx,
-        allerglevelcode,
-        typedxcode,
-        allerglevelnum,
-        informat,
-        allergsymptom
-      )
-    VALUES
-      (
-        '` +
-      val.cid +
-      `',
-        '` +
-      val.hospcode +
-      `',
-        '` +
-      val.drugcode +
-      `',
-        N'` +
-      val.drugname +
-      `',
-        '` +
-      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
-      `',
-      CURRENT_TIMESTAMP (),
-      '${val.typedx ? val.typedx : ""}',
-      '${val.allerglevel ? val.allerglevel : ""}',
-      '${val.typedxcode ? val.typedxcode : ""}',
-      '${val.allerglevelcode ? val.allerglevelcode : ""}',
-      '${val.informat ? val.informat : ""}',
-      '${val.allergsymptom ? val.allergsymptom : ""}'
-      )ON DUPLICATE KEY UPDATE drugname = '` +
-      val.drugname +
-      `',
-       daterecord = '` +
-      val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
-      `',
-      createdDT = CURRENT_TIMESTAMP ()`;
+  // this.insertDrugAllergy = function fill(val, DATA) {
+  //   var sql =
+  //     `INSERT INTO moph_drugs (
+  //       cid,
+  //       hospcode,
+  //       drugcode,
+  //       drugname,
+  //       daterecord,
+  //       createdDT,
+  //       typedx,
+  //       allerglevelcode,
+  //       typedxcode,
+  //       allerglevelnum,
+  //       informat,
+  //       allergsymptom
+  //     )
+  //   VALUES
+  //     (
+  //       '` +
+  //     val.cid +
+  //     `',
+  //       '` +
+  //     val.hospcode +
+  //     `',
+  //       '` +
+  //     val.drugcode +
+  //     `',
+  //       N'` +
+  //     val.drugname +
+  //     `',
+  //       '` +
+  //     val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+  //     `',
+  //     CURRENT_TIMESTAMP (),
+  //     '${val.typedx ? val.typedx : ""}',
+  //     '${val.allerglevel ? val.allerglevel : ""}',
+  //     '${val.typedxcode ? val.typedxcode : ""}',
+  //     '${val.allerglevelcode ? val.allerglevelcode : ""}',
+  //     '${val.informat ? val.informat : ""}',
+  //     '${val.allergsymptom ? val.allergsymptom : ""}'
+  //     )ON DUPLICATE KEY UPDATE drugname = '` +
+  //     val.drugname +
+  //     `',
+  //      daterecord = '` +
+  //     val.daterecord.replace(/T/, " ").replace(/\..+/, "") +
+  //     `',
+  //     createdDT = CURRENT_TIMESTAMP ()`;
 
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
-    });
-  };
+  //   return new Promise(function (resolve, reject) {
+  //     connection.query(sql, function (err, result, fields) {
+  //       if (err) throw err;
+  //       resolve(result);
+  //     });
+  //   });
+  // };
   this.insertDrugAllergy = function fill(val, DATA) {
     var sql =
       `INSERT INTO moph_drugs (
@@ -1518,15 +1553,23 @@ FROM
     });
   };
   this.queue = function fill(val, DATA) {
-    var sql =
-      `SELECT QN
-      FROM hospitalq
-      WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
-      AND locationQ = 'PHAR_A2'
-      AND patientNO = '` +
-      val.hn.trim() +
-      `'
-      ORDER BY createDT DESC`;
+    let sql = val.select
+      ? `SELECT QN
+    FROM hospitalq
+    WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
+    AND locationQ = 'PHAR_A3'
+    AND patientNO = '` +
+        val.hn.trim() +
+        `'
+    ORDER BY createDT DESC`
+      : `SELECT QN
+    FROM hospitalq
+    WHERE  CONVERT(createDT,DATE) = CURRENT_DATE()
+    AND locationQ = 'PHAR_A2'
+    AND patientNO = '` +
+        val.hn.trim() +
+        `'
+    ORDER BY createDT DESC`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1606,88 +1649,89 @@ GROUP BY
 
   this.listPatientQpost = function fill(val, DATA) {
     var sql = `SELECT
-    q.patientNO,
-    q.QN,
-    q.patientName,
-    CAST(q.createDT AS char)  createdDT,
-    CAST(c.timestamp AS char) timestamp,
-    s.cid,
-    d.check,
-    cdd. STATUS as status
+  q.patientNO,
+  q.QN,
+  q.patientName,
+  CAST(q.createDT AS char)  createdDT,
+  CAST(c.timestamp AS char) timestamp,
+  s.cid,
+  d.check,
+  cdd. STATUS as status
 FROM
 (SELECT
-	*
+*
 FROM
-	(
-		SELECT
-			q.QN,
-			q.patientNO,
-			q.patientName,
-			q.date,
-			q.createDT
-		FROM
-			hospitalq q
-		WHERE
-			q.date BETWEEN '${val.date1}'
-      AND '${val.date2}'
-		AND locationQ = 'PHAR_A2'
-		UNION
-			SELECT
-				q.QN,
-				q.patientNO,
-				q.patientName,
-				q.date,
-				q.updateDT 'createDT'
-			FROM
-				queue_p q
-			WHERE
-				q.date BETWEEN '${val.date1}'
-        AND '${val.date2}'
-	) AS a
-ORDER BY
-	createDT DESC) AS q
-    LEFT JOIN moph_sync s ON q.patientNO = s.patientID
-    AND CAST(s.updateDT AS Date) = CURDATE()
-    
-    LEFT JOIN (
-      SELECT
-        cid,
-        'Y' as 'check'
-      FROM
-        moph_drugs d
-      WHERE
-        d.hospcode <> '10666'
-      GROUP BY
-        cid
-    ) AS d ON s.CID = d.cid
-LEFT JOIN (
+(
+  SELECT
+    q.QN,
+    q.patientNO,
+    q.patientName,
+    q.date,
+    q.createDT
+  FROM
+    hospitalq q
+  WHERE
+    q.createDT BETWEEN '${val.date1}'
+    AND '${val.date2}'
+  AND locationQ = 'PHAR_A2'
+  UNION
     SELECT
-        TIMESTAMP,
-        hn,
-        queue
+      q.QN,
+      q.patientNO,
+      q.patientName,
+      q.date,
+      q.updateDT 'createDT'
     FROM
-        moph_confirm
+      queue_p q
     WHERE
-        CAST(TIMESTAMP AS Date) BETWEEN '${val.date1}'
-        AND '${val.date2}'
-        AND site = 'W8'
+      q.updateDT BETWEEN '${val.date1}'
+      AND '${val.date2}'
+      AND (q.QN LIKE 'P%' OR q.QN = '')
+) AS a
+ORDER BY
+createDT DESC) AS q
+  LEFT JOIN moph_sync s ON q.patientNO = s.patientID
+  AND CAST(s.updateDT AS Date) = CURDATE()
+  
+  LEFT JOIN (
+    SELECT
+      cid,
+      'Y' as 'check'
+    FROM
+      moph_drugs d
+    WHERE
+      d.hospcode <> '10666'
+    GROUP BY
+      cid
+  ) AS d ON s.CID = d.cid
+LEFT JOIN (
+  SELECT
+      TIMESTAMP,
+      hn,
+      queue
+  FROM
+      moph_confirm
+  WHERE
+      CAST(TIMESTAMP AS Date) BETWEEN CAST('${val.date1}' AS Date)
+      AND CAST('${val.date2}' AS Date)
+      AND site = 'W8'
 ) AS c ON q.patientNO = c.hn
 LEFT JOIN (
-    SELECT
-        hn,
-        STATUS
-    FROM
-        cut_dispend_drug
-    WHERE
-        STATUS = 'Y'
-    AND deleteDT IS NULL
-    AND departmentcode = 'W8'
-    GROUP BY
-        hn
+  SELECT
+      hn,
+      STATUS
+  FROM
+      cut_dispend_drug
+  WHERE
+      STATUS = 'Y'
+  AND deleteDT IS NULL
+  AND departmentcode = 'W8'
+  GROUP BY
+      hn
 ) AS cdd ON trim(q.patientNO) = trim(cdd.hn)
 
 ORDER BY
-    q.createDT`;
+  q.createDT`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1736,78 +1780,96 @@ ORDER BY
     });
   };
   this.getTimecheck = function fill(val, DATA) {
-    // let sql =
-    //   `SELECT
-    //   p.hn,
-    //   p.userCheck,
-    //   p.timestamp,
-    //   p.checkComplete,
-
-    //   TIMEDIFF(
-    //     TIME(p.checkComplete),
-    //     TIME(p.timestamp)
-    //   ) AS time,
-    //   COUNT(m.cmp_id) AS item
-    // FROM
-    //   checkmedpatient p
-    // LEFT JOIN checkmed m ON p.id = m.cmp_id
-    // WHERE
-    //   p.date BETWEEN '` +
-    //   val.datestart +
-    //   `'
-    //   AND '` +
-    //   val.dateend +
-    //   `'
-    // AND p.checkComplete <> ''
-    // AND p.isDelete IS NULL
-    // GROUP BY
-    //   m.cmp_id
-    // ORDER BY
-    //   p.timestamp`;
-    let sql = `SELECT
-      a.hn,a.patientname,
-      DATE_FORMAT(a.starttime, '%Y-%m-%d %H:%i:%s') AS starttime,
-      DATE_FORMAT(c.checkComplete, '%Y-%m-%d %H:%i:%s') AS endtime, 
-      TIMEDIFF(
-        TIME(c.checkComplete),
-        TIME(a.starttime)
-      ) AS time
-    FROM
-      (
+    let sql = ``;
+    if (val.site == "W8") {
+      sql = `SELECT
+    a.hn,a.patientname,
+    DATE_FORMAT(a.starttime, '%Y-%m-%d %H:%i:%s') AS starttime,
+    DATE_FORMAT(c.checkComplete, '%Y-%m-%d %H:%i:%s') AS endtime, 
+    TIMEDIFF(
+      TIME(c.checkComplete),
+      TIME(a.starttime)
+    ) AS time
+  FROM
+    (
+      SELECT
+        p.hn,
+        p.patientname,
+        p.datetimestamp AS 'starttime',
+        p.takedate,p.queue
+      FROM
+        gd4unit.prescription p
+      WHERE
+        p.takedate BETWEEN '${val.datestart}' 
+      AND '${val.dateend}'
+      GROUP BY
+        p.takedate,
+        p.hn,p.queue
+      UNION
         SELECT
           p.hn,
           p.patientname,
           p.datetimestamp AS 'starttime',
           p.takedate,p.queue
         FROM
-          gd4unit.prescription p
+          gd4unit_bk.prescription p
         WHERE
-          p.takedate BETWEEN '${val.datestart}' 
+          p.takedate BETWEEN '${val.datestart}'
         AND '${val.dateend}'
         GROUP BY
           p.takedate,
-          p.hn
-        UNION
-          SELECT
-            p.hn,
-            p.patientname,
-            p.datetimestamp AS 'starttime',
-            p.takedate,p.queue
-          FROM
-            gd4unit_bk.prescription p
-          WHERE
-            p.takedate BETWEEN '${val.datestart}'
-          AND '${val.dateend}'
-          GROUP BY
-            p.takedate,
-            p.hn
-      ) a
-    LEFT JOIN center.checkmedpatient c ON a.hn = c.hn
-    AND a.takedate = c.date
-    WHERE
-      c.hn <> ''
-    AND c.checkComplete <> '' 
-    ORDER BY a.starttime
+          p.hn,p.queue
+    ) a
+  LEFT JOIN center.checkmedpatient c ON a.hn = c.hn
+  AND a.takedate = c.date AND a.queue = c.queue
+  WHERE
+    c.hn <> ''
+  AND c.checkComplete <> '' 
+  ORDER BY a.starttime
+  `;
+    } else {
+      let qn = val.site == "W18" ? `like '3%'` : `= '${val.site}'`;
+      sql = `SELECT
+	p.patientNO hn,
+	p.patientName patientname,
+	DATE_FORMAT(
+		p.createDT,
+		'%Y-%m-%d %H:%i:%s'
+	) AS starttime,
+	DATE_FORMAT(
+		c.checkComplete,
+		'%Y-%m-%d %H:%i:%s'
+	) AS endtime,
+	TIMEDIFF(
+		TIME(c.checkComplete),
+		TIME(p.createDT)
+	) AS time
+FROM
+	center.queue_p p
+LEFT JOIN center.checkmedpatient c ON p.patientNO = c.hn
+AND p.QN = c.queue
+AND p.date = c.date
+WHERE
+	p.date BETWEEN  '${val.datestart}'
+        AND '${val.dateend}'
+AND p.QN  ${qn}
+AND c.hn <> ''
+AND c.checkComplete <> ''
+ORDER BY
+	p.createDT`;
+    }
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getHosp = function fill(val, DATA) {
+    let sql = `SELECT NAME as hospname
+    FROM hospcode
+    WHERE OFF_ID = '${val}'
     `;
 
     return new Promise(function (resolve, reject) {

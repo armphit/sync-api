@@ -12,8 +12,12 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
-var gd4unit_101_mysql = new db_gd4unit_101_mysql();
+var db_Xmed = require("../DB/db_Xed_102_sqlserver");
+var Xmed = new db_Xmed();
+var db_onCube = require("../DB/db_onCube");
+var onCube = new db_onCube();
+// const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
+// var gd4unit_101_mysql = new db_gd4unit_101_mysql();
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
@@ -21,16 +25,18 @@ exports.checkpatientController = async (req, res, next) => {
     datasend.allTimeOld = `''`;
     if (datasend.site == "W8" || datasend.site == "W18") {
       let q = await center102.fill(datasend);
-      let checkhn = await gd4unit_101_mysql.getsiteQhn(dataPatient.hn);
-      if (checkhn.length) {
-        if (q[0].QN != checkhn[0].queue) {
-          datasend.queue = checkhn[0].queue;
-        } else {
-          datasend.queue = q[0] ? q[0].QN : datasend.site;
-        }
-      } else {
-        datasend.queue = q[0] ? q[0].QN : datasend.site;
-      }
+      datasend.queue = q.length ? q[0].QN : datasend.site;
+
+      // let checkhn = await gd4unit_101_mysql.getsiteQhn(dataPatient.hn);
+      // if (checkhn.length) {
+      //   if (q[0].QN != checkhn[0].queue) {
+      //     datasend.queue = checkhn[0].queue;
+      //   } else {
+      //     datasend.queue = q[0] ? q[0].QN : datasend.site;
+      //   }
+      // } else {
+      //   datasend.queue = q[0] ? q[0].QN : datasend.site;
+      // }
     } else {
       datasend.queue = datasend.site;
     }
@@ -213,9 +219,15 @@ exports.updatecheckmedController = async (req, res, next) => {
           ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
           : "";
       }
+
       if (req.body.currentqty == 0) {
         try {
-          await center104.update_led(req.body);
+          if (datadrugpatient.length) {
+            if (datadrugpatient[0].departmentcode == "W8") {
+              console.log(datadrugpatient[0].departmentcode);
+              await center104.update_led(req.body);
+            }
+          }
         } catch (e) {
           console.log("update_led");
           console.log(datasend);
@@ -258,12 +270,12 @@ exports.reportcheckmedController = async (req, res, next) => {
     let getname = [];
     if (get_mederror.length) {
       for (let data of get_mederror) {
-        data.createDT = data.createDT
-          ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
-          : "";
-        data.hnDT = data.hnDT
-          ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
-          : "";
+        // data.createDT = data.createDT
+        //   ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
+        //   : "";
+        // data.hnDT = data.hnDT
+        //   ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
+        //   : "";
         if (!data.med_wrong_name) {
           getname = await homc.getDrugstar(data.med_wrong);
           if (getname.length) {
@@ -413,6 +425,41 @@ exports.timedispendController = async (req, res, next) => {
   }
 
   res.send({ gettime, averageTime: averageTime });
+};
+
+exports.cutqtyController = async (req, res, next) => {
+  let obj1 = {
+    rowCount: 0,
+    result: [],
+  };
+  let obj2 = { rowCount: 0, result: [] };
+  let obj3 = { rowCount: 0, result: [] };
+
+  let sendapi1 = await Xmed.cutxmed(req.body);
+  if (sendapi1.length) {
+    obj1 = {
+      rowCount: sendapi1.length,
+      result: sendapi1,
+    };
+  } else {
+    // sendapi2 = await onCube.cutoncube(req.body);
+    let sendapi2 = [];
+    if (sendapi2.length) {
+      obj2 = {
+        rowCount: sendapi2.length,
+        result: sendapi2,
+      };
+    } else {
+      let sendapi3 = await center102.cutbarmanual(req.body);
+      if (sendapi3.length) {
+        obj3 = {
+          rowCount: sendapi3.length,
+          result: sendapi3,
+        };
+      }
+    }
+  }
+  res.send([obj1, obj2, obj3]);
 };
 
 function get_time_difference(date1, date2) {

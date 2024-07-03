@@ -17,7 +17,7 @@ var db_mysql101 = require("../DB/db_gd4unit_101_mysql");
 var gd4unit101 = new db_mysql101();
 var db_Xmed = require("../DB/db_Xed_102_sqlserver");
 var Xmed = new db_Xmed();
-
+var fs = require("fs");
 //แก้นับตอนยิง
 
 exports.syncOPDController = async (req, res, next) => {
@@ -815,8 +815,6 @@ async function getdataHomc(data, etc) {
 }
 
 async function createFile(filename = "DIH/file.XML", text) {
-  let fs = require("fs");
-
   let pathRoot = "DATA/JVM_OPD/";
   let fullname = pathRoot + filename;
   let path = require("path").dirname(fullname);

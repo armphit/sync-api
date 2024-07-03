@@ -16,7 +16,6 @@ module.exports = function () {
   });
 
   this.fill = function fill(val, DATA) {
-  
     var sql =
       `INSERT INTO synclastupdate_opd (
         prescriptionno,
@@ -324,7 +323,6 @@ module.exports = function () {
   };
 
   this.getDrugSync = function fill(val, DATA) {
- 
     var sql =
       `SELECT
       prescriptionno,
@@ -809,7 +807,7 @@ ORDER BY checkstamp
     prescription
   WHERE
     departmentcode = 'W8'
-  AND hn = ${val.hn.trim()}
+  AND hn = '${val.hn.trim()}'
   GROUP BY
     queue
   ORDER BY
@@ -853,6 +851,20 @@ ORDER BY checkstamp
       (hn = '${val.hn}')
     AND (queue = '${val.queue}')
     AND (date_key = CURDATE ())`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getUser2 = function fill(val, DATA) {
+    var sql = `SELECT
+      *
+    FROM
+      center_db.users
+    WHERE user NOT IN ('test','admin')`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

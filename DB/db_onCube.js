@@ -102,9 +102,36 @@ module.exports = function () {
       }
     });
   };
+  this.cutoncube = function fill(val, DATA) {
+    var sql = `SELECT
+          pph.PouchSerialNo,
+          pcp.PatientID,
+          SUBSTRING(pt.PatientNo, 1, LEN(pt.PatientNo)-1) PatientNo,
+          pt.PatientName,
+          it.Mnemonic AS drugCode,
+          it.GenericName,
+          pci.AdminQuantity AS HisPackageRatio
+      FROM
+          PackOrderPouchHistory pph
+      LEFT JOIN Prescription pcp ON pph.PrescriptionID = pcp.RawID
+      LEFT JOIN Patient pt ON pcp.PatientID = pt.RawID
+      LEFT JOIN PrescriptionItem pci ON pcp.RawID = pci.PrescriptionID
+      LEFT JOIN Item it ON pci.ItemID = it.RawID
+      WHERE
+          pph.PouchSerialNo = '${val.barcode}'
+      AND CAST( pph.LastUpdatedDate AS Date ) = CAST( GETDATE() AS Date )`;
 
-  module.exports = {
-    sql,
-    poolPromise,
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      try {
+        const request = await pool.request();
+        const result = await request.query(sql);
+        resolve(result.recordset);
+      } catch (error) {
+        num = 0;
+        console.log("OnCube datadrug:" + error);
+        connectDB();
+      }
+    });
   };
 };

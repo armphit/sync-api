@@ -417,4 +417,46 @@ WHERE
       }
     });
   };
+  this.cutxmed = async function fill(val, DATA) {
+    var sqlgetdrug = `SELECT
+      MAX(p.Barcode) Barcode,
+      d.drugCode,
+      MAX(d.drugName) drugName,
+      CASE
+    WHEN SUBSTRING (
+      d.drugCode,
+      CHARINDEX('-', d.drugCode),
+      1
+    ) = '-'
+    AND d.drugCode <> 'CYCL-'
+    AND d.drugCode <> 'DEX-O'
+    AND d.drugCode <> 'POLY-1' THEN
+      'Y'
+    ELSE
+      'N'
+    END AS isPrepack
+    FROM
+      XMed.dbo.Products p
+    LEFT JOIN center.dbo.dictdrug d ON p.Code = d.drugID COLLATE SQL_Latin1_General_CP1_CI_AS
+    LEFT JOIN XMed.dbo.Spaces s ON p.Id = s.ProductId
+    WHERE
+      p.Barcode = '${val.barcode}'
+    AND p.Barcode <> ''
+    AND d.drugCode <> ''
+    AND CONVERT (nvarchar(50), s.ProductId) <> ''
+    GROUP BY
+      drugCode
+`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      try {
+        const request = await pool.request();
+        const result = await request.query(sqlgetdrug);
+        resolve(result.recordset);
+      } catch (error) {
+        // await pool.close();
+        console.log("XMed:" + error);
+      }
+    });
+  };
 };

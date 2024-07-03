@@ -11,8 +11,9 @@ exports.reportcheckmedController = async (req, res, next) => {
     //     ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
     //   }));
     // }
+
     let get_mederror = await center102.get_mederror(req.body);
-    console.log(get_mederror);
+
     let getname = [];
     if (get_mederror.length) {
       get_mederror = get_mederror.map((val) => {

@@ -10,10 +10,6 @@ exports.getDispenseDaterangeController = async (req, res, next) => {
   let getDispense = await pmpf.getDispense(req.body);
   res.send(getDispense);
 };
-exports.getDispenseDaterangeController = async (req, res, next) => {
-  let getDispense = await pmpf.getDispense(req.body);
-  res.send(getDispense);
-};
 
 exports.doorreportController = async (req, res, next) => {
   let getDoorreport = null;
