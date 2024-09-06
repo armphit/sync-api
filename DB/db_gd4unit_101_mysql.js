@@ -3,16 +3,38 @@ const { Console } = require("console");
 module.exports = function () {
   const mysql = require("mysql");
   // จริง
-  const connection = mysql.createConnection({
-    user: "root",
-    password: "cretem",
-    host: "192.168.185.102",
-    database: "gd4unit",
+  // const connection = mysql.createConnection({
+  //   user: "root",
+  //   password: "cretem",
+  //   host: "192.168.185.102",
+  //   database: "gd4unit",
+  // });
+
+  // connection.connect(function (err) {
+  //   if (err) throw err;
+  //   console.log("Connected to GD4Unit 101 MySQL");
+  // });
+
+  let connection;
+  connectDatabase();
+  function connectDatabase() {
+    connection = mysql.createPool({
+      user: "root",
+      password: "cretem",
+      host: "192.168.185.102",
+      database: "gd4unit",
+      queueLimit: 0,
+    });
+
+    return connection;
+  }
+  connection.on("connection", (connection) => {
+    console.log("Connected to gd4unit MySQL.");
   });
 
-  connection.connect(function (err) {
-    if (err) throw err;
-    console.log("Connected to GD4Unit 101 MySQL");
+  connection.on("error", (err) => {
+    console.error("Error gd4unit MySQ:", err.message);
+    connectDatabase();
   });
 
   this.fill = function fill(val, DATA) {
@@ -865,6 +887,17 @@ ORDER BY checkstamp
     FROM
       center_db.users
     WHERE user NOT IN ('test','admin')`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.checkCut = function fill(val, DATA) {
+    var sql = `SELECT *
+                FROM center_db.drug_cut`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

@@ -3,37 +3,48 @@ const { Console } = require("console");
 module.exports = function () {
   const sql = require("mssql");
   //จริง
-  this.config = {
-    user: "robot",
-    password: "57496208",
-    server: "192.168.41.1",
-    database: "MHR",
-    timezone: "utc",
-    requestTimeout: 180000, // for timeout setting
-    connectionTimeout: 180000, // for timeout setting
-    options: {
-      encrypt: false, // need to stop ssl checking in case of local db
-      enableArithAbort: true,
-    },
-  };
 
-  this.connection = new sql.connect(this.config, function (err) {
-    if (err) console.log("ERROR: " + err);
-  });
-
-  const poolPromise = new sql.ConnectionPool(this.config)
-    .connect()
-    .then((pool) => {
-      console.log(
-        `Connected to Homc ${new Date().toLocaleString("en-GB", {
-          hour12: false,
-        })}`
-      );
-      return pool;
+  // this.connection = new sql.connect(this.config, function (err) {
+  //   if (err) console.log("ERROR: " + err);
+  // });
+  let poolPromise;
+  let num = 0;
+  conDB();
+  function conDB() {
+    poolPromise = new sql.ConnectionPool({
+      user: "robot",
+      password: "57496208",
+      server: "192.168.41.1",
+      database: "MHR",
+      timezone: "utc",
+      requestTimeout: 180000, // for timeout setting
+      connectionTimeout: 180000, // for timeout setting
+      options: {
+        encrypt: false, // need to stop ssl checking in case of local db
+        enableArithAbort: true,
+      },
     })
-    .catch((err) =>
-      console.log("Database Connection Failed! Bad Config: ", err)
-    );
+      .connect()
+      .then((pool) => {
+        console.log(
+          `Connected to Homc ${new Date().toLocaleString("en-GB", {
+            hour12: false,
+          })}`
+        );
+        return pool;
+      })
+      .catch((err) => {
+        console.log("Database Connection Failed! Bad Config: ", err);
+        setTimeout(() => {
+          if (num <= 5) {
+            let todayDate = formatDate(new Date());
+            console.log(todayDate + " HOMC Error: " + num);
+
+            conDB();
+          }
+        }, 3000);
+      });
+  }
 
   String.prototype.padL = function padL(n) {
     var target = this;
@@ -133,10 +144,10 @@ WHERE
 AND mh.invdate = '` +
       val.date +
       `'
-AND m.pat_status = 'O'
+
 AND m.site = '${site}'
-AND m.revFlag IS NULL
-AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
+
+AND CONVERT(VARCHAR(5),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
       val.allTimeOld +
       `)
 ORDER BY
@@ -190,7 +201,7 @@ ORDER BY
      m.inv_code AS drugCode,
      v.gen_name AS drugName,
      v.remarks AS drugNameTh,
-     m.quant AS qty,
+     IIF(m.quant <> '', Try_convert(float,m.quant), 0) AS qty,
      p.unit AS unitCode,
      m.site AS departmentcode,
      dy.priceGroupDesc,
@@ -278,7 +289,7 @@ ORDER BY
     AND m.pat_status = 'O'
     AND m.site = '${val.site}'
     AND m.revFlag IS NULL 
-        AND FORMAT(p.lastIssTime,'hh:mm') not in (` +
+        AND  CONVERT(VARCHAR(5),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
       val.allTimeOld +
       `)
     ORDER BY
@@ -296,9 +307,66 @@ ORDER BY
     for (let i = 0; i < 7 - String(val.hn).length; i++) {
       hn = " " + hn;
     }
-
-    let sqlCommand =
-      `SELECT
+    let sqlCommand = ``;
+    if (val.floor == "W21") {
+      sqlCommand = `SELECT
+      Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
+      Invd.invCode AS invCode,
+      la.lamed_name AS lamed_name,
+      Invd.unitPerFeed AS dosage,
+      (
+        SELECT
+          lamed_name
+        FROM
+          Lamed lam
+        WHERE
+          lam.lamed_code = Invd.lamedUnit
+      ) AS freetext0,
+      Invd.lamedTimeText AS freetext1,
+      Invd.lamedText AS freetext2,
+      '( ' + (
+        SELECT DISTINCT
+          (
+            Rtrim(LTRIM(mi.Description))
+          ) + ' '
+        FROM
+          Med_Info_Group mi
+        LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+        WHERE
+          mif.Med_Inv_Code = Invd.invCode
+        AND (
+          mi.InfoGroup LIKE '%สี%'
+          OR mi.InfoGroup IS NULL
+        ) FOR XML PATH ('')
+      ) + ')' AS itemidentify,
+      Invh.lastIssTime AS lastIssTime
+    FROM
+      InvReqH Invh (NOLOCK)
+    LEFT JOIN Ipd_h i (NOLOCK) ON i.hn = Invh.hn
+    LEFT JOIN InvReqD Invd (NOLOCK) ON Invh.reqNo = Invd.reqNo
+    LEFT JOIN Lamed la ON Invd.lamedHow = la.lamed_code
+    LEFT JOIN Med_inv v (NOLOCK) ON v.code = Invd.invCode
+    LEFT JOIN PATIENT pt ON (Invh.hn = pt.hn)
+    LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+    AND v.[site] = '1'
+    LEFT JOIN Site si (NOLOCK) ON Invh.toSite = si.site_key
+    WHERE
+      (
+        i.discharge_date IS NULL
+        OR i.discharge_date = ''
+      )
+    AND Invh.hn = '${hn}'
+    AND Invh.toSite  =  '${val.floor}'
+    AND Invd.revDate IS NULL
+    AND v.gen_name <> ''
+    AND Invh.reqDate =  '${val.date}'
+    AND Invh.reqType = 'H'
+    ORDER BY
+      Invh.lastIssTime DESC
+      `;
+    } else {
+      sqlCommand =
+        `SELECT
       TRIM (ti.titleName) + ' ' + pt.firstName + ' ' + TRIM (pt.lastName) AS name_patient,
       p.invCode,
       la.lamed_name AS lamedName,
@@ -355,21 +423,22 @@ ORDER BY
     LEFT JOIN Med_QRCode qr ON m.inv_code = qr.inv_code
     WHERE
       mh.hn = '` +
-      hn +
-      `'
+        hn +
+        `'
     AND mh.invdate = ` +
-      val.date +
-      `
+        val.date +
+        `
     AND m.pat_status = 'O'
     AND m.site = '` +
-      val.floor +
-      `'
+        val.floor +
+        `'
     AND m.revFlag IS NULL
     AND TRIM (m.inv_code) = '` +
-      val.code +
-      `'
+        val.code +
+        `'
     ORDER BY
       p.lastIssTime`;
+    }
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

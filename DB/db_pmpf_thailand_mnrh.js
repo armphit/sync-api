@@ -3,18 +3,38 @@ const { Console } = require("console");
 module.exports = function () {
   const mysql = require("mysql");
   // จริง
-  const connection = mysql.createConnection({
-    user: "root",
-    password: "cretem",
-    host: "192.168.185.102",
-    database: "pmpf_thailand_mnrh",
+  // const connection = mysql.createConnection({
+  //   user: "root",
+  //   password: "cretem",
+  //   host: "192.168.185.102",
+  //   database: "pmpf_thailand_mnrh",
+  // });
+
+  // connection.connect(function (err) {
+  //   if (err) throw err;
+  //   console.log("Connected to Pmpf_Thailand_MNRH");
+  // });
+  let connection;
+  connectDatabase();
+  function connectDatabase() {
+    connection = mysql.createPool({
+      user: "root",
+      password: "cretem",
+      host: "192.168.185.102",
+      database: "pmpf_thailand_mnrh",
+      queueLimit: 0,
+    });
+
+    return connection;
+  }
+  connection.on("connection", (connection) => {
+    console.log("Connected to pmpf_thailand_mnrh MySQL.");
   });
 
-  connection.connect(function (err) {
-    if (err) throw err;
-    console.log("Connected to Pmpf_Thailand_MNRH");
+  connection.on("error", (err) => {
+    console.error("Error pmpf_thailand_mnrh MySQ:", err.message);
+    connectDatabase();
   });
-
   this.fill = function fill(val, DATA) {
     var sql =
       `SELECT
@@ -192,8 +212,7 @@ GROUP BY
   };
 
   this.dataZone = function fill(val, DATA) {
-    var sql =
-      `SELECT
+    var sql = `SELECT
       dd.drugCode,
       de.deviceCode,
       dg.group_id
@@ -203,9 +222,7 @@ GROUP BY
     LEFT JOIN device de ON ds.deviceID = de.deviceID
     LEFT JOIN center.device_group dg ON de.deviceCode = dg.deviceCode
     WHERE
-      dd.drugCode = '` +
-      val +
-      `'
+      de.deviceCode IN (${val})
     AND group_id IS NOT NULL
     GROUP BY
       de.deviceCode`;

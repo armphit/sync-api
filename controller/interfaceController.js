@@ -5,13 +5,20 @@ var pmpf = new db_pmpf();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 const moment = require("moment");
-const html2json = require("html2json").html2json;
 var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
 const axios = require("axios");
+const https = require("https");
+var db_center104 = require("../DB/db_104_Center");
+var center104 = new db_center104();
+const fs = require("fs");
+var token = fs.readFileSync(
+  "D:\\GitHub\\MHRdashboard\\node\\model\\token.txt",
+  "utf-8"
+);
 exports.patientSyncController = async (req, res, next) => {
   if (req.body) {
-    let patient = await gd4unit101.getPatientSync(req.body.date);
+    let patient = await center104.getPatientSync(req.body.date);
     patient = patient.map((r) => ({
       ...r,
       readdatetime: moment(r.readdatetime).format("YYYY-MM-DD HH:mm:ss"),
@@ -22,7 +29,7 @@ exports.patientSyncController = async (req, res, next) => {
 
 exports.drugSyncController = async (req, res, next) => {
   if (req.body) {
-    let patientDrug = await gd4unit101.getDrugSync(req.body);
+    let patientDrug = await center104.getDrugSync(req.body);
     let data = { patientDrug: patientDrug };
     res.send(data);
   }
@@ -100,6 +107,8 @@ exports.listPatientAllergicController = async (req, res, next) => {
 
       moph_patient = await center102.hn_moph_patient(req.body);
     }
+    console.log(moph_patient);
+
     let data = {
       moph_patient: moph_patient,
     };
@@ -109,7 +118,7 @@ exports.listPatientAllergicController = async (req, res, next) => {
 exports.checkallergyController = async (req, res, next) => {
   let countDrug = 0;
   if (req.body.choice == 2) {
-    let getCid = await homc.getCid(req.body.hn.trim());
+    let getCid = await homc.getCid(req.body.hn);
 
     if (getCid.length) {
       if (req.body.select) {
@@ -211,14 +220,13 @@ exports.checkallergyController = async (req, res, next) => {
                                   headers,
                                 }
                               );
-                              // console.log(sendata);
-                              // console.log("send to api ");
-                              // console.log(resultapi);
-                              // console.log(
-                              //   resultapi.data
-                              //     ? resultapi.data.replace(/(\r\n|\r|\n)/g, "")
-                              //     : "result err"
-                              // );
+
+                              console.log(
+                                `cid ${
+                                  dataAllergic[k].cid ? dataAllergic[k].cid : ""
+                                } send to api `
+                              );
+
                               resultapi = null;
                               hosp = null;
                               sendata = null;
@@ -228,7 +236,6 @@ exports.checkallergyController = async (req, res, next) => {
                               );
                               console.log(error);
                             }
-
                             // if (insert_md.affectedRows) {
                             //   console.log(
                             //     stampDB.hn +
@@ -334,89 +341,75 @@ exports.checkallergyController = async (req, res, next) => {
 //   }
 // }
 async function getAllergic(cid) {
-  // let a = await axios.get(
-  //   `http://164.115.23.100/test_token_php/index77.php?cid=${cid}`
-  // );
-  // let b = html2json(a.data).child;
-  // let c = [];
+  // return [];
 
-  // for (let index = 0; index < b.length; index++) {
-  //   if (b[index].node == "text") {
-  //     try {
-  //       let d = JSON.parse(b[index].text);
-  //       if ("drugName" in d) {
-  //         let f = c.filter((val) => val.drugName == d.drugName);
-  //         if (!f.length) {
-  //           c.push(d);
-  //         }
-  //       }
-  //     } catch (e) {}
-  //   }
-  // }
-
-  // return c;
-  let a = await axios.get(
-    "http://164.115.23.100/test_token_php/index7_ipd.php?cid=" +
-      cid +
-      "&format=json"
-  );
-
-  let b = html2json(a.data).child;
-  let c = [];
-  // console.log(b);
-  try {
-    c = JSON.parse(b[0].child[3].child[3].text).data;
-  } catch (e) {
-    c = [];
-    console.log("allergy ipd : " + e);
+  const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
+    cid
+  )}`;
+  const instance = axios.create({
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false,
+      keepAlive: true,
+    }),
+    baseURL: url,
+    timeout: 1000, //optional
+    headers: {
+      "jwt-token": token, // Add more default headers as needed
+    },
+  });
+  // instance.defaults.headers.get["jwt-token"] =
+  //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
+  let dataAllegy = await instance.get(url);
+  console.log("-----------------------------------------");
+  console.log(`${cid}`);
+  console.log(dataAllegy.data);
+  console.log("-----------------------------------------");
+  if (dataAllegy.data.data) {
+    return dataAllegy.data.data;
+  } else {
+    return [];
   }
-  return c;
 }
 
 exports.drugQueuePController = async (req, res, next) => {
   let data = req.body;
-  // let checkq = await center102.checkqueue();
-  // let permittedValues = checkq.map((value) => value.patientNO).join("','");
-  // permittedValues = `'${permittedValues}'`;
-  // data.hn = permittedValues;
-  // data.datethai1 = moment(data.date1).add(543, "year").format("YYYYMMDD");
-  // data.datethai2 = moment(data.date2).add(543, "year").format("YYYYMMDD");
-  // checkq = await homc.getQP(data);
-  // let datacut = await center102.get_cut_dispend_drug();
-  // let datacon = await center102.get_moph_sync();
-  // let qp = await gd4unit101.getqp(data);
-  // // let qp = [];
-  // checkq = checkq.map(function (emp) {
-  //   return {
-  //     ...emp,
-  //     ...(datacut.find(
-  //       (item) => item.patientNO.trim() === emp.patientNO.trim()
-  //     ) ?? { status: "N" }),
-  //     ...(datacon.find(
-  //       (item) => item.patientNO.trim() === emp.patientNO.trim()
-  //     ) ?? { check: "", timestamp: null }),
-  //     ...(qp.find((item) => item.patientNO.trim() === emp.patientNO.trim()) ?? {
-  //       QN: null,
-  //     }),
-  //   };
-  // });
+  let checkq = await center102.checkqueue();
+  let permittedValues = checkq.map((value) => value.patientNO).join("','");
+  permittedValues = `'${permittedValues}'`;
+  data.hn = permittedValues;
+  data.datethai1 = moment(data.date1).add(543, "year").format("YYYYMMDD");
+  data.datethai2 = moment(data.date2).add(543, "year").format("YYYYMMDD");
+  checkq = await homc.getQP(data);
+  let datacut = await center102.get_cut_dispend_drug();
+  let datacon = await center102.get_moph_sync();
+  let qp = await gd4unit101.getqp(data);
+  // let qp = [];
+  checkq = checkq.map(function (emp) {
+    return {
+      ...emp,
+      ...(datacut.find(
+        (item) => item.patientNO.trim() === emp.patientNO.trim()
+      ) ?? { status: "N" }),
+      ...(datacon.find(
+        (item) => item.patientNO.trim() === emp.patientNO.trim()
+      ) ?? { check: "", timestamp: null }),
+      ...(qp.find((item) => item.patientNO.trim() === emp.patientNO.trim()) ?? {
+        QN: null,
+      }),
+    };
+  });
   let gethospitalQ = await center102.listPatientQpost(data);
-  // checkq = checkq.filter(
-  //   (obj1) =>
-  //     !gethospitalQ.some(
-  //       (obj2) => obj2.patientNO.trim() === obj1.patientNO.trim()
-  //     )
-  // );
-  // gethospitalQ = checkq.concat(gethospitalQ);
-  // gethospitalQ.sort((a, b) => {
-  //   let da = new Date(a.createdDT),
-  //     db = new Date(b.createdDT);
-  //   return db - da;
-  // });
+  checkq = checkq.filter(
+    (obj1) =>
+      !gethospitalQ.some(
+        (obj2) => obj2.patientNO.trim() === obj1.patientNO.trim()
+      )
+  );
+  gethospitalQ = checkq.concat(gethospitalQ);
+  gethospitalQ.sort((a, b) => {
+    let da = new Date(a.createdDT),
+      db = new Date(b.createdDT);
+    return db - da;
+  });
   res.send({ gethospitalQ, rowCount: gethospitalQ.length });
-};
-exports.getUserController = async (req, res, next) => {
-  let data = await gd4unit101.getUser2();
-
-  res.send({ result: data });
 };

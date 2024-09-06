@@ -1,6 +1,6 @@
 const moment = require("moment");
-var db_mysql101center = require("../DB/db_center_101_mysql");
-var center101 = new db_mysql101center();
+// var db_mysql101center = require("../DB/db_center_101_mysql");
+// var center101 = new db_mysql101center();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 
@@ -12,10 +12,6 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-var db_Xmed = require("../DB/db_Xed_102_sqlserver");
-var Xmed = new db_Xmed();
-var db_onCube = require("../DB/db_onCube");
-var onCube = new db_onCube();
 // const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
 // var gd4unit_101_mysql = new db_gd4unit_101_mysql();
 exports.checkpatientController = async (req, res, next) => {
@@ -25,8 +21,7 @@ exports.checkpatientController = async (req, res, next) => {
     datasend.allTimeOld = `''`;
     if (datasend.site == "W8" || datasend.site == "W18") {
       let q = await center102.fill(datasend);
-      datasend.queue = q.length ? q[0].QN : datasend.site;
-
+      datasend.queue = q[0] ? q[0].QN : datasend.site;
       // let checkhn = await gd4unit_101_mysql.getsiteQhn(dataPatient.hn);
       // if (checkhn.length) {
       //   if (q[0].QN != checkhn[0].queue) {
@@ -132,25 +127,11 @@ exports.checkpatientController = async (req, res, next) => {
           });
         }
       }
-      let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
-      if (datadrugpatient.length) {
-        let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
-        if (checkTime && !dataPatient.checkComplete) {
-          let data = {
-            status: 1,
-            patient: dataPatient.id,
-          };
-          await center102.updatePatient(data);
-        } else if (!checkTime && dataPatient.checkComplete) {
-          let data = {
-            status: 0,
-            patient: dataPatient.id,
-          };
-          await center102.updatePatient(data);
-        }
-      }
-
-      //  datadrugpatient = await center102.selectcheckmed(dataPatient.id);
+      // let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
+      let datadrugpatient = await center102.selectcheckmed({
+        id: dataPatient.id,
+        site: datasend.site,
+      });
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -172,11 +153,38 @@ exports.checkpatientController = async (req, res, next) => {
       let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
 
+      if (datadrugpatient.length) {
+        let checkTime = datadrugpatient.every((item) => item.checkqty === 0);
+        if (checkTime && !dataPatient.checkComplete) {
+          let data = {
+            status: 1,
+            patient: dataPatient.id,
+          };
+          await center102.updatePatient(data);
+        } else if (!checkTime && dataPatient.checkComplete) {
+          let data = {
+            status: 0,
+            patient: dataPatient.id,
+          };
+          await center102.updatePatient(data);
+        }
+      }
+      // if (datasend.check) {
+      //   let ab = datadrugpatient
+      //     .filter((item) => item.device.includes("M2"))
+      //     .every((item) => item.checkqty === 0);
+
+      //   if (ab) {
+      //     await gd4unit_101_mysql.updateDrugL(datasend);
+      //   }
+      // }
       datasend.PrescriptionNo =
         datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
       try {
-        await center104.insertLED(datasend);
+        if (datasend.site == "W8") {
+          await center104.insertLED(datasend);
+        }
       } catch (e) {
         console.log("insertLED");
         console.log(datasend);
@@ -202,7 +210,11 @@ exports.updatecheckmedController = async (req, res, next) => {
       req.body
     );
     if (insertloginsertlogcheckmed.affectedRows) {
-      let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
+      // let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
+      let datadrugpatient = await center102.selectcheckmed({
+        id: req.body.cmp_id,
+        site: req.body.site,
+      });
       datadrugpatient.map((item) => {
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
@@ -219,12 +231,10 @@ exports.updatecheckmedController = async (req, res, next) => {
           ? moment(data.lastmodified).format("YYYY-MM-DD HH:mm:ss")
           : "";
       }
-
       if (req.body.currentqty == 0) {
         try {
           if (datadrugpatient.length) {
-            if (datadrugpatient[0].departmentcode == "W8") {
-              console.log(datadrugpatient[0].departmentcode);
+            if (datadrugpatient[0].departmentcode.trim() == "W8") {
               await center104.update_led(req.body);
             }
           }
@@ -270,12 +280,12 @@ exports.reportcheckmedController = async (req, res, next) => {
     let getname = [];
     if (get_mederror.length) {
       for (let data of get_mederror) {
-        // data.createDT = data.createDT
-        //   ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
-        //   : "";
-        // data.hnDT = data.hnDT
-        //   ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
-        //   : "";
+        data.createDT = data.createDT
+          ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
+        data.hnDT = data.hnDT
+          ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
+          : "";
         if (!data.med_wrong_name) {
           getname = await homc.getDrugstar(data.med_wrong);
           if (getname.length) {
@@ -349,15 +359,15 @@ exports.reportcheckmedController = async (req, res, next) => {
 };
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
-  let user_list = await center101.getUser();
-  // let user_list = [];
+  // let user_list = await center101.getUser();
+  let user_list = [];
   let drug_list = await homc.getDrughomc();
-  let a = drug_list.find((val) => val.code == "LANSO1");
-  console.log(a);
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 
 exports.mederrorController = async (req, res, next) => {
+  console.log(req.body);
+
   let insertMederror = await center102.insert_mederror(req.body);
   let get_data = [];
   if (insertMederror.affectedRows) {
@@ -399,67 +409,6 @@ exports.manageerrorController = async (req, res, next) => {
   let data = req.body;
   let manage_error = await center102.manage_mederror(data);
   manage_error.affectedRows ? res.send([1]) : [];
-};
-
-exports.timedispendController = async (req, res, next) => {
-  let data = req.body;
-  let gettime = await center102.getTimecheck(data);
-  let averageTime = null;
-  if (gettime.length) {
-    const times = gettime.map((v) => v.time);
-
-    // Helper function to convert "HH:MM:SS" to total seconds
-    const timeToSeconds = (time) =>
-      time.split(":").reduce((acc, time) => 60 * acc + +time, 0);
-
-    // Helper function to convert total seconds to "HH:MM:SS"
-    const secondsToTime = (seconds) =>
-      new Date(seconds * 1000).toISOString().substr(11, 8);
-
-    // Convert all times to seconds, sum them, and calculate the average
-    const averageSeconds =
-      times.map(timeToSeconds).reduce((a, b) => a + b) / times.length;
-
-    // Convert the average time back to "HH:MM:SS"
-    averageTime = secondsToTime(averageSeconds);
-  }
-
-  res.send({ gettime, averageTime: averageTime });
-};
-
-exports.cutqtyController = async (req, res, next) => {
-  let obj1 = {
-    rowCount: 0,
-    result: [],
-  };
-  let obj2 = { rowCount: 0, result: [] };
-  let obj3 = { rowCount: 0, result: [] };
-
-  let sendapi1 = await Xmed.cutxmed(req.body);
-  if (sendapi1.length) {
-    obj1 = {
-      rowCount: sendapi1.length,
-      result: sendapi1,
-    };
-  } else {
-    // sendapi2 = await onCube.cutoncube(req.body);
-    let sendapi2 = [];
-    if (sendapi2.length) {
-      obj2 = {
-        rowCount: sendapi2.length,
-        result: sendapi2,
-      };
-    } else {
-      let sendapi3 = await center102.cutbarmanual(req.body);
-      if (sendapi3.length) {
-        obj3 = {
-          rowCount: sendapi3.length,
-          result: sendapi3,
-        };
-      }
-    }
-  }
-  res.send([obj1, obj2, obj3]);
 };
 
 function get_time_difference(date1, date2) {

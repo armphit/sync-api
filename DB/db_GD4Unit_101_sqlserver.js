@@ -16,9 +16,9 @@ module.exports = function () {
     },
   };
 
-  this.connection = new sql.connect(this.config, function (err) {
-    if (err) console.log("ERROR: " + err);
-  });
+  // this.connection = new sql.connect(this.config, function (err) {
+  //   if (err) console.log("ERROR: " + err);
+  // });
 
   const poolPromise = new sql.ConnectionPool(this.config)
     .connect()

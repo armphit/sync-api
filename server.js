@@ -2,6 +2,20 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(function (req, res, next) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methode", "GET, POST, PUT, DELETE");
+  res.setHeader("Access-Control-Allow-HEADERS", "content-type, x-access-token");
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  next();
+});
+var {
+  testController,
+  testController2,
+} = require("./controller/testController");
+
 var {
   registerController,
   loginController,
@@ -10,7 +24,6 @@ var {
 var {
   syncOPDController,
   syncOPDManualController,
-  testController,
 } = require("./controller/syncController");
 
 var {
@@ -49,16 +62,6 @@ var {
   drugController,
 } = require("./controller/msrController");
 
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methode", "GET, POST, PUT, DELETE");
-  res.setHeader("Access-Control-Allow-HEADERS", "content-type, x-access-token");
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  next();
-});
-
 app.post("/register", registerController);
 app.post("/login", loginController);
 app.post("/updatePassword", updatePasswordController);
@@ -85,10 +88,12 @@ app.post("/getDispend", dispendController);
 app.post("/checkAllergy", checkallergyController);
 app.get("/drugs", drugController);
 app.post("/queueP", drugQueuePController);
-app.post("/getTimedispenddrug", timedispendController);
-app.post("/getUser", getUserController);
-app.post("/cutqty", cutqtyController);
-// app.get("/test", testController);
+// app.post("/getTimedispenddrug", timedispendController);
+// app.post("/getUser", getUserController);
+// app.post("/cutqty", cutqtyController);
+
+app.post("/test", testController);
+app.post("/test2", testController2);
 module.exports = app;
 
 app.get("/", (req, res) => {
