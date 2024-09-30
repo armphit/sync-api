@@ -12,6 +12,8 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
+var db_mysql101center = require("../DB/db_center_101_mysql");
+var center101 = new db_mysql101center();
 // const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
 // var gd4unit_101_mysql = new db_gd4unit_101_mysql();
 exports.checkpatientController = async (req, res, next) => {
@@ -359,8 +361,7 @@ exports.reportcheckmedController = async (req, res, next) => {
 };
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
-  // let user_list = await center101.getUser();
-  let user_list = [];
+  let user_list = await center101.getUser();
   let drug_list = await homc.getDrughomc();
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };

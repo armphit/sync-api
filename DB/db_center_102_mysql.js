@@ -711,7 +711,8 @@ module.exports = function () {
     let sql =
       `SELECT
       cm.drugCode,
-      GROUP_CONCAT(DISTINCT cml. USER) userCheck
+      GROUP_CONCAT(DISTINCT cml. USER) userCheck,
+      CAST(MIN(cml.createDT) AS char) checkDT
     FROM
       checkmedpatient cmp
     LEFT JOIN checkmed cm ON cm.cmp_id = cmp.id
@@ -1447,6 +1448,7 @@ module.exports = function () {
     });
   };
   this.manage_mederror = function fill(val, DATA) {
+  
     var sql = ``;
     if (val.check === "edit") {
       sql =
@@ -1499,7 +1501,8 @@ module.exports = function () {
         source = '${val.source}',
         error_type = '${val.error_type}',
         site = '${val.site}',
-        type_pre = '${val.type_pre ? val.type_pre : ``}'
+        type_pre = '${val.type_pre ? val.type_pre : ``}',
+        drugAllergy = '${val.medcode_err ? val.medcode_err : ``}'
       WHERE
         (
           id = '` +
@@ -2073,100 +2076,193 @@ GROUP BY
     });
   };
 
-  this.listPatientQpost = function fill(val, DATA) {
-    var sql = `SELECT
-  q.patientNO,
-  q.QN,
-  q.patientName,
-  CAST(q.createDT AS char)  createdDT,
-  CAST(c.timestamp AS char) timestamp,
-  s.cid,
-  d.check,
-  cdd. STATUS as status
+//   this.listPatientQpost = function fill(val, DATA) {
+//     var sql = `SELECT
+//   q.patientNO,
+//   q.QN,
+//   q.patientName,
+//   CAST(q.createDT AS char)  createdDT,
+//   CAST(c.timestamp AS char) timestamp,
+//   s.cid,
+//   d.check,
+//   cdd. STATUS as status
+// FROM
+// (SELECT
+// *
+// FROM
+// (
+//   SELECT
+//     q.QN,
+//     q.patientNO,
+//     q.patientName,
+//     q.date,
+//     q.createDT
+//   FROM
+//     hospitalq q
+//   WHERE
+//     q.createDT BETWEEN '${val.date1}'
+//     AND '${val.date2}'
+//   AND locationQ = 'PHAR_A2'
+//   UNION
+//     SELECT
+//       q.QN,
+//       q.patientNO,
+//       q.patientName,
+//       q.date,
+//       q.updateDT 'createDT'
+//     FROM
+//       queue_p q
+//     WHERE
+//       q.updateDT BETWEEN '${val.date1}'
+//       AND '${val.date2}'
+//       AND (q.QN LIKE 'P%' OR q.QN = '')
+// ) AS a
+// ORDER BY
+// createDT DESC) AS q
+//   LEFT JOIN moph_sync s ON q.patientNO = s.patientID
+//   AND CAST(s.updateDT AS Date) = CURDATE()
+  
+//   LEFT JOIN (
+//     SELECT
+//       cid,
+//       'Y' as 'check'
+//     FROM
+//       moph_drugs d
+//     WHERE
+//       d.hospcode <> '10666'
+//     GROUP BY
+//       cid
+//   ) AS d ON s.CID = d.cid
+// LEFT JOIN (
+//   SELECT
+//       TIMESTAMP,
+//       hn,
+//       queue
+//   FROM
+//       moph_confirm
+//   WHERE
+//       CAST(TIMESTAMP AS Date) BETWEEN CAST('${val.date1}' AS Date)
+//       AND CAST('${val.date2}' AS Date)
+//       AND site = 'W8'
+// ) AS c ON q.patientNO = c.hn
+// LEFT JOIN (
+//   SELECT
+//       hn,
+//       STATUS
+//   FROM
+//       cut_dispend_drug
+//   WHERE
+//       STATUS = 'Y'
+//   AND deleteDT IS NULL
+//   AND departmentcode = 'W8'
+//   GROUP BY
+//       hn
+// ) AS cdd ON trim(q.patientNO) = trim(cdd.hn)
+
+// ORDER BY
+//   q.createDT`;
+
+//     return new Promise(function (resolve, reject) {
+//       connection.query(sql, function (err, result, fields) {
+//         if (err) throw err;
+//         resolve(result);
+//       });
+//     });
+//   };
+this.listPatientQpost = function fill(val, DATA) {
+  var sql = `SELECT
+q.patientNO,
+q.QN,
+q.patientName,
+CAST(q.createDT AS char)  createdDT,
+CAST(c.timestamp AS char) timestamp,
+s.cid,
+d.check,
+cdd. STATUS as status
 FROM
 (SELECT
 *
 FROM
 (
+SELECT
+  q.QN,
+  q.patientNO,
+  q.patientName,
+  q.date,
+  q.createDT
+FROM
+  hospitalq q
+WHERE
+  q.createDT BETWEEN '${val.date1}'
+  AND '${val.date2}'
+AND locationQ = 'PHAR_A2'
+UNION
   SELECT
     q.QN,
     q.patientNO,
     q.patientName,
     q.date,
-    q.createDT
+    q.updateDT 'createDT'
   FROM
-    hospitalq q
+    queue_p q
   WHERE
-    q.createDT BETWEEN '${val.date1}'
+    q.updateDT BETWEEN '${val.date1}'
     AND '${val.date2}'
-  AND locationQ = 'PHAR_A2'
-  UNION
-    SELECT
-      q.QN,
-      q.patientNO,
-      q.patientName,
-      q.date,
-      q.updateDT 'createDT'
-    FROM
-      queue_p q
-    WHERE
-      q.updateDT BETWEEN '${val.date1}'
-      AND '${val.date2}'
-      AND (q.QN LIKE 'P%' OR q.QN = '')
+    AND (q.QN LIKE 'P%' OR q.QN = '')
 ) AS a
 ORDER BY
 createDT DESC) AS q
-  LEFT JOIN moph_sync s ON q.patientNO = s.patientID
-  AND CAST(s.updateDT AS Date) = CURDATE()
-  
-  LEFT JOIN (
-    SELECT
-      cid,
-      'Y' as 'check'
-    FROM
-      moph_drugs d
-    WHERE
-      d.hospcode <> '10666'
-    GROUP BY
-      cid
-  ) AS d ON s.CID = d.cid
+LEFT JOIN moph_sync s ON q.patientNO = s.patientID
+AND CAST(s.updateDT AS Date) = CURDATE()
+
 LEFT JOIN (
   SELECT
-      TIMESTAMP,
-      hn,
-      queue
+    cid,
+    'Y' as 'check'
   FROM
-      moph_confirm
+    moph_drugs d
   WHERE
-      CAST(TIMESTAMP AS Date) BETWEEN CAST('${val.date1}' AS Date)
-      AND CAST('${val.date2}' AS Date)
-      AND site = 'W8'
+    d.hospcode <> '10666'
+  GROUP BY
+    cid
+) AS d ON s.CID = d.cid
+LEFT JOIN (
+SELECT
+    TIMESTAMP,
+    hn,
+    queue
+FROM
+    moph_confirm
+WHERE
+    CAST(TIMESTAMP AS Date) BETWEEN CAST('${val.date1}' AS Date)
+    AND CAST('${val.date2}' AS Date)
+    AND site = 'W8'
 ) AS c ON q.patientNO = c.hn
 LEFT JOIN (
-  SELECT
-      hn,
-      STATUS
-  FROM
-      cut_dispend_drug
-  WHERE
-      STATUS = 'Y'
-  AND deleteDT IS NULL
-  AND departmentcode = 'W8'
-  GROUP BY
-      hn
+SELECT
+    hn,
+    STATUS
+FROM
+    cut_dispend_drug
+WHERE
+    STATUS = 'Y'
+AND deleteDT IS NULL
+
+GROUP BY
+    hn
 ) AS cdd ON trim(q.patientNO) = trim(cdd.hn)
 
 ORDER BY
-  q.createDT`;
+q.createDT`;
+console.log(sql);
 
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
+  return new Promise(function (resolve, reject) {
+    connection.query(sql, function (err, result, fields) {
+      if (err) throw err;
+      resolve(result);
     });
-  };
-
+  });
+};
   this.addQP = function fill(val, DATA) {
     var sql =
       `INSERT INTO center.queue_p (

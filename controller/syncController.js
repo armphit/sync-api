@@ -1721,13 +1721,21 @@ async function getdataHomc(data, etc) {
     // console.log(sendzone);
     // console.log(zone);
     let jun =
-      sendzone.toString() === "JV,Xmed1"
-        ? 3
-        : sendzone.toString() === "Xmed1"
-        ? 1
-        : sendzone.toString() === "JV"
-        ? 2
-        : 0;
+    sendzone.toString() === "JV,Xmed1"
+      ? 99
+      : sendzone.toString() === "Xmed1"
+      ? 99
+      : sendzone.toString() === "JV"
+      ? 99
+      : sendzone.toString() === "J"
+      ? 99
+      : sendzone.toString() === "J,JV,Xmed1"
+      ? 99
+      : sendzone.toString() === "J,JV"
+      ? 99
+      : sendzone.toString() === "J,Xmed1"
+      ? 99
+      : 0;
 
     let jsonDrug = {
       patient: {
@@ -1820,7 +1828,7 @@ async function getdataHomc(data, etc) {
       xml: js2xmlparser.parse("outpOrderDispense", item),
     };
 
-    // console.log(xmlDrug);
+     console.log(xmlDrug);
     console.log("-------------------------------------------------");
     console.log("WindowNo : " + item.prescriptions.prescription.windowNo);
     console.log("Name : " + item.patient.patName);
