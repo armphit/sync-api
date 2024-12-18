@@ -440,6 +440,8 @@ ORDER BY
       p.lastIssTime`;
     }
 
+    console.log(sqlCommand);
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlCommand);
@@ -449,18 +451,19 @@ ORDER BY
   this.getDrugstar = async function fill(val, DATA) {
     var sqlCommand =
       `SELECT
+      TRIM (code) code,
+      TRIM (name) name,
       IIF (
         SUBSTRING (
           gen_name,
           LEN(TRIM(gen_name)),
           LEN(TRIM(gen_name))
-        ) = '*',
+        ) = '*' OR code IN ('DEXTR3','NORTR2'),
         1,
         0
-      ) val,     
+      ) val,
       TRIM (code) code,
-      TRIM (name) name,
-      TRIM (gen_name) gen_name
+      TRIM (name) name
     FROM
       Med_inv
     WHERE
@@ -469,15 +472,22 @@ ORDER BY
       `'`;
 
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
   this.getDrughomc = async function fill(val, DATA) {
     var sqlCommand = `SELECT
       TRIM (code) code,
-      TRIM (name) name
+      TRIM (name) name,
+      TRIM (unit) unit,
+      CAST(TRIM(opd_prc) AS FLOAT) AS OPDprice
     FROM
       Med_inv
     WHERE
@@ -738,6 +748,35 @@ ORDER BY
   WHERE
   TRIM (s.hn) = TRIM ('${val.data}')`;
     console.log(cid);
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(cid);
+      resolve(result.recordset);
+    });
+  };
+  this.datapatient = async function fill(val, DATA) {
+    var cid = `SELECT
+	TRIM(s.CardID) CardID,
+	TRIM(s.hn) hn,
+	Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientName,
+	CASE
+WHEN pt.sex = 'ช' THEN
+	'ชาย'
+ELSE
+	'หญิง'
+END AS sex,
+ CONVERT (
+	VARCHAR (10),
+	CAST (pt.birthDay AS DATE),
+	103
+) birthDay
+FROM
+	PatSS s
+LEFT JOIN PATIENT pt ON (pt.hn = s.hn)
+LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+WHERE
+	TRIM (s.CardID) = TRIM ('${val}')`;
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(cid);

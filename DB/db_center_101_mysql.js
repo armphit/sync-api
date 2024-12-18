@@ -61,4 +61,59 @@ module.exports = function () {
       });
     });
   };
+  this.insertDrugreturn = function fill(val, DATA) {
+    var sql = `INSERT INTO stock.card_93 (
+	patientNo,
+	patientName,
+	patientBD,
+	patientVD,
+	patientVN,
+	patientSex,
+	patientAge,
+	patientAdd,
+	patientRight,
+	docCode,
+	deptCode,
+	pharCode,
+	marker,
+	drugCode,
+	drugName,
+	returnQty,
+	dosageunitcode,
+	reason,
+	createDT,
+	location
+)
+VALUES
+	(
+		' 513129',
+		'นายชื่น เที่ยงกระโทก',
+		'',
+		'',
+		'0022',
+		'',
+		'',
+		'',
+		'',
+		'',
+		'',
+		'P62',
+		'P62',
+		'ASAM',
+		'ASPENT- M 81 MG [ร][*G*]*',
+		'20',
+		'TAB',
+		'',
+		'2024-11-29 16:36:05',
+		'R93'
+	);
+    `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

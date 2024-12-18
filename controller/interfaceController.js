@@ -412,7 +412,75 @@ exports.drugQueuePController = async (req, res, next) => {
   //   return db - da;
   // });
   // res.send({ gethospitalQ, rowCount: gethospitalQ.length });
-    let data = req.body;
+  let data = req.body;
   let gethospitalQ = await center102.listPatientQpost(data);
   res.send({ gethospitalQ, rowCount: gethospitalQ.length });
+};
+exports.datapatientController = async (req, res, next) => {
+  let cid = req.body.cid;
+
+  try {
+    let gethospitalQ = await homc.datapatient(cid);
+    if (gethospitalQ.length) {
+      res.status(200).json(gethospitalQ[0]);
+    } else {
+      res.status(404).json({
+        message: "No Data",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+};
+exports.managereportgd4Controller = async (req, res, next) => {
+  try {
+    if (req.body.choice == 1) {
+      let data = [];
+      req.body.data.forEach((val) => {
+        let comma = Object.keys(val)
+          .map(function (k) {
+            return val[k];
+          })
+          .join("','");
+        comma = `(NEWID(),'${comma}','',${req.body.date},REPLACE(CONVERT(varchar(5), CURRENT_TIMESTAMP, 108), ':', ''),CURRENT_TIMESTAMP)`;
+        data.push(comma);
+      });
+      let addReport = await center104.addReport(data);
+
+      res.send({
+        data: addReport.rowsAffected.length ? addReport.rowsAffected[0] : 0,
+      });
+    } else if (req.body.choice == 2) {
+      let data = [];
+      let date = req.body.date;
+      await center104.deleteReport(date);
+      req.body.data.forEach((val) => {
+        let comma = Object.keys(val)
+          .map(function (k) {
+            return val[k];
+          })
+          .join("','");
+        comma = `(NEWID(),'${comma}','',${req.body.date},REPLACE(CONVERT(varchar(5), CURRENT_TIMESTAMP, 108), ':', ''),CURRENT_TIMESTAMP)`;
+        data.push(comma);
+      });
+      let addReport = await center104.addReport(data);
+
+      res.send({
+        data: addReport.rowsAffected.length ? addReport.rowsAffected[0] : 0,
+      });
+    } else if (req.body.choice == 3) {
+      let date = req.body.date.dateend
+        ? `date_index between  ${req.body.date.datestart} and ${req.body.date.dateend}`
+        : `date_index = ${req.body.date}`;
+
+      let getReport = await center104.getReport(date);
+      res.send(getReport);
+    }
+  } catch (error) {
+    res.send({
+      massage: error,
+    });
+  }
 };

@@ -88,3 +88,35 @@ exports.drugController = async (req, res, next) => {
   let getdata = await homc.getDrugip2000();
   res.send({ data: getdata });
 };
+
+exports.returndrugController = async (req, res, next) => {
+  if (req.body.choice == 1) {
+    let getdata = await center102.insertDrugreturn(req.body);
+
+    res.send({ data: getdata.affectedRows });
+  } else {
+    let getdata = await center102.getDrugreturn(req.body);
+    if (getdata.length) {
+      console.log(getdata);
+
+      getDrughomc = await homc.getDrughomc();
+      getdata = getdata
+        .map((val) => {
+          return {
+            ...val,
+            ...getDrughomc.find((data) => data.code == val.drugCode),
+          };
+        })
+        .map((result) => {
+          return {
+            ...result,
+            drugPrice: result.OPDprice
+              ? result.returnQty * result.OPDprice
+              : "",
+          };
+        });
+    }
+
+    res.send(getdata);
+  }
+};

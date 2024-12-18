@@ -52,6 +52,8 @@ var {
   checkallergyController,
   drugQueuePController,
   getUserController,
+  datapatientController,
+  managereportgd4Controller,
 } = require("./controller/interfaceController");
 
 var {
@@ -60,6 +62,7 @@ var {
   onuspharController,
   dispendController,
   drugController,
+  returndrugController,
 } = require("./controller/msrController");
 
 app.post("/register", registerController);
@@ -88,6 +91,9 @@ app.post("/getDispend", dispendController);
 app.post("/checkAllergy", checkallergyController);
 app.get("/drugs", drugController);
 app.post("/queueP", drugQueuePController);
+app.post("/datapatient", datapatientController);
+app.post("/managereportgd4", managereportgd4Controller);
+app.post("/returndrug", returndrugController);
 // app.post("/getTimedispenddrug", timedispendController);
 // app.post("/getUser", getUserController);
 // app.post("/cutqty", cutqtyController);

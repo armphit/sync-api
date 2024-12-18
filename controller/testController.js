@@ -92,32 +92,10 @@ exports.testController = async (req, res, next) => {
 };
 exports.testController2 = async (req, res, next) => {
 
-//   const fetch = require("node-fetch");
-// const body = {a: 1};
-
-// const response = await fetch('http://localhost:5000/test', {
-// 	method: 'post',
-// 	body: JSON.stringify(body),
-// 	headers: {'Content-Type': 'application/json'}
-// });
-// const data = await response.json();
-const data = {
-  username: "m2000ka@gmail.com",
-  password: "123456",
-};
-const url = `http://localhost:5000/test`;
-const instance = axios.create({
-  // httpsAgent: new https.Agent({
-  //   rejectUnauthorized: false,
-  //   keepAlive: true,
-  // }),
-  // baseURL: url,
-  // timeout: 1000,
-});
-
-let dataAllegy = await instance.post(url, data);
-console.log(dataAllegy.data);
-  res.send(dataAllegy.data);
+  let getData = await center102.gettimedis();
+// let dataAllegy = await instance.post(url, data);
+console.log(getData);
+  res.send(getData);
 
 };
 

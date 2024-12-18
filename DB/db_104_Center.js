@@ -807,4 +807,61 @@ GROUP BY
       resolve(result.recordset);
     });
   };
+  this.addReport = function fill(val, DATA) {
+    var sql = `INSERT INTO [center].[dbo].[gd4_report] (
+	[id],
+	[department],
+	[system],
+	[status],
+	[issue_reason],
+	[solution],
+	[username],
+	[date_index],
+	[time_index],
+	[createDT]
+)
+VALUES
+	${val}`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result);
+    });
+  };
+  this.getReport = function fill(val, DATA) {
+    var sql = `SELECT
+    	id,
+	department,
+	system,
+	status,
+	issue_reason,
+	solution,
+	username,
+	date_index,
+	time_index,
+	CONVERT (VARCHAR(25), createDT, 120) createDT
+    FROM
+      [center].[dbo].[gd4_report]
+    WHERE
+      ${val}`;
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.deleteReport = function fill(val, DATA) {
+    var sql = `DELETE 
+FROM
+	center.dbo.gd4_report
+WHERE
+	date_index = ${val}`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result);
+    });
+  };
 };
