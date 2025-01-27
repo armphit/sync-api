@@ -28,41 +28,28 @@ const html2json = require("html2json").html2json;
 
 exports.syncOPDController = async (req, res, next) => {
   let data = req.body;
-  if (data.site == "W8") {
-    const hn = req.body.data;
-    const check = req.body.check;
-    let sendv = {};
+  const hn = req.body.data;
+  const check = req.body.check;
+  let sendv = {};
 
-    if (parseInt(hn) != NaN) {
-      let dataP = [];
-      let q = await center102.queue({ hn: hn });
-      // if (check.user != "admin") {
-      if (!q.length) {
-        // q = await gd4unit101.getsiteQ();
-        // q = q.length ? `P${Number(q[0].num) + 1}` : "P1";
-        dataP = await homc.getQPatient(data);
-        if (dataP.length) {
-          await center102.addQP(dataP[0]);
-        }
-
-        // let send = {
-        //   patientNO: data.data,
-        //   QN: q,
-        //   date: new Date().toISOString().split("T")[0],
-        // };
-        // await center102.addQP(send);
-
-        // dataP = null;
-        // send = null;
-      } else {
-        q = q[0].QN;
+  if (parseInt(hn) != NaN) {
+    let dataP = [];
+    let q = await center102.queue({ hn: hn });
+    // if (check.user != "admin") {
+    if (!q.length) {
+      // q = await gd4unit101.getsiteQ();
+      // q = q.length ? `P${Number(q[0].num) + 1}` : "P1";
+      dataP = await homc.getQPatient(data);
+      if (dataP.length) {
+        await center102.addQP(dataP[0]);
       }
-      // } else {
-      //   q = q.length ? q[0].QN : "";
-      // }
 
-      let checkAllergic = await listPatientAllergicController({ hn: hn });
-      // console.log("checkAllergic : " + checkAllergic);
+      // let send = {
+      //   patientNO: data.data,
+      //   QN: q,
+      //   date: new Date().toISOString().split("T")[0],
+      // };
+      // await center102.addQP(send);
 
       // dataP = null;
       // send = null;
@@ -319,12 +306,9 @@ exports.syncOPDController = async (req, res, next) => {
             err: 3,
             time: allTimeOld,
           };
+          res.send(sendv);
         }
       }
-      // } else {
-      //   sendv.status = checkAllergic;
-      //   res.send(sendv);
-      // }
     } else {
       let allTimeOld = "";
       let time = await gd4unit101.checkPatient(hn);
@@ -562,11 +546,13 @@ exports.syncOPDController = async (req, res, next) => {
         res.send(sendv);
       }
     }
+    // } else {
+    //   sendv.status = checkAllergic;
+    //   res.send(sendv);
+    // }
   } else {
-    let sendReturn = await getPrescriptionSite(data);
-    console.log(sendReturn);
-
-    res.send(sendReturn);
+    sendv.status = 4;
+    res.send(sendv);
   }
 };
 
