@@ -809,4 +809,193 @@ module.exports = function () {
       resolve(result.recordset);
     });
   };
+  this.checkDrugPatient = async function fill(val, DATA) {
+    var sql = `SELECT
+    MAX(hn) hn,
+    FORMAT(p.makerDT, 'HH:mm') AS ordertime
+ FROM
+    opd.dbo.prescription p
+ WHERE
+    FORMAT(p.createDT, 'yyyy-MM-dd') = FORMAT(GETDATE(), 'yyyy-MM-dd')
+ AND p.hn = '${val}'
+ GROUP BY
+    FORMAT(p.makerDT, 'HH:mm')`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.insertSys = async function fill(val, DATA) {
+    var sql = `
+IF (
+	SELECT
+		hn
+	FROM
+		 [opd].[dbo].[syslastupdate]
+	WHERE
+		hn = TRIM('${val.hn}')
+	AND queue = '${val.qn}'
+	AND dateindex = FORMAT (GetDate(), 'yyyyMMdd')
+) IS NOT NULL UPDATE [opd].[dbo].[syslastupdate]
+SET [updateDT] = GetDate()
+WHERE
+	hn = TRIM('${val.hn}')
+AND queue = '${val.qn}'
+AND dateindex = FORMAT (GetDate(), 'yyyyMMdd')
+ELSE
+	INSERT INTO [opd].[dbo].[syslastupdate] (
+		[id],
+		[hn],
+		[queue],
+		[maker],
+		[dateindex],
+		[timeindex],
+		[createDT],
+		[site],
+		[patientName],
+		[patientDob],
+		[sex]
+	)
+VALUES
+	(
+		NEWID(),
+		TRIM('${val.hn}'),
+		'${val.qn}',
+		'${val.maker}',
+		FORMAT (GetDate(), 'yyyyMMdd'),
+		FORMAT (GetDate(), 'HHmm'),
+		GetDate(),
+		'${val.site}',
+		'${val.patientname}',
+		'${val.patientdob}',
+		'${val.sex}'
+	)`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result);
+    });
+  };
+
+  this.insertPre = async function fill(val, DATA) {
+    var sql = `
+INSERT INTO [opd].[dbo].[prescription] (
+	[id],
+	[sys_id],
+	[seq],
+	[drugCode],
+	[drugName],
+	[qty],
+	[unit],
+	[makerDT],
+	[createDT],
+	[dateindex],
+	[timeindex],
+	[prescriptionNo],
+	[hn]
+)
+VALUES
+	${val}`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result);
+    });
+  };
+  this.getSys = async function fill(val, DATA) {
+    var sql = `SELECT
+	id
+FROM
+	opd.dbo.syslastupdate
+WHERE
+	hn = ${val.hn}
+AND queue = '${val.qn}'
+AND dateindex = FORMAT (GetDate(), 'yyyyMMdd')`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.interfaceSys = async function fill(val, DATA) {
+    var sql = `SELECT
+	ROW_NUMBER () OVER (ORDER BY createDT DESC) indexrow,
+	hn,
+	patientName patientname,
+	CONVERT (
+		CHAR (10),
+		DATEADD(
+			YEAR ,- 543,
+			CONVERT (CHAR, patientDob)
+		),
+		120
+	) patientdob,
+	FLOOR(
+		DATEDIFF(
+			DAY,
+			CONVERT (
+				CHAR (10),
+				DATEADD(
+					YEAR ,- 543,
+					CONVERT (CHAR, patientDob)
+				),
+				120
+			),
+			GETDATE()
+		) / 365.25
+	) age,
+	sex,
+	CONVERT (VARCHAR(25), createDT, 120) readdatetime,
+	'Y' sendMachine,
+	patientDob birthTH,
+  id
+FROM
+	opd.dbo.syslastupdate
+WHERE
+	dateindex = FORMAT (GetDate(), 'yyyyMMdd')
+  AND site = '${val.site}'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.interfaceDrug = async function fill(val, DATA) {
+    var sql = `SELECT
+	p.prescriptionNo prescriptiono,
+	s.sex,
+	CONVERT (
+		CHAR (10),
+		DATEADD(
+			YEAR ,- 543,
+			CONVERT (CHAR, patientDob)
+		),
+		120
+	) patientdob,
+	patientDob birthTH,
+	p.drugCode orderitemcode,
+	p.drugName orderitemname,
+	p.qty orderqty,
+	p.unit orderunitcode,
+	CONVERT (VARCHAR(25), p.makerDT, 120) ordercreatedate,
+	'true' AS STATUS
+FROM
+	opd.dbo.syslastupdate s
+LEFT JOIN opd.dbo.prescription p ON p.sys_id = s.id
+WHERE
+	s.dateindex = FORMAT (GetDate(), 'yyyyMMdd')
+AND sys_id = '${val.id}'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
 };

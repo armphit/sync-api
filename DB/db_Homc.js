@@ -54,16 +54,16 @@ module.exports = function () {
     return target;
   };
 
-  this.fill = function fill(CMD, DATA) {
-    // // create Request object
-    new this.sql.Request(this.connection).query(CMD, function (err, recordset) {
-      if (err) console.log("ERROR: " + err);
+  // this.fill = function fill(CMD, DATA) {
+  //   // // create Request object
+  //   new this.sql.Request(this.connection).query(CMD, function (err, recordset) {
+  //     if (err) console.log("ERROR: " + err);
 
-      // send records as a response
-      // res.send(recordset);
-      DATA(recordset);
-    });
-  };
+  //     // send records as a response
+  //     // res.send(recordset);
+  //     DATA(recordset);
+  //   });
+  // };
 
   this.fill = async function fill(val, DATA) {
     let site = val.check.sitew1 ? `W9` : `W8`;
@@ -145,13 +145,14 @@ AND mh.invdate = '` +
       val.date +
       `'
 
-AND m.site = '${site}'
+AND m.site = '${val.site}'
 
 AND CONVERT(VARCHAR(5),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
       val.allTimeOld +
       `)
 ORDER BY
 	p.lastIssTime`;
+    console.log(sqlCommand);
 
     return new Promise(async (resolve, reject) => {
       try {
