@@ -16,24 +16,56 @@ var token = fs.readFileSync(
   "D:\\GitHub\\MHRdashboard\\node\\model\\token.txt",
   "utf-8"
 );
+var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
+var GD4Unit_101 = new db_GD4Unit_101();
+// exports.patientSyncController = async (req, res, next) => {
+//   if (req.body) {
+//     let patient = await center104.getPatientSync(req.body.date);
+//     patient = patient.map((r) => ({
+//       ...r,
+//       readdatetime: moment(r.readdatetime).format("YYYY-MM-DD HH:mm:ss"),
+//     }));
+//     res.send(patient);
+//   }
+// };
 exports.patientSyncController = async (req, res, next) => {
   if (req.body) {
-    let patient = await center104.getPatientSync(req.body.date);
-    patient = patient.map((r) => ({
-      ...r,
-      readdatetime: moment(r.readdatetime).format("YYYY-MM-DD HH:mm:ss"),
-    }));
+    let patient = [];
+
+    if (req.body.site == "W8") {
+      patient = await gd4unit101.getPatientSync(req.body.date);
+      patient = patient.map((r) => ({
+        ...r,
+        readdatetime: moment(r.readdatetime).format("YYYY-MM-DD HH:mm:ss"),
+      }));
+    } else {
+      patient = await GD4Unit_101.interfaceSys(req.body);
+    }
     res.send(patient);
   }
 };
-
 exports.drugSyncController = async (req, res, next) => {
   if (req.body) {
-    let patientDrug = await center104.getDrugSync(req.body);
-    let data = { patientDrug: patientDrug };
+    let patientDrug = [];
+    let data = { patientDrug: [] };
+    if (req.body.site == "W8") {
+      patientDrug = await gd4unit101.getDrugSync(req.body);
+      data = { patientDrug: patientDrug };
+    } else {
+      patientDrug = await GD4Unit_101.interfaceDrug(req.body);
+      data = { patientDrug: patientDrug };
+    }
+
     res.send(data);
   }
 };
+// exports.drugSyncController = async (req, res, next) => {
+//   if (req.body) {
+//     let patientDrug = await center104.getDrugSync(req.body);
+//     let data = { patientDrug: patientDrug };
+//     res.send(data);
+//   }
+// };
 
 exports.listDrugSyncController = async (req, res, next) => {
   if (req.body) {
@@ -340,34 +372,41 @@ exports.checkallergyController = async (req, res, next) => {
 //     return [];
 //   }
 // }
+
 async function getAllergic(cid) {
   // return [];
 
-  const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
-    cid
-  )}`;
-  const instance = axios.create({
-    httpsAgent: new https.Agent({
-      rejectUnauthorized: false,
-      keepAlive: true,
-    }),
-    baseURL: url,
-    timeout: 1000, //optional
-    headers: {
-      "jwt-token": token, // Add more default headers as needed
-    },
-  });
-  // instance.defaults.headers.get["jwt-token"] =
-  //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
-  let dataAllegy = await instance.get(url);
-  console.log("-----------------------------------------");
-  console.log(`${cid}`);
-  console.log(dataAllegy.data);
-  console.log("-----------------------------------------");
-  if (dataAllegy.data.data) {
-    return dataAllegy.data.data;
-  } else {
-    return [];
+  try {
+    const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
+      cid
+    )}`;
+    const instance = axios.create({
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+        keepAlive: true,
+      }),
+      baseURL: url,
+      timeout: 1000, //optional
+      headers: {
+        "jwt-token": token, // Add more default headers as needed
+      },
+    });
+    // axiosRetry(instance, { retries: 3 });
+    // instance.defaults.headers.get["jwt-token"] =
+    //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
+    let dataAllegy = await instance.get(url);
+    console.log("-----------------------------------------");
+    console.log(`${cid}`);
+    console.log(dataAllegy.data);
+    console.log("-----------------------------------------");
+    if (dataAllegy.data.data) {
+      return dataAllegy.data.data;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.log("getallegic");
+    console.log(error);
   }
 }
 

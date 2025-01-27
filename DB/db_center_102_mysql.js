@@ -127,7 +127,7 @@ module.exports = function () {
 
     // GROUP BY
     //   patientNO`;
-    let site = val.sitew1 ? `W9` : `W8`;
+    // let site = val.sitew1 ? `W9` : `W8`;
     var sql = `SELECT
     s.patientID,
     GROUP_CONCAT(d.drugcode) drugcode,
@@ -146,7 +146,7 @@ module.exports = function () {
       moph_confirm
     WHERE
       CAST(TIMESTAMP AS Date) = CURDATE()
-    AND site = '${site}'
+    AND site = '${val.site}'
   ) AS c ON TRIM(c.hn) = TRIM(s.patientID)
   WHERE
     CAST(s.updateDT AS Date) = CURDATE()
