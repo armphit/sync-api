@@ -185,7 +185,22 @@ module.exports = function () {
       });
     });
   };
+  this.hn_moph_cid = function fill(val, DATA) {
+    var sql =
+      `SELECT CID CardID
+FROM moph_sync
+WHERE patientID = ` +
+      val +
+      `
+    `;
 
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
   this.site_maharat = function fill(val, DATA) {
     var sql =
       `SELECT site_name,site_tel

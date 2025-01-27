@@ -5,19 +5,20 @@ var pmpf = new db_pmpf();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 const moment = require("moment");
-const html2json = require("html2json").html2json;
 var db_Homc = require("../DB/db_Homc");
 var homc = new db_Homc();
 const axios = require("axios");
 const https = require("https");
+var db_center104 = require("../DB/db_104_Center");
+var center104 = new db_center104();
 const fs = require("fs");
 var token = fs.readFileSync(
-  "D:\\Projacts\\NodeJS\\MHRdashboard\\node\\model\\token.txt",
+  "D:\\GitHub\\MHRdashboard\\node\\model\\token.txt",
   "utf-8"
 );
 exports.patientSyncController = async (req, res, next) => {
   if (req.body) {
-    let patient = await gd4unit101.getPatientSync(req.body.date);
+    let patient = await center104.getPatientSync(req.body.date);
     patient = patient.map((r) => ({
       ...r,
       readdatetime: moment(r.readdatetime).format("YYYY-MM-DD HH:mm:ss"),
@@ -28,7 +29,7 @@ exports.patientSyncController = async (req, res, next) => {
 
 exports.drugSyncController = async (req, res, next) => {
   if (req.body) {
-    let patientDrug = await gd4unit101.getDrugSync(req.body);
+    let patientDrug = await center104.getDrugSync(req.body);
     let data = { patientDrug: patientDrug };
     res.send(data);
   }
@@ -106,6 +107,8 @@ exports.listPatientAllergicController = async (req, res, next) => {
 
       moph_patient = await center102.hn_moph_patient(req.body);
     }
+    console.log(moph_patient);
+
     let data = {
       moph_patient: moph_patient,
     };
@@ -339,78 +342,145 @@ exports.checkallergyController = async (req, res, next) => {
 // }
 async function getAllergic(cid) {
   // return [];
-  try {
-    const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
-      cid
-    )}`;
-    const instance = axios.create({
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-        keepAlive: true,
-      }),
-      baseURL: url,
-      timeout: 1000, //optional
-      headers: {
-        "jwt-token": token, // Add more default headers as needed
-      },
-    });
-    // instance.defaults.headers.get["jwt-token"] =
-    //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
-    let dataAllegy = await instance.get(url);
-    console.log("-----------------------------------------");
-    console.log(`${cid}`);
-    console.log(dataAllegy.data);
-    console.log("-----------------------------------------");
-    if (dataAllegy.data.data) {
-      return dataAllegy.data.data;
-    } else {
-      return [];
-    }
-  } catch (error) {
-    console.log("getallegic");
-    console.log(error);
+
+  const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
+    cid
+  )}`;
+  const instance = axios.create({
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false,
+      keepAlive: true,
+    }),
+    baseURL: url,
+    timeout: 1000, //optional
+    headers: {
+      "jwt-token": token, // Add more default headers as needed
+    },
+  });
+  // instance.defaults.headers.get["jwt-token"] =
+  //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
+  let dataAllegy = await instance.get(url);
+  console.log("-----------------------------------------");
+  console.log(`${cid}`);
+  console.log(dataAllegy.data);
+  console.log("-----------------------------------------");
+  if (dataAllegy.data.data) {
+    return dataAllegy.data.data;
+  } else {
+    return [];
   }
 }
 
 exports.drugQueuePController = async (req, res, next) => {
+  // let data = req.body;
+  // let checkq = await center102.checkqueue();
+  // let permittedValues = checkq.map((value) => value.patientNO).join("','");
+  // permittedValues = `'${permittedValues}'`;
+  // data.hn = permittedValues;
+  // data.datethai1 = moment(data.date1).add(543, "year").format("YYYYMMDD");
+  // data.datethai2 = moment(data.date2).add(543, "year").format("YYYYMMDD");
+  // checkq = await homc.getQP(data);
+  // let datacut = await center102.get_cut_dispend_drug();
+  // let datacon = await center102.get_moph_sync();
+  // let qp = await gd4unit101.getqp(data);
+  // // let qp = [];
+  // checkq = checkq.map(function (emp) {
+  //   return {
+  //     ...emp,
+  //     ...(datacut.find(
+  //       (item) => item.patientNO.trim() === emp.patientNO.trim()
+  //     ) ?? { status: "N" }),
+  //     ...(datacon.find(
+  //       (item) => item.patientNO.trim() === emp.patientNO.trim()
+  //     ) ?? { check: "", timestamp: null }),
+  //     ...(qp.find((item) => item.patientNO.trim() === emp.patientNO.trim()) ?? {
+  //       QN: null,
+  //     }),
+  //   };
+  // });
+  // let gethospitalQ = await center102.listPatientQpost(data);
+  // checkq = checkq.filter(
+  //   (obj1) =>
+  //     !gethospitalQ.some(
+  //       (obj2) => obj2.patientNO.trim() === obj1.patientNO.trim()
+  //     )
+  // );
+  // gethospitalQ = checkq.concat(gethospitalQ);
+  // gethospitalQ.sort((a, b) => {
+  //   let da = new Date(a.createdDT),
+  //     db = new Date(b.createdDT);
+  //   return db - da;
+  // });
+  // res.send({ gethospitalQ, rowCount: gethospitalQ.length });
   let data = req.body;
-  let checkq = await center102.checkqueue();
-  let permittedValues = checkq.map((value) => value.patientNO).join("','");
-  permittedValues = `'${permittedValues}'`;
-  data.hn = permittedValues;
-  data.datethai1 = moment(data.date1).add(543, "year").format("YYYYMMDD");
-  data.datethai2 = moment(data.date2).add(543, "year").format("YYYYMMDD");
-  checkq = await homc.getQP(data);
-  let datacut = await center102.get_cut_dispend_drug();
-  let datacon = await center102.get_moph_sync();
-  let qp = await gd4unit101.getqp(data);
-  // let qp = [];
-  checkq = checkq.map(function (emp) {
-    return {
-      ...emp,
-      ...(datacut.find(
-        (item) => item.patientNO.trim() === emp.patientNO.trim()
-      ) ?? { status: "N" }),
-      ...(datacon.find(
-        (item) => item.patientNO.trim() === emp.patientNO.trim()
-      ) ?? { check: "", timestamp: null }),
-      ...(qp.find((item) => item.patientNO.trim() === emp.patientNO.trim()) ?? {
-        QN: null,
-      }),
-    };
-  });
   let gethospitalQ = await center102.listPatientQpost(data);
-  checkq = checkq.filter(
-    (obj1) =>
-      !gethospitalQ.some(
-        (obj2) => obj2.patientNO.trim() === obj1.patientNO.trim()
-      )
-  );
-  gethospitalQ = checkq.concat(gethospitalQ);
-  gethospitalQ.sort((a, b) => {
-    let da = new Date(a.createdDT),
-      db = new Date(b.createdDT);
-    return db - da;
-  });
   res.send({ gethospitalQ, rowCount: gethospitalQ.length });
+};
+exports.datapatientController = async (req, res, next) => {
+  let cid = req.body.cid;
+
+  try {
+    let gethospitalQ = await homc.datapatient(cid);
+    if (gethospitalQ.length) {
+      res.status(200).json(gethospitalQ[0]);
+    } else {
+      res.status(404).json({
+        message: "No Data",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+};
+exports.managereportgd4Controller = async (req, res, next) => {
+  try {
+    if (req.body.choice == 1) {
+      let data = [];
+      req.body.data.forEach((val) => {
+        let comma = Object.keys(val)
+          .map(function (k) {
+            return val[k];
+          })
+          .join("','");
+        comma = `(NEWID(),'${comma}','',${req.body.date},REPLACE(CONVERT(varchar(5), CURRENT_TIMESTAMP, 108), ':', ''),CURRENT_TIMESTAMP)`;
+        data.push(comma);
+      });
+      let addReport = await center104.addReport(data);
+
+      res.send({
+        data: addReport.rowsAffected.length ? addReport.rowsAffected[0] : 0,
+      });
+    } else if (req.body.choice == 2) {
+      let data = [];
+      let date = req.body.date;
+      await center104.deleteReport(date);
+      req.body.data.forEach((val) => {
+        let comma = Object.keys(val)
+          .map(function (k) {
+            return val[k];
+          })
+          .join("','");
+        comma = `(NEWID(),'${comma}','',${req.body.date},REPLACE(CONVERT(varchar(5), CURRENT_TIMESTAMP, 108), ':', ''),CURRENT_TIMESTAMP)`;
+        data.push(comma);
+      });
+      let addReport = await center104.addReport(data);
+
+      res.send({
+        data: addReport.rowsAffected.length ? addReport.rowsAffected[0] : 0,
+      });
+    } else if (req.body.choice == 3) {
+      let date = req.body.date.dateend
+        ? `date_index between  ${req.body.date.datestart} and ${req.body.date.dateend}`
+        : `date_index = ${req.body.date}`;
+
+      let getReport = await center104.getReport(date);
+      res.send(getReport);
+    }
+  } catch (error) {
+    res.send({
+      massage: error,
+    });
+  }
 };
