@@ -147,6 +147,7 @@ exports.listPatientAllergicController = async (req, res, next) => {
 };
 exports.checkallergyController = async (req, res, next) => {
   let countDrug = 0;
+
   if (req.body.choice == 2) {
     let getCid = await homc.getCid(req.body.hn);
 
@@ -168,12 +169,13 @@ exports.checkallergyController = async (req, res, next) => {
         await center102.addQP(send);
       }
       let checkBase = await center102.check_moph(req.body);
-
+      console.log(checkBase);
       if (checkBase.length) {
         countDrug = checkBase[0].num;
         let getData = await center102.get_moph(req.body);
         res.send({ getData, countDrug });
       } else {
+        console.log(getCid);
         if (getCid[0].CardID) {
           const cid = getCid[0].CardID.trim();
           let dataAllergic = await getAllergic(cid);

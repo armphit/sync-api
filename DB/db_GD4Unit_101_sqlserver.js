@@ -968,7 +968,7 @@ WHERE
   };
   this.interfaceDrug = async function fill(val, DATA) {
     var sql = `SELECT
-	p.prescriptionNo prescriptiono,
+	p.prescriptionNo prescriptionno,
 	s.sex,
 	CONVERT (
 		CHAR (10),
@@ -991,6 +991,28 @@ LEFT JOIN opd.dbo.prescription p ON p.sys_id = s.id
 WHERE
 	s.dateindex = FORMAT (GetDate(), 'yyyyMMdd')
 AND sys_id = '${val.id}'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.opd3Location = async function fill(val, DATA) {
+    var sql = `SELECT
+	CONCAT (
+		d.deviceCode,
+		'-',
+		s.row,
+		'-',
+		s.[column]
+	) location,
+   s.drugCode orderitemcode
+FROM
+	opd.dbo.device d
+INNER JOIN [opd].[dbo].[devicedrugsetting] s ON d.id = s.device_id
+WHERE
+	d.site = '${val.site}'`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

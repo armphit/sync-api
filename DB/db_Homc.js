@@ -146,13 +146,13 @@ AND mh.invdate = '` +
       `'
 
 AND m.site = '${val.site}'
-
+AND m.pat_status = 'O'
+AND m.revFlag IS NULL
 AND CONVERT(VARCHAR(5),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
       val.allTimeOld +
       `)
 ORDER BY
 	p.lastIssTime`;
-    console.log(sqlCommand);
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -441,8 +441,6 @@ ORDER BY
       p.lastIssTime`;
     }
 
-    console.log(sqlCommand);
-
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sqlCommand);
@@ -531,9 +529,7 @@ ORDER BY
       val.date +
       `
   AND ml.pat_status = 'O'
-  AND ml.site = '` +
-      val.site +
-      `'
+  AND ml.site = '${val.site ? val.site : `W8`}'
   AND ml.revFlag IS NULL
   AND TRIM (ml.inv_code) = TRIM('` +
       val.drugCode +
@@ -748,7 +744,6 @@ ORDER BY
   LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
   WHERE
   TRIM (s.hn) = TRIM ('${val.data}')`;
-    console.log(cid);
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(cid);

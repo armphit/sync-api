@@ -203,7 +203,7 @@ module.exports = function () {
     var sql =
       `SELECT
       hn,
-      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+      DATE_FORMAT(p.lastmodified, '%H:%i') AS ordertime
    FROM
       prescription p
    WHERE
