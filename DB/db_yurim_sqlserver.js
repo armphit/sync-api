@@ -3,32 +3,43 @@ const { Console } = require("console");
 module.exports = function () {
   const sql = require("mssql");
 
-  this.config = {
-    user: "sa",
-    password: "123456",
-    server: "192.168.180.161",
-    requestTimeout: 180000, // for timeout setting
-    connectionTimeout: 180000, // for timeout setting
-    options: {
-      encrypt: false, // need to stop ssl checking in case of local db
-      enableArithAbort: true,
-    },
-  };
-
-  // this.connection = new sql.connect(this.config, function (err) {
-  //   if (err) console.log("ERROR: " + err);
-  // });
-
-  const poolPromise = new sql.ConnectionPool(this.config)
-    .connect()
-    .then((pool) => {
-      console.log("Connected to Yurim");
-      return pool;
+  let poolPromise;
+  let num = 0;
+  conDB();
+  function conDB() {
+    poolPromise = new sql.ConnectionPool({
+      user: "sa",
+      password: "123456",
+      server: "192.168.180.161",
+      requestTimeout: 180000, // for timeout setting
+      connectionTimeout: 180000, // for timeout setting
+      options: {
+        encrypt: false, // need to stop ssl checking in case of local db
+        enableArithAbort: true,
+      },
     })
-    .catch((err) =>
-      console.log("Database Connection Failed! Bad Config: ", err)
-    );
+      .connect()
+      .then((pool) => {
+        console.log(
+          `Connected to YULIM ${new Date().toLocaleString("en-GB", {
+            hour12: false,
+          })}`
+        );
+        return pool;
+      })
+      .catch((err) => {
+        num++;
+        console.log("Database Connection Failed! Bad Config: ", err);
+        setTimeout(() => {
+          if (num <= 5) {
+            let todayDate = formatDate(new Date());
+            console.log(todayDate + " YULIM Error: " + num);
 
+            conDB();
+          }
+        }, 3000);
+      });
+  }
   this.dataDrug = async function fill(val, DATA) {
     var sqlgetdrug = `SELECT
 	p.Code orderitemcode,
@@ -44,3 +55,22 @@ LEFT JOIN CLFBJ20241127.dbo.MedBoxs m ON m.ProductId = p.Id`;
     });
   };
 };
+
+function formatDate(date) {
+  return (
+    [
+      date.getFullYear(),
+      padTo2Digits(date.getMonth() + 1),
+      padTo2Digits(date.getDate()),
+    ].join("-") +
+    " " +
+    [
+      padTo2Digits(date.getHours()),
+      padTo2Digits(date.getMinutes()),
+      padTo2Digits(date.getSeconds()),
+    ].join(":")
+  );
+}
+function padTo2Digits(num) {
+  return num.toString().padStart(2, "0");
+}

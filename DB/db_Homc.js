@@ -26,6 +26,7 @@ module.exports = function () {
     })
       .connect()
       .then((pool) => {
+        num++;
         console.log(
           `Connected to Homc ${new Date().toLocaleString("en-GB", {
             hour12: false,
@@ -34,6 +35,7 @@ module.exports = function () {
         return pool;
       })
       .catch((err) => {
+        num++;
         console.log("Database Connection Failed! Bad Config: ", err);
         setTimeout(() => {
           if (num <= 5) {
