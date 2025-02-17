@@ -43,7 +43,8 @@ module.exports = function () {
   this.dataDrug = async function fill(val, DATA) {
     var sqlgetdrug = `SELECT
 	p.Code orderitemcode,
-	CONCAT ('YU-', m.Code) location
+	CONCAT ('YU-', m.Code) location,
+  21 sortOrder
 FROM
 	CLFBJ20241127.dbo.Products p
 INNER JOIN CLFBJ20241127.dbo.Spaces s ON s.ProductId = p.Id

@@ -1523,13 +1523,14 @@ async function getAllergic(cid) {
 }
 
 async function getPrescriptionSite(data, check) {
-  // let checkAllergic = await listPatientAllergicController({ hn: hn });
+  let checkAllergic = await listPatientAllergicController({ hn: data.data });
   let sendv = {};
 
   let moph_patient = await center102.hn_moph_patient({
     hn: data.data,
     site: data.site,
   });
+
   let listDrug = [];
   if (
     moph_patient.length &&
@@ -1561,6 +1562,7 @@ async function getPrescriptionSite(data, check) {
     } else {
       listDrug = data.listDrug;
     }
+
     if (listDrug.length) {
       let opd3Location = await GD4Unit_101.opd3Location(data);
       let yulimLocation = await yurim.dataDrug();
@@ -1573,7 +1575,7 @@ async function getPrescriptionSite(data, check) {
           ) ??
             yulimLocation.find(
               (emp) => emp.orderitemcode === val.orderitemcode.trim()
-            ) ?? { location: "W" }),
+            ) ?? { location: "W", sortOrder: "" }),
           datePrint: moment(new Date())
             .add(543, "year")
             .format("DD/MM/YYYY HH:mm:ss"),
@@ -1582,19 +1584,70 @@ async function getPrescriptionSite(data, check) {
           site: data.site,
         };
       });
+      console.log(listDrug);
+      // listDrug = listDrug.sort((a, b) => {
+      //   if (a.sortOrder === "") return 1;
+      //   if (b.sortOrder === "") return -1;
+      //   return a.sortOrder - b.sortOrder;
+      // });
 
       let dataYulim = [];
       if (data.check.yulim) {
+        let dataPack = [
+          { orderitemcode: "PHENY4", pack: 100, location: "YU", sortOrder: 22 },
+          { orderitemcode: "F.B.", pack: 100, location: "YU", sortOrder: 22 },
+        ];
         let setyulimLocation = new Set(
           yulimLocation.map((item) => item.orderitemcode)
         );
-        dataYulim = listDrug.filter((item) =>
-          setyulimLocation.has(item.orderitemcode)
-        );
-      }
-      console.log(listDrug);
+        dataYulim = listDrug
+          .filter((item) => setyulimLocation.has(item.orderitemcode))
+          .map((item1) => {
+            const item2 = dataPack.find(
+              (item2) => item2.orderitemcode === item1.orderitemcode
+            ) ?? { pack: 0 };
+            return {
+              ...item1,
+              orderqty:
+                parseInt(item1.orderqty) > item2.pack
+                  ? parseInt(item1.orderqty) - item2.pack
+                  : item1.orderqty,
+              checkPack: parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
+              checkqty: parseInt(item1.orderqty),
+            };
+          });
+        listDrug = listDrug
+          .map((item1) => {
+            const item2 = dataPack.find(
+              (item2) => item2.orderitemcode === item1.orderitemcode
+            ) ?? { pack: 0 };
 
-      // if (data.check.yulim) {
+            return {
+              ...item1,
+              orderqty:
+                item2.pack && parseInt(item1.orderqty) > item2.pack
+                  ? parseInt(item1.orderqty) - item2.pack
+                  : item1.orderqty,
+              checkPack:
+                item2.pack && parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
+              checkqty: parseInt(item1.orderqty),
+            };
+          })
+          .flatMap((item3) =>
+            item3.checkPack == "Y"
+              ? [
+                  item3,
+                  {
+                    ...item3,
+                    location: "YU",
+                    sortOrder: 22,
+                    orderqty: item3.checkqty - item3.orderqty,
+                  },
+                ]
+              : [item3]
+          );
+      }
+
       if (data.check.yulim && dataYulim.length) {
         let filexml = await createXML(dataYulim);
         if (filexml == 1) {
@@ -1641,7 +1694,7 @@ function createXML(data) {
           ? val.orderunitcode.trim()
           : val.orderunitcode,
         DrtsCd: "",
-        Dose: val.orderqty ? parseInt(val.orderqty.trim()) : val.orderqty,
+        Dose: val.orderqty ? parseInt(val.orderqty) : val.orderqty,
         Note2: "",
         Note3: "",
         XmlFlag: "",
@@ -1678,21 +1731,27 @@ function createXML(data) {
     let xmlDrug = js2xmlparser.parse("OrderInfo", dataJson);
 
     // const filePath = `\\\\192.168.185.101\\InterfaceGD4\\order\\${data[0].prescriptionno}.xml`;
-    const filePath = `\\\\192.168.180.161\\order\\${data[0].prescriptionno}.xml`;
-    console.log(filePath);
+    const filePath = `order\\${data[0].prescriptionno}.xml`;
 
     fs.writeFileSync(filePath, xmlDrug);
     return 1;
   } catch (error) {
-    console.error("Error writing file:", err);
+    console.error("Error writing file:", error);
     return {
       err: 8,
-      message: "Error writing file : " + err,
+      message: "Error writing file : " + error,
     };
   }
 }
 async function dataResult(listDrug, check, data) {
+  listDrug = listDrug.sort((a, b) => {
+    if (a.sortOrder === "") return 1;
+    if (b.sortOrder === "") return -1;
+    return a.sortOrder - b.sortOrder;
+  });
+
   let sendv = {};
+
   if (check) {
     if (data.check.print) {
       try {

@@ -922,43 +922,89 @@ AND dateindex = FORMAT (GetDate(), 'yyyyMMdd')`;
       resolve(result.recordset);
     });
   };
+  //   this.interfaceSys = async function fill(val, DATA) {
+  //     var sql = `SELECT
+  // 	ROW_NUMBER () OVER (ORDER BY createDT DESC) indexrow,
+  // 	hn,
+  // 	patientName patientname,
+  // 	CONVERT (
+  // 		CHAR (10),
+  // 		DATEADD(
+  // 			YEAR ,- 543,
+  // 			CONVERT (CHAR, patientDob)
+  // 		),
+  // 		120
+  // 	) patientdob,
+  // 	FLOOR(
+  // 		DATEDIFF(
+  // 			DAY,
+  // 			CONVERT (
+  // 				CHAR (10),
+  // 				DATEADD(
+  // 					YEAR ,- 543,
+  // 					CONVERT (CHAR, patientDob)
+  // 				),
+  // 				120
+  // 			),
+  // 			GETDATE()
+  // 		) / 365.25
+  // 	) age,
+  // 	sex,
+  // 	CONVERT (VARCHAR(25), createDT, 120) readdatetime,
+  // 	'Y' sendMachine,
+  // 	patientDob birthTH,
+  //   id
+  // FROM
+  // 	opd.dbo.syslastupdate
+  // WHERE
+  // 	dateindex = FORMAT (GetDate(), 'yyyyMMdd')
+  //   AND site = '${val.site}'`;
+
+  //     return new Promise(async (resolve, reject) => {
+  //       const pool = await poolPromise;
+  //       const result = await pool.request().query(sql);
+  //       resolve(result.recordset);
+  //     });
+  //   };
   this.interfaceSys = async function fill(val, DATA) {
     var sql = `SELECT
-	ROW_NUMBER () OVER (ORDER BY createDT DESC) indexrow,
-	hn,
-	patientName patientname,
-	CONVERT (
-		CHAR (10),
-		DATEADD(
-			YEAR ,- 543,
-			CONVERT (CHAR, patientDob)
-		),
-		120
-	) patientdob,
-	FLOOR(
-		DATEDIFF(
-			DAY,
-			CONVERT (
-				CHAR (10),
-				DATEADD(
-					YEAR ,- 543,
-					CONVERT (CHAR, patientDob)
-				),
-				120
-			),
-			GETDATE()
-		) / 365.25
-	) age,
-	sex,
-	CONVERT (VARCHAR(25), createDT, 120) readdatetime,
-	'Y' sendMachine,
-	patientDob birthTH,
-  id
+ROW_NUMBER () OVER (ORDER BY createDT DESC) indexrow,
+hn,
+patientName patientname,
+-- CONVERT (
+-- 	CHAR (10),
+-- 	DATEADD(
+-- 		YEAR ,- 543,
+-- 		CONVERT (CHAR, patientDob)
+-- 	),
+-- 	120
+-- ) patientdob,
+-- FLOOR(
+-- 	DATEDIFF(
+-- 		DAY,
+-- 		CONVERT (
+-- 			CHAR (10),
+-- 			DATEADD(
+-- 				YEAR ,- 543,
+-- 				CONVERT (CHAR, patientDob)
+-- 			),
+-- 			120
+-- 		),
+-- 		GETDATE()
+-- 	) / 365.25
+-- ) age,
+ '' patientdob,
+'' age,
+sex,
+CONVERT (VARCHAR(25), createDT, 120) readdatetime,
+'Y' sendMachine,
+patientDob birthTH,
+id
 FROM
-	opd.dbo.syslastupdate
+opd.dbo.syslastupdate
 WHERE
-	dateindex = FORMAT (GetDate(), 'yyyyMMdd')
-  AND site = '${val.site}'`;
+dateindex = FORMAT (GetDate(), 'yyyyMMdd')
+AND site = '${val.site}'`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -1007,10 +1053,11 @@ AND sys_id = '${val.id}'`;
 		'-',
 		s.[column]
 	) location,
-   s.drugCode orderitemcode
+   s.drugCode orderitemcode,
+   d.sortOrder
 FROM
-	opd.dbo.device d
-INNER JOIN [opd].[dbo].[devicedrugsetting] s ON d.id = s.device_id
+	opd.dbo.device_copy d
+INNER JOIN [opd].[dbo].[devicedrugsetting_copy] s ON d.id = s.device_id
 WHERE
 	d.site = '${val.site}'`;
 
