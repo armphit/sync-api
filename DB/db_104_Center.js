@@ -864,4 +864,18 @@ WHERE
       resolve(result);
     });
   };
+  this.getQrcode = async function fill(val, DATA) {
+    var sql = `SELECT
+	*
+FROM
+	center.dbo.drug_qrcode
+WHERE
+	drugCode = '${val}'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
 };

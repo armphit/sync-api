@@ -1,23 +1,23 @@
 <?xml version='1.0'?>
 <OrderInfo>
-    <OrderNum>76876432</OrderNum>
-    <OrderDt>20250217</OrderDt>
-    <OrderDtm>20250217150709</OrderDtm>
-    <MdctNum>3</MdctNum>
+    <OrderNum>30885312</OrderNum>
+    <OrderDt>20250221</OrderDt>
+    <OrderDtm>20250221144723</OrderDtm>
+    <MdctNum>2</MdctNum>
     <MdctDt/>
-    <PtntNum>2125043</PtntNum>
-    <PtntNm>นาย สว่าง แสวงผล</PtntNm>
+    <PtntNum>2414171</PtntNum>
+    <PtntNm>นาย ถวัลย์ พินทะ</PtntNm>
     <Sex>M</Sex>
-    <Birthday>25680217</Birthday>
+    <Birthday>25680221</Birthday>
     <DptmtCd/>
     <DoctorNm/>
     <PtntTel/>
-    <Note>768764322125043</Note>
+    <Note>308853122414171</Note>
     <HsptCd/>
     <PtntAddr/>
     <MedItem>
-        <MedCd>DEXTR3</MedCd>
-        <MedNm>DEXTROMETHORPHAN 15 MG[ROMILAR]*[ร]</MedNm>
+        <MedCd>VITAM5</MedCd>
+        <MedNm>VITAMIN B 1-6-12</MedNm>
         <MedType/>
         <MedSpec/>
         <MedUnit>TAB</MedUnit>
@@ -28,25 +28,25 @@
         <XmlFlag/>
     </MedItem>
     <MedItem>
-        <MedCd>F.B.</MedCd>
-        <MedNm>F.B.C. TAB.*</MedNm>
+        <MedCd>LORAZ2</MedCd>
+        <MedNm>2 MG Lorazepam (ATIVAN 2mg) *</MedNm>
         <MedType/>
         <MedSpec/>
         <MedUnit>TAB</MedUnit>
         <DrtsCd/>
-        <Dose>80</Dose>
+        <Dose>30</Dose>
         <Note2/>
         <Note3/>
         <XmlFlag/>
     </MedItem>
     <MedItem>
-        <MedCd>MULTI1</MedCd>
-        <MedNm>MULTIVITAMIN</MedNm>
+        <MedCd>HALOP2</MedCd>
+        <MedNm>HALOPERIDOL 0.5 MG/TAB*[ร] [DI- A ,T**]</MedNm>
         <MedType/>
         <MedSpec/>
         <MedUnit>TAB</MedUnit>
         <DrtsCd/>
-        <Dose>120</Dose>
+        <Dose>20</Dose>
         <Note2/>
         <Note3/>
         <XmlFlag/>

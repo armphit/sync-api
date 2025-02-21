@@ -1056,10 +1056,23 @@ AND sys_id = '${val.id}'`;
    s.drugCode orderitemcode,
    d.sortOrder
 FROM
-	opd.dbo.device_copy d
-INNER JOIN [opd].[dbo].[devicedrugsetting_copy] s ON d.id = s.device_id
+	opd.dbo.device d
+INNER JOIN [opd].[dbo].[devicedrugsetting] s ON d.id = s.device_id
 WHERE
 	d.site = '${val.site}'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.packYurim = async function fill(val, DATA) {
+    var sql = `SELECT
+	*, 'YU' location,
+	22 sortOrder
+FROM
+	opd.dbo.pack_yurim`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

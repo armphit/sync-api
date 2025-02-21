@@ -81,7 +81,12 @@ exports.checkpatientController = async (req, res, next) => {
 
               data.QRCode = value.result;
             } catch (error) {
-              data.QRCode = "";
+              let qr = await center104.getQrcode(data.drugCode.trim());
+              if (qr.length) {
+                data.QRCode = qr[0].QrCode;
+              } else {
+                data.QRCode = "";
+              }
             }
           }
           data.lastmodified = data.lastmodified
@@ -129,7 +134,7 @@ exports.checkpatientController = async (req, res, next) => {
           });
         }
       }
-      // let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
+
       let datadrugpatient = await center102.selectcheckmed({
         id: dataPatient.id,
         site: datasend.site,
@@ -171,15 +176,7 @@ exports.checkpatientController = async (req, res, next) => {
           await center102.updatePatient(data);
         }
       }
-      // if (datasend.check) {
-      //   let ab = datadrugpatient
-      //     .filter((item) => item.device.includes("M2"))
-      //     .every((item) => item.checkqty === 0);
 
-      //   if (ab) {
-      //     await gd4unit_101_mysql.updateDrugL(datasend);
-      //   }
-      // }
       datasend.PrescriptionNo =
         datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 

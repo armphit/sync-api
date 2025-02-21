@@ -63,9 +63,16 @@ exports.syncOPDController = async (req, res, next) => {
       }
 
       let checkAllergic = await listPatientAllergicController({ hn: hn });
+      console.log(req.body);
 
-      let moph_patient = await center102.hn_moph_patient({ hn: hn });
+      let moph_patient = await center102.hn_moph_patient({
+        hn: hn,
+        site: req.body.site,
+      });
 
+      console.log(moph_patient[0].drugcode);
+      console.log(moph_patient[0].timestamp);
+      console.log(moph_patient.length);
       if (moph_patient.length) {
         if (
           moph_patient[0].timestamp === null &&
@@ -1584,19 +1591,10 @@ async function getPrescriptionSite(data, check) {
           site: data.site,
         };
       });
-      console.log(listDrug);
-      // listDrug = listDrug.sort((a, b) => {
-      //   if (a.sortOrder === "") return 1;
-      //   if (b.sortOrder === "") return -1;
-      //   return a.sortOrder - b.sortOrder;
-      // });
 
       let dataYulim = [];
       if (data.check.yulim) {
-        let dataPack = [
-          { orderitemcode: "PHENY4", pack: 100, location: "YU", sortOrder: 22 },
-          { orderitemcode: "F.B.", pack: 100, location: "YU", sortOrder: 22 },
-        ];
+        let dataPack = await GD4Unit_101.packYurim();
         let setyulimLocation = new Set(
           yulimLocation.map((item) => item.orderitemcode)
         );
@@ -1609,10 +1607,9 @@ async function getPrescriptionSite(data, check) {
             return {
               ...item1,
               orderqty:
-                parseInt(item1.orderqty) > item2.pack
-                  ? parseInt(item1.orderqty) - item2.pack
+                parseInt(item1.orderqty) > item2.pack && item2.pack
+                  ? parseInt(item1.orderqty) % item2.pack
                   : item1.orderqty,
-              checkPack: parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
               checkqty: parseInt(item1.orderqty),
             };
           });
@@ -1625,12 +1622,15 @@ async function getPrescriptionSite(data, check) {
             return {
               ...item1,
               orderqty:
-                item2.pack && parseInt(item1.orderqty) > item2.pack
-                  ? parseInt(item1.orderqty) - item2.pack
+                item2.pack &&
+                parseInt(item1.orderqty) > item2.pack &&
+                item2.pack
+                  ? parseInt(item1.orderqty) % item2.pack
                   : item1.orderqty,
               checkPack:
                 item2.pack && parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
               checkqty: parseInt(item1.orderqty),
+              // pack: item2.pack,
             };
           })
           .flatMap((item3) =>
@@ -1641,14 +1641,83 @@ async function getPrescriptionSite(data, check) {
                     ...item3,
                     location: "YU",
                     sortOrder: 22,
-                    orderqty: item3.checkqty - item3.orderqty,
+                    orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
+                    // orderitemcode: "BOX",
                   },
                 ]
               : [item3]
           );
       }
+      // if (data.check.yulim) {
+
+      //   let dataPack = await GD4Unit_101.packYurim();
+      //   let setyulimLocation = new Set(
+      //     yulimLocation.map((item) => item.orderitemcode)
+      //   );
+      //   dataYulim = listDrug
+      //     .filter((item) => setyulimLocation.has(item.orderitemcode))
+      //     .map((item1) => {
+      //       const item2 = dataPack.find(
+      //         (item2) => item2.orderitemcode === item1.orderitemcode
+      //       ) ?? { pack: 0 };
+      //       return {
+      //         ...item1,
+      //         orderqty:
+      //           parseInt(item1.orderqty) > item2.pack
+      //             ? parseInt(item1.orderqty) - item2.pack
+      //             : item1.orderqty,
+      //         checkPack: parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
+      //         checkqty: parseInt(item1.orderqty),
+      //       };
+      //     });
+      //   listDrug = listDrug
+      //     .map((item1) => {
+      //       const item2 = dataPack.find(
+      //         (item2) => item2.orderitemcode === item1.orderitemcode
+      //       ) ?? { pack: 0 };
+
+      //       return {
+      //         ...item1,
+      //         orderqty:
+      //           item2.pack && parseInt(item1.orderqty) > item2.pack
+      //             ? parseInt(item1.orderqty) - item2.pack
+      //             : item1.orderqty,
+      //         checkPack:
+      //           item2.pack && parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
+      //         checkqty: parseInt(item1.orderqty),
+      //       };
+      //     })
+      //     .flatMap((item3) =>
+      //       item3.checkPack == "Y"
+      //         ? [
+      //             item3,
+      //             {
+      //               ...item3,
+      //               location: "YU",
+      //               sortOrder: 22,
+      //               orderqty: item3.checkqty - item3.orderqty,
+      //             },
+      //           ]
+      //         : [item3]
+      //     );
+      // }
 
       if (data.check.yulim && dataYulim.length) {
+        let seen = new Map();
+        let data1 = [];
+        let data2 = [];
+
+        dataYulim.forEach((item) => {
+          if (!seen.has(item.orderitemcode)) {
+            seen.set(item.orderitemcode, true);
+            data1.push(item);
+          } else {
+            data2.push(item);
+          }
+        });
+
+        dataYulim = [data1, data2];
+
         let filexml = await createXML(dataYulim);
         if (filexml == 1) {
           return await dataResult(listDrug, check, { check: data.check });
@@ -1684,56 +1753,65 @@ function formatDate(dateString) {
 }
 function createXML(data) {
   try {
-    let arrDrug = data.map((val) => {
-      return {
-        MedCd: val.orderitemcode ? val.orderitemcode.trim() : val.orderitemcode,
-        MedNm: val.orderitemname ? val.orderitemname.trim() : val.orderitemname,
-        MedType: "",
-        MedSpec: "",
-        MedUnit: val.orderunitcode
-          ? val.orderunitcode.trim()
-          : val.orderunitcode,
-        DrtsCd: "",
-        Dose: val.orderqty ? parseInt(val.orderqty) : val.orderqty,
-        Note2: "",
-        Note3: "",
-        XmlFlag: "",
-      };
-    });
+    for (let i = 0; i < data.length; i++) {
+      let arrDrug = data[i].map((val) => {
+        return {
+          MedCd: val.orderitemcode
+            ? val.orderitemcode.trim()
+            : val.orderitemcode,
+          MedNm: val.orderitemname
+            ? val.orderitemname.trim()
+            : val.orderitemname,
+          MedType: "",
+          MedSpec: "",
+          MedUnit: val.orderunitcode
+            ? val.orderunitcode.trim()
+            : val.orderunitcode,
+          DrtsCd: "",
+          Dose: val.orderqty ? parseInt(val.orderqty) : val.orderqty,
+          Note2: "",
+          Note3: "",
+          XmlFlag: "",
+        };
+      });
+      console.log(data[i]);
+      if (data[i].length) {
+        let dataJson = {
+          OrderNum: data[i][0].prescriptionno,
+          OrderDt: moment(data[i][0].lastmodified).format("YYYYMMDD"),
+          OrderDtm: moment(data[i][0].lastmodified).format("YYYYMMDDHHmmss"),
+          MdctNum: data.length,
+          MdctDt: "",
+          PtntNum: data[i][0].hn ? data[i][0].hn.trim() : data[i][0].hn,
+          PtntNm: data[i][0].patientname
+            ? data[i][0].patientname.trim()
+            : data[i][0].patientname,
+          Sex: data[i][0].sex,
+          Birthday: data[i][0].patientdob,
+          DptmtCd: "",
+          DoctorNm: "",
+          DptmtCd: "",
+          DptmtCd: "",
+          DptmtCd: "",
+          DptmtCd: "",
+          DoctorNm: "",
+          PtntTel: "",
+          Note: `${data[i][0].prescriptionno}${
+            data[i][0].hn ? data[i][0].hn.trim() : data[i][0].hn
+          }`,
+          HsptCd: "",
+          PtntAddr: "",
+          MedItem: arrDrug,
+        };
+        let xmlDrug = js2xmlparser.parse("OrderInfo", dataJson);
 
-    let dataJson = {
-      OrderNum: data[0].prescriptionno,
-      OrderDt: moment(data[0].lastmodified).format("YYYYMMDD"),
-      OrderDtm: moment(data[0].lastmodified).format("YYYYMMDDHHmmss"),
-      MdctNum: data.length,
-      MdctDt: "",
-      PtntNum: data[0].hn ? data[0].hn.trim() : data[0].hn,
-      PtntNm: data[0].patientname
-        ? data[0].patientname.trim()
-        : data[0].patientname,
-      Sex: data[0].sex,
-      Birthday: data[0].patientdob,
-      DptmtCd: "",
-      DoctorNm: "",
-      DptmtCd: "",
-      DptmtCd: "",
-      DptmtCd: "",
-      DptmtCd: "",
-      DoctorNm: "",
-      PtntTel: "",
-      Note: `${data[0].prescriptionno}${
-        data[0].hn ? data[0].hn.trim() : data[0].hn
-      }`,
-      HsptCd: "",
-      PtntAddr: "",
-      MedItem: arrDrug,
-    };
-    let xmlDrug = js2xmlparser.parse("OrderInfo", dataJson);
+        // const filePath = `\\\\192.168.185.101\\InterfaceGD4\\order\\${data[0].prescriptionno}.xml`;
+        const filePath = `order\\${data[i][0].prescriptionno}_${i + 1}.xml`;
 
-    // const filePath = `\\\\192.168.185.101\\InterfaceGD4\\order\\${data[0].prescriptionno}.xml`;
-    const filePath = `order\\${data[0].prescriptionno}.xml`;
+        fs.writeFileSync(filePath, xmlDrug);
+      }
+    }
 
-    fs.writeFileSync(filePath, xmlDrug);
     return 1;
   } catch (error) {
     console.error("Error writing file:", error);
