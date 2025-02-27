@@ -1774,7 +1774,7 @@ function createXML(data) {
           XmlFlag: "",
         };
       });
-      console.log(data[i]);
+
       if (data[i].length) {
         let dataJson = {
           OrderNum: data[i][0].prescriptionno,
@@ -1805,8 +1805,13 @@ function createXML(data) {
         };
         let xmlDrug = js2xmlparser.parse("OrderInfo", dataJson);
 
-        // const filePath = `\\\\192.168.185.101\\InterfaceGD4\\order\\${data[0].prescriptionno}.xml`;
-        const filePath = `order\\${data[i][0].prescriptionno}_${i + 1}.xml`;
+        // const filePath = `\\\\192.168.180.161\\order\\${
+        //   data[0].prescriptionno
+        // }_${moment(new Date()).format("YYMMDDHHmm")}.xml`;
+
+        const filePath = `order\\${data[i][0].prescriptionno}_${Math.floor(
+          10000 + Math.random() * 90000
+        )}.xml`;
 
         fs.writeFileSync(filePath, xmlDrug);
       }
