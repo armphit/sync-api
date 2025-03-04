@@ -1595,6 +1595,7 @@ async function getPrescriptionSite(data, check) {
       let dataYulim = [];
       if (data.check.yulim) {
         let dataPack = await GD4Unit_101.packYurim();
+
         let setyulimLocation = new Set(
           yulimLocation.map((item) => item.orderitemcode)
         );
@@ -1602,7 +1603,8 @@ async function getPrescriptionSite(data, check) {
           .filter((item) => setyulimLocation.has(item.orderitemcode))
           .map((item1) => {
             const item2 = dataPack.find(
-              (item2) => item2.orderitemcode === item1.orderitemcode
+              (item2) =>
+                item2.orderitemcode === item1.orderitemcode && item2.pack
             ) ?? { pack: 0 };
             return {
               ...item1,
@@ -1616,7 +1618,8 @@ async function getPrescriptionSite(data, check) {
         listDrug = listDrug
           .map((item1) => {
             const item2 = dataPack.find(
-              (item2) => item2.orderitemcode === item1.orderitemcode
+              (item2) =>
+                item2.orderitemcode === item1.orderitemcode && item2.pack
             ) ?? { pack: 0 };
 
             return {
@@ -1641,12 +1644,41 @@ async function getPrescriptionSite(data, check) {
                     ...item3,
                     location: "YU",
                     sortOrder: 22,
-                    orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
+                    orderqty: item3.checkqty - item3.orderqty,
+                    // orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
                     // orderitemcode: "BOX",
                   },
                 ]
               : [item3]
           );
+        if (dataYulim.length) {
+          let seen = new Map();
+          let data1 = [];
+          let data2 = [];
+
+          dataYulim.forEach((item) => {
+            if (!seen.has(item.orderitemcode)) {
+              seen.set(item.orderitemcode, true);
+              data1.push(item);
+            } else {
+              data2.push(item);
+            }
+          });
+
+          dataYulim = [data1, data2];
+
+          let filexml = await createXML(dataYulim, dataPack);
+          if (filexml == 1) {
+            return await dataResult(listDrug, check, { check: data.check });
+          } else {
+            sendv.status = filexml;
+            return sendv;
+          }
+        } else {
+          return await dataResult(listDrug, check, { check: data.check });
+        }
+      } else {
+        return await dataResult(listDrug, check, { check: data.check });
       }
       // if (data.check.yulim) {
 
@@ -1701,33 +1733,6 @@ async function getPrescriptionSite(data, check) {
       //         : [item3]
       //     );
       // }
-
-      if (data.check.yulim && dataYulim.length) {
-        let seen = new Map();
-        let data1 = [];
-        let data2 = [];
-
-        dataYulim.forEach((item) => {
-          if (!seen.has(item.orderitemcode)) {
-            seen.set(item.orderitemcode, true);
-            data1.push(item);
-          } else {
-            data2.push(item);
-          }
-        });
-
-        dataYulim = [data1, data2];
-
-        let filexml = await createXML(dataYulim);
-        if (filexml == 1) {
-          return await dataResult(listDrug, check, { check: data.check });
-        } else {
-          sendv.status = filexml;
-          return sendv;
-        }
-      } else {
-        return await dataResult(listDrug, check, { check: data.check });
-      }
     } else {
       sendv.status = {
         err: 3,
@@ -1751,7 +1756,34 @@ function formatDate(dateString) {
 
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
-function createXML(data) {
+function createXML(data, dataPack) {
+  // data = data.map((item) => {
+  //   return {
+  //     ...item,
+  //     // ...dataPack.find(
+  //     //   (item2) => item2.orderitemcode === item.orderitemcode && item2.cup
+  //     // ),
+  //   };
+  // });
+  data = data.filter((subArray) => subArray.length > 0);
+  console.log(data);
+
+  // data = data.flatMap((item3) =>
+
+  //   item3.checkPack == "Y"
+  //     ? [
+  //         item3,
+  //         {
+  //           ...item3,
+  //           location: "YU",
+  //           sortOrder: 22,
+  //           orderqty: item3.checkqty - item3.orderqty,
+  //           // orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
+  //           // orderitemcode: "BOX",
+  //         },
+  //       ]
+  //     : [item3]
+  // );
   try {
     for (let i = 0; i < data.length; i++) {
       let arrDrug = data[i].map((val) => {

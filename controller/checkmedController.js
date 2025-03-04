@@ -14,6 +14,14 @@ var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
 var db_mysql101center = require("../DB/db_center_101_mysql");
 var center101 = new db_mysql101center();
+var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
+var GD4Unit_101 = new db_GD4Unit_101();
+const net = require("net");
+
+// const SERVER_HOST = "127.0.0.1"; // Receiver Server IP
+// const SERVER_PORT = 5000; // Receiver Server Port
+
+const client = new net.Socket();
 // const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
 // var gd4unit_101_mysql = new db_gd4unit_101_mysql();
 exports.checkpatientController = async (req, res, next) => {
@@ -183,6 +191,22 @@ exports.checkpatientController = async (req, res, next) => {
       try {
         if (datasend.site == "W8") {
           await center104.insertLED(datasend);
+          client.connect(SERVER_PORT, SERVER_PORT, () => {
+            console.log(
+              `Connected to Receiver Server at ${SERVER_HOST}:${SERVER_PORT}`
+            );
+
+            client.write(text);
+            console.log(`Sent: ${text}`);
+          });
+
+          // Handle errors
+          client.on("error", (err) => {
+            console.error(`Error: ${err.message}`);
+            // setTimeout(() => {
+            //   connectClient(text); // เชื่อมต่อใหม่
+            // }, 5000);
+          });
         }
       } catch (e) {
         console.log("insertLED");
@@ -408,6 +432,68 @@ exports.manageerrorController = async (req, res, next) => {
   let manage_error = await center102.manage_mederror(data);
   manage_error.affectedRows ? res.send([1]) : [];
 };
+exports.timedispendController = async (req, res, next) => {
+  let data = req.body;
+  let gettime = await center102.getTimecheck(data);
+  let averageTime = null;
+  if (gettime.length) {
+    try {
+      if (data.site == "W18") {
+        let starttimew18 = await GD4Unit_101.dataPatient(data);
+        gettime = gettime
+          .map((val) => {
+            return (
+              {
+                ...val,
+                ...starttimew18.find(
+                  (val2) =>
+                    val.hn == val2.hn &&
+                    val.queue == val2.queue &&
+                    val.dateindex == val2.dateindex
+                ),
+              } ?? {
+                patientname: "",
+                starttime: "",
+              }
+            );
+          })
+          .filter(
+            (val3) =>
+              val3.patientname &&
+              new Date(val3.starttime) < new Date(val3.endtime)
+          )
+          .sort((a, b) => new Date(a.starttime) - new Date(b.starttime))
+          .map((val4) => {
+            return {
+              ...val4,
+              time: getTimeDiff(val4.starttime, val4.endtime),
+            };
+          });
+      }
+
+      const times = gettime.map((v) => v.time);
+
+      // Helper function to convert "HH:MM:SS" to total seconds
+      const timeToSeconds = (time) =>
+        time.split(":").reduce((acc, time) => 60 * acc + +time, 0);
+
+      // Helper function to convert total seconds to "HH:MM:SS"
+      const secondsToTime = (seconds) =>
+        new Date(seconds * 1000).toISOString().substr(11, 8);
+
+      // Convert all times to seconds, sum them, and calculate the average
+      const averageSeconds =
+        times.map(timeToSeconds).reduce((a, b) => a + b) / times.length;
+
+      // Convert the average time back to "HH:MM:SS"
+      averageTime = secondsToTime(averageSeconds);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  res.send({ gettime, averageTime: averageTime });
+};
 
 function get_time_difference(date1, date2) {
   if (date1 && date2) {
@@ -433,4 +519,21 @@ function get_time_difference(date1, date2) {
   } else {
     return null;
   }
+}
+
+function getTimeDiff(start, end) {
+  const date1 = new Date(start);
+  const date2 = new Date(end);
+
+  let diffMs = Math.abs(date2 - date1); // Difference in milliseconds
+
+  let hours = Math.floor(diffMs / 3600000);
+  let minutes = Math.floor((diffMs % 3600000) / 60000);
+  let seconds = Math.floor((diffMs % 60000) / 1000);
+
+  // Format as HH:MM:SS
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}:${String(seconds).padStart(2, "0")}`;
 }

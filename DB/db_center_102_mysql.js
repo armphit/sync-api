@@ -2338,6 +2338,21 @@ q.createDT`;
   AND c.checkComplete <> '' 
   ORDER BY a.starttime
   `;
+    } else if (val.site == "W18") {
+      sql = `SELECT
+	hn,
+	queue,
+	CAST(date AS UNSIGNED) dateindex,
+	CONVERT(checkComplete, CHAR) AS endtime
+FROM
+	checkmedpatient
+WHERE
+	date BETWEEN '${val.datestart}'
+        AND '${val.dateend}'
+AND CAST(
+	SUBSTRING(queue, 1, 1) AS UNSIGNED
+) = 3
+AND checkComplete <> ''`;
     } else {
       let qn = val.site == "W18" ? `like '3%'` : `= '${val.site}'`;
       sql = `SELECT

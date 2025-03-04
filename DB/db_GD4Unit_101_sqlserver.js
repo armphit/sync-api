@@ -1080,4 +1080,28 @@ FROM
       resolve(result.recordset);
     });
   };
+  this.dataPatient = async function fill(val, DATA) {
+    var sql = `SELECT
+	queue,
+	hn,
+	patientName patientname,
+	dateindex,
+	FORMAT (
+		createDT,
+		'yyyy-MM-dd HH:mm:ss'
+	) AS starttime
+FROM
+	opd.dbo.syslastupdate
+WHERE
+	dateindex BETWEEN 
+    CAST(REPLACE('${val.datestart}', '-', '') AS INT) 
+AND CAST(REPLACE('${val.dateend}', '-', '') AS INT) 
+`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
 };

@@ -94,7 +94,7 @@ app.post("/queueP", drugQueuePController);
 app.post("/datapatient", datapatientController);
 app.post("/managereportgd4", managereportgd4Controller);
 app.post("/returndrug", returndrugController);
-// app.post("/getTimedispenddrug", timedispendController);
+app.post("/getTimedispenddrug", timedispendController);
 // app.post("/getUser", getUserController);
 // app.post("/cutqty", cutqtyController);
 
