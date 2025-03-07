@@ -1615,6 +1615,7 @@ async function getPrescriptionSite(data, check) {
               checkqty: parseInt(item1.orderqty),
             };
           });
+
         listDrug = listDrug
           .map((item1) => {
             const item2 = dataPack.find(
@@ -1651,21 +1652,11 @@ async function getPrescriptionSite(data, check) {
                 ]
               : [item3]
           );
+        console.log(listDrug);
         if (dataYulim.length) {
-          let seen = new Map();
-          let data1 = [];
-          let data2 = [];
-
-          dataYulim.forEach((item) => {
-            if (!seen.has(item.orderitemcode)) {
-              seen.set(item.orderitemcode, true);
-              data1.push(item);
-            } else {
-              data2.push(item);
-            }
-          });
-
-          dataYulim = [data1, data2];
+          dataYulim = await splitOrders(dataYulim, dataPack);
+          dataYulim = await separateByType(dataYulim);
+          console.log(dataYulim);
 
           let filexml = await createXML(dataYulim, dataPack);
           if (filexml == 1) {
@@ -1742,6 +1733,80 @@ async function getPrescriptionSite(data, check) {
     }
   }
 }
+function separateByType(arr) {
+  let result = [];
+  let typeCount = new Map();
+
+  // นับจำนวนครั้งที่แต่ละ type ปรากฏ
+  for (let obj of arr) {
+    typeCount.set(
+      obj.orderitemcode,
+      (typeCount.get(obj.orderitemcode) || 0) + 1
+    );
+  }
+
+  while (arr.length > 0) {
+    let unique = [];
+    let remaining = [];
+    let usedTypes = new Set();
+
+    for (let obj of arr) {
+      if (!usedTypes.has(obj.orderitemcode)) {
+        unique.push(obj);
+        usedTypes.add(obj.orderitemcode);
+        typeCount.set(obj.orderitemcode, typeCount.get(obj.orderitemcode) - 1);
+      } else {
+        remaining.push(obj);
+      }
+    }
+
+    result.push(unique);
+    arr = remaining.filter((obj) => typeCount.get(obj.orderitemcode) > 0);
+  }
+
+  return result;
+}
+function splitOrders(a, b) {
+  let result = [];
+
+  // วนลูปผ่านข้อมูลใน a
+  for (let orderA of a) {
+    // ค้นหาคู่ที่ตรงกันใน b ตาม orderitemcode
+    let orderB = b.find(
+      (orderB) => orderB.orderitemcode === orderA.orderitemcode
+    );
+
+    if (orderB) {
+      let qtyA = parseInt(orderA.orderqty, 10); // แปลง orderqty ใน a เป็นจำนวนเต็ม
+      let cupB = orderB.cup;
+
+      // ถ้า cupB มีค่า
+      if (cupB) {
+        let fullPacks = Math.floor(qtyA / cupB); // จำนวนเต็มของการหาร
+        let remainder = qtyA % cupB; // เศษที่เหลือ
+
+        // สร้างอาร์เรย์ที่แยกจาก a ตามจำนวนเต็ม
+        for (let i = 0; i < fullPacks; i++) {
+          result.push({ ...orderA, orderqty: cupB });
+        }
+
+        // ถ้ามีเศษเหลือเพิ่มเป็นอันสุดท้าย
+        if (remainder > 0) {
+          result.push({ ...orderA, orderqty: remainder });
+        }
+      } else {
+        // ถ้า cupB เป็น null ก็ใช้จำนวนเดิมจาก a
+        result.push(orderA);
+      }
+    } else {
+      // ถ้าไม่เจอ orderB
+      result.push(orderA);
+    }
+  }
+
+  return result;
+}
+
 function formatDate(dateString) {
   const date = new Date(dateString);
   const pad = (n) => n.toString().padStart(2, "0");
@@ -1757,33 +1822,8 @@ function formatDate(dateString) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 function createXML(data, dataPack) {
-  // data = data.map((item) => {
-  //   return {
-  //     ...item,
-  //     // ...dataPack.find(
-  //     //   (item2) => item2.orderitemcode === item.orderitemcode && item2.cup
-  //     // ),
-  //   };
-  // });
-  data = data.filter((subArray) => subArray.length > 0);
-  console.log(data);
+  // data = data.filter((subArray) => subArray.length > 0);
 
-  // data = data.flatMap((item3) =>
-
-  //   item3.checkPack == "Y"
-  //     ? [
-  //         item3,
-  //         {
-  //           ...item3,
-  //           location: "YU",
-  //           sortOrder: 22,
-  //           orderqty: item3.checkqty - item3.orderqty,
-  //           // orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
-  //           // orderitemcode: "BOX",
-  //         },
-  //       ]
-  //     : [item3]
-  // );
   try {
     for (let i = 0; i < data.length; i++) {
       let arrDrug = data[i].map((val) => {
