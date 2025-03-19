@@ -190,23 +190,21 @@ exports.checkpatientController = async (req, res, next) => {
 
       try {
         if (datasend.site == "W8") {
-          await center104.insertLED(datasend);
-          client.connect(SERVER_PORT, SERVER_PORT, () => {
-            console.log(
-              `Connected to Receiver Server at ${SERVER_HOST}:${SERVER_PORT}`
-            );
-
-            client.write(text);
-            console.log(`Sent: ${text}`);
-          });
-
-          // Handle errors
-          client.on("error", (err) => {
-            console.error(`Error: ${err.message}`);
-            // setTimeout(() => {
-            //   connectClient(text); // เชื่อมต่อใหม่
-            // }, 5000);
-          });
+          // await center104.insertLED(datasend);
+          // client.connect(SERVER_PORT, SERVER_PORT, () => {
+          //   console.log(
+          //     `Connected to Receiver Server at ${SERVER_HOST}:${SERVER_PORT}`
+          //   );
+          //   client.write(text);
+          //   console.log(`Sent: ${text}`);
+          // });
+          // // Handle errors
+          // client.on("error", (err) => {
+          //   console.error(`Error: ${err.message}`);
+          //   // setTimeout(() => {
+          //   //   connectClient(text); // เชื่อมต่อใหม่
+          //   // }, 5000);
+          // });
         }
       } catch (e) {
         console.log("insertLED");
@@ -258,7 +256,7 @@ exports.updatecheckmedController = async (req, res, next) => {
         try {
           if (datadrugpatient.length) {
             if (datadrugpatient[0].departmentcode.trim() == "W8") {
-              await center104.update_led(req.body);
+              // await center104.update_led(req.body);
             }
           }
         } catch (e) {

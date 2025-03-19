@@ -340,7 +340,7 @@ WHERE patientID = ` +
     var sql =
       `SELECT
       hn,
-      DATE_FORMAT(p.lastmodified, '%h:%i') AS ordertime
+      DATE_FORMAT(p.lastmodified, '%H:%i') AS ordertime
    FROM
       checkmed  p
    WHERE
@@ -498,12 +498,33 @@ WHERE patientID = ` +
    bdg.barCode,
    sortDrug.device,
    mp.drugCode checkDrug,
-   IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty
+   IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
+   mo.check,
+   mo.CID
   FROM
     checkmed pc
   LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
   LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
   LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
+  LEFT JOIN (
+	SELECT
+		s.patientID hn,
+		d.check,
+    s.CID
+	FROM
+		moph_sync s
+	LEFT JOIN (
+		SELECT
+			cid,
+			'Y' AS 'check'
+		FROM
+			moph_drugs d
+		WHERE
+			d.hospcode <> '10666'
+		GROUP BY
+			cid
+	) AS d ON s.CID = d.cid
+) AS mo ON mo.hn = pc.hn
   LEFT JOIN (
     SELECT
       drugCode,

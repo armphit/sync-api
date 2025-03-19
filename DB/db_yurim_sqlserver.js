@@ -25,7 +25,7 @@ module.exports = function () {
             hour12: false,
           })}`
         );
-        updateEXP();
+        // updateEXP();
         return pool;
       })
       .catch((err) => {
