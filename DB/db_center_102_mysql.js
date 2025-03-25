@@ -500,7 +500,13 @@ WHERE patientID = ` +
    mp.drugCode checkDrug,
    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
    mo.check,
-   mo.CID
+   mo.CID,
+   IF (
+    bdg.barCode <> ''
+    OR sortDrug.checkAccept <> '',
+    'Y',
+    NULL
+  ) checkAccept
   FROM
     checkmed pc
   LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
@@ -530,14 +536,36 @@ WHERE patientID = ` +
       drugCode,
       drugName,
       device,
-      sortOrder
+      sortOrder,
+      checkAccept
     FROM
       (
         SELECT
           dd.drugCode,
           dd.drugName,
-          dv.deviceCode AS device,
-          pd.sortOrder
+          GROUP_CONCAT(
+            DISTINCT CASE
+            WHEN dv.deviceCode = 'Xmed1' THEN
+              NULL
+            ELSE
+              dv.deviceCode
+            END SEPARATOR ','
+          ) AS device,
+          pd.sortOrder,
+
+        IF (
+          GROUP_CONCAT(
+            DISTINCT CASE
+            WHEN dv.deviceCode = 'Xmed1' THEN
+              'SEMed'
+            ELSE
+              dv.deviceCode
+            END SEPARATOR ','
+          ) LIKE '%SEMed%'
+          OR GROUP_CONCAT(DISTINCT dv.deviceCode) LIKE '%J%',
+          'Y',
+          'N'
+        ) checkAccept
         FROM
           pmpf_thailand_mnrh.devicedrugsetting ds
         LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
@@ -554,7 +582,6 @@ WHERE patientID = ` +
           dv.deviceCode NOT IN (
             'AP',
             'CDMed2',
-            'Xmed1',
             'ตู้ฉร',
             'C',
             'CATV'
@@ -565,8 +592,7 @@ WHERE patientID = ` +
         AND dd.drugCode IS NOT NULL
         AND dv.pharmacyCode <> 'IPD'
         GROUP BY
-          dd.drugCode,
-          dv.deviceCode
+          dd.drugCode
       ) sortDrug
     GROUP BY
       sortDrug.drugCode
@@ -586,6 +612,7 @@ WHERE patientID = ` +
     sortOrder
      
     `;
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -636,7 +663,7 @@ WHERE patientID = ` +
   };
   this.insertlogcheckmed = function fill(val, DATA) {
     let sql =
-      `INSERT INTO checkmed_log  (id, cm_id, qty, user, createDT)
+      `INSERT INTO checkmed_log  (id, cm_id, qty, user, createDT, checkAccept, drugCode, queue)
       VALUES
         (
           uuid(),
@@ -649,7 +676,10 @@ WHERE patientID = ` +
       '` +
       val.user +
       `',
-      CURRENT_TIMESTAMP()
+      CURRENT_TIMESTAMP(),
+      ${val.checkAccept},
+      '${val.drugCode.trim()}',
+      '${val.hn}'
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -745,11 +775,57 @@ WHERE patientID = ` +
       `SELECT
       cm.drugCode,
       GROUP_CONCAT(DISTINCT cml. USER) userCheck,
-      CAST(MIN(cml.createDT) AS char) checkDT
+      CAST(MIN(cml.createDT) AS char) checkDT,
+      IF (
+	GROUP_CONCAT(DISTINCT cml.checkAccept) <> '',
+
+IF (
+	CAST(MIN(cml.createDT) AS CHAR) IS NOT NULL,
+
+IF (
+	POSITION(
+		'1' IN GROUP_CONCAT(DISTINCT cml.checkAccept)
+	),
+	'QRCode',
+	'OnClick'
+),
+ NULL
+),
+ NULL
+) checkAccept,
+ dd.location
     FROM
       checkmedpatient cmp
     LEFT JOIN checkmed cm ON cm.cmp_id = cmp.id
     LEFT JOIN checkmed_log cml ON cml.cm_id = cm.id
+    LEFT JOIN (SELECT
+                  CASE
+                WHEN dd.drugCode = 'CYCL-' THEN
+                  'CYCL-'
+                WHEN dd.drugCode = 'DEX-O' THEN
+                  'DEX-O'
+                WHEN dd.drugCode = 'DEX-E' THEN
+                  'DEX-E'
+                WHEN dd.drugCode = 'POLY-1' THEN
+                  'LPOLY-1'
+                ELSE
+                  SUBSTRING_INDEX(dd.drugCode, '-', 1)
+                END AS drugCodeFix,
+              GROUP_CONCAT(
+                DISTINCT dv.deviceCode
+                ORDER BY
+                  dv.deviceCode ASC
+              ) AS location
+              FROM
+                pmpf_thailand_mnrh.dictdrug dd
+              LEFT JOIN pmpf_thailand_mnrh.devicedrugsetting dt ON dt.drugID = dd.drugID
+              LEFT JOIN pmpf_thailand_mnrh.device dv ON dv.deviceID = dt.deviceID
+              AND dv.deviceCode NOT IN ('AP', 'CDMed2')
+              AND dv.isDeleted = 'N'
+              AND dv.isEnabled = 'Y'
+              AND dv.pharmacyCode <> 'IPD'
+              GROUP BY
+                drugCodeFix) dd ON dd.drugCodeFix = cm.drugCode
     WHERE
       cmp.hn = '` +
       val.hn.trim() +
@@ -761,6 +837,7 @@ WHERE patientID = ` +
     AND cmp.isDelete IS NULL
     GROUP BY
       cml.cm_id`;
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1407,7 +1484,6 @@ WHERE patientID = ` +
       ${val.site ? `AND location = '${val.site}'` : ``}
         ORDER BY hnDT desc`;
     }
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1777,7 +1853,6 @@ AND (
 GROUP BY
 	of_id`;
     }
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
