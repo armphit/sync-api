@@ -17,7 +17,8 @@ var center101 = new db_mysql101center();
 var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
 var GD4Unit_101 = new db_GD4Unit_101();
 const net = require("net");
-
+var db_yurim = require("../DB/db_yurim_sqlserver");
+var yurim = new db_yurim();
 // const SERVER_HOST = "127.0.0.1"; // Receiver Server IP
 // const SERVER_PORT = 5000; // Receiver Server Port
 
@@ -159,6 +160,7 @@ exports.checkpatientController = async (req, res, next) => {
         .call(datadrugpatient, (s) => s.drugCode.trim())
         .join("','");
       datadrugpatient.map((item) => {
+        item.barCode = item.barCode = "null" ? null : item.barCode;
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
           item.typeNum = item.typeNum.split(",");
@@ -168,18 +170,19 @@ exports.checkpatientController = async (req, res, next) => {
       patientDrug = [];
       if (datasend.site != "W8") {
         let getLocation = await GD4Unit_101.opd3Location(datasend);
+
         getLocation = getLocation.map((item) => ({
           deviceCheck: item.location,
+          orderitemcode: item.orderitemcode,
         }));
         datadrugpatient = datadrugpatient.map((item) => {
           let location = getLocation.find(
-            (loc) => loc.drugCode == item.orderitemcode
+            (loc) => loc.orderitemcode == item.drugCode.trim()
           );
           if (location) {
             item.deviceCheck = location.deviceCheck;
-            item.device = location.deviceCheck
-              ? location.deviceCheck.substring(0, 1)
-              : "";
+            item.device = location.deviceCheck;
+
             item.checkAccept = "Y";
           } else {
             item.deviceCheck = "";
@@ -188,9 +191,62 @@ exports.checkpatientController = async (req, res, next) => {
           }
           return item;
         });
-      } else {
-        patientDrug = await pmpf.drugSEPack(drugjoin);
+        if (datasend.site == "W18") {
+          let yu = await yurim.dataDrug();
+          datadrugpatient = datadrugpatient.map((item) => {
+            let location = yu.find(
+              (loc) => loc.orderitemcode == item.drugCode.trim()
+            );
+            if (location) {
+              item.deviceCheck = location.location;
+              item.device = location.location;
+
+              item.checkAccept = "Y";
+            }
+            return item;
+          });
+        }
+        console.log(datadrugpatient);
+        // datadrugpatient = datadrugpatient
+        //   .map((i) => {
+        //     return {
+        //       ...i,
+        //       drugCode: i.drugCode.trim(),
+        //     };
+        //   })
+        //   .map((item) => {
+        //     return {
+        //       ...item,
+        //       ...(getLocation.find(
+        //         (loc) => loc.orderitemcode == item.drugCode
+        //       ) ?? { deviceCheck: null }),
+        //     };
+        //   })
+        //   .map((j) => {
+        //     return {
+        //       ...j,
+        //     };
+        //   });
+
+        // .map((item) => {
+        //   let location = getLocation.find(
+        //     (loc) => loc.orderitemcode == item.drugCode
+        //   );
+        //   console.log(location);
+        //   if (location) {
+        //     item.deviceCheck = location.deviceCheck;
+        //     item.device = location.deviceCheck;
+
+        //     item.checkAccept = "Y";
+        //   } else {
+        //     item.deviceCheck = "";
+        //     item.device = "";
+        //     item.checkAccept = "";
+        //   }
+        //   return item;
+        // });
       }
+      patientDrug = await pmpf.drugSEPack(drugjoin);
 
       // let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
