@@ -1063,11 +1063,15 @@ FROM
 INNER JOIN [opd].[dbo].[devicedrugsetting] s ON d.id = s.device_id
 WHERE
 	d.site = '${
-    val.queue.substring(0, 1) == "2"
-      ? "W8"
-      : val.queue.substring(0, 1) == "3"
-      ? "W18"
+    val.queue
+      ? val.queue.substring(0, 1) == "2"
+        ? "W8"
+        : val.queue.substring(0, 1) == "3"
+        ? "W18"
+        : val.queue
       : val.queue
+      ? val.queue
+      : "W18"
   }'`;
 
     return new Promise(async (resolve, reject) => {

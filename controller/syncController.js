@@ -1500,7 +1500,7 @@ async function listPatientAllergicController(data) {
 
 async function getAllergic(cid) {
   // return [];
-  console.log(cid);
+
   const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
     cid
   )}`;
@@ -1609,7 +1609,7 @@ async function getPrescriptionSite(data, check) {
             return {
               ...item1,
               orderqty:
-                parseInt(item1.orderqty) > item2.pack && item2.pack
+                parseInt(item1.orderqty) >= item2.pack && item2.pack
                   ? parseInt(item1.orderqty) % item2.pack
                   : item1.orderqty,
               checkqty: parseInt(item1.orderqty),
@@ -1632,32 +1632,43 @@ async function getPrescriptionSite(data, check) {
                   ? parseInt(item1.orderqty) % item2.pack
                   : item1.orderqty,
               checkPack:
-                item2.pack && parseInt(item1.orderqty) > item2.pack ? "Y" : "N",
+                item2.pack && parseInt(item1.orderqty) >= item2.pack
+                  ? "Y"
+                  : "N",
               checkqty: parseInt(item1.orderqty),
               // pack: item2.pack,
             };
           })
           .flatMap((item3) =>
             item3.checkPack == "Y"
-              ? [
-                  item3,
-                  {
+              ? item3.checkqty - item3.orderqty == 0
+                ? {
                     ...item3,
                     location: "YU",
                     sortOrder: 22,
-                    orderqty: item3.checkqty - item3.orderqty,
+                    orderqty: item3.orderqty,
                     // orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
                     // orderitemcode: "BOX",
-                  },
-                ]
+                  }
+                : [
+                    item3,
+                    {
+                      ...item3,
+                      location: "YU",
+                      sortOrder: 22,
+                      orderqty: item3.checkqty - item3.orderqty,
+                      // orderqty: (item3.checkqty - item3.orderqty) / item3.pack,
+                      // orderitemcode: "BOX",
+                    },
+                  ]
               : [item3]
           );
-        console.log(listDrug);
+
         if (dataYulim.length) {
+          dataYulim = dataYulim.filter((item) => item.orderqty);
           dataYulim = await splitOrders(dataYulim, dataPack);
           dataYulim = await separateByType(dataYulim);
           console.log(dataYulim);
-
           let filexml = await createXML(dataYulim, dataPack);
           if (filexml == 1) {
             return await dataResult(listDrug, check, { check: data.check });
