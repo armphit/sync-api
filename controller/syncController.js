@@ -1564,7 +1564,7 @@ async function getPrescriptionSite(data, check) {
 
       data.allTimeOld = allTimeOld;
 
-      listDrug = await homc.fill(data);
+      listDrug = await homc.fill2(data);
       listDrug = listDrug.recordset;
     } else {
       listDrug = data.listDrug;

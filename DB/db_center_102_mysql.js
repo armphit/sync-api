@@ -405,6 +405,223 @@ WHERE patientID = ` +
     });
   };
 
+  // this.selectcheckmed = function fill(val, DATA) {
+  //   let sql =
+  //     `SELECT
+  //     (
+  //       SELECT
+  //         MAX(seq)
+  //       FROM
+  //         checkmed
+  //       WHERE
+  //         cmp_id = '` +
+  //     val.id +
+  //     `'
+  //       GROUP BY
+  //         hn
+  //     ) AS countDrug,
+
+  //   IF (
+  //     TRIM(pc.drugCode) IN (
+  //       'CYCLO3',
+  //       'TDF+2',
+  //       'LEVO25',
+  //       'DESOX',
+  //       'ISOSO3',
+  //       'TRIA5'
+  //     ),
+  //     1,
+  //     0
+  //   ) checkLength,
+  //    pc.id,
+  //    pc.cmp_id,
+  //    pc.rowNum,
+  //    pc.prescriptionno,
+  //    pc.seq,
+  //    pc.hn,
+  //    pc.patientname,
+  //    pc.sex,
+  //    pc.patientdob,
+  //    pc.drugCode,
+
+  //   IF (
+  //     TRIM(pc.drugCode) IN ('OLAZA'),
+  //     CONCAT(
+  //       SUBSTRING(pc.drugName, 1, 36),
+  //       '...'
+  //     ),
+  //     pc.drugName
+  //   ) drugName,
+  //    pc.drugNameTh,
+  //    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut,dc.qty_cut,pc.qty),pc.qty),pc.qty) qty,
+  //    pc.unitCode,
+  //    pc.departmentcode,
+  //    pc.righttext1,
+  //    pc.righttext2,
+  //    pc.righttext3,
+  //    pc.lamedName,
+  //    pc.dosage,
+  //    pc.freetext0,
+  //    pc.freetext1,
+  //    pc.freetext2,
+  //    pc.itemidentify,
+  //    pc.indication,
+  //    pc.qrCode,
+  //    pc.ordercreatedate,
+  //    pc.lastmodified,
+  //    pc.lamedEng,
+  //    pc.freetext1Eng,
+  //    pc.checkstamp,
+  //    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.checkqty >  dc.qty_cut,dc.qty_cut,pc.checkqty),pc.checkqty),pc.checkqty) checkqty,
+  //    pc.scantimestamp,
+
+  //   IF (
+  //     sortDrug.sortOrder IS NULL,
+  //     (
+  //       SELECT
+  //         MAX(sortOrder)
+  //       FROM
+  //         pmpf_thailand_mnrh.devicedescription
+  //     ),
+  //     sortDrug.sortOrder
+  //   ) sortOrder,
+  //    GROUP_CONCAT(
+  //     img.pathImage
+  //     ORDER BY
+  //       img.typeNum ASC
+  //   ) pathImage,
+  //    GROUP_CONCAT(
+  //     img.typeNum
+  //     ORDER BY
+  //       img.typeNum ASC
+  //   ) typeNum,
+  //    bdg.barCode,
+  //    sortDrug.device,
+  //    mp.drugCode checkDrug,
+  //    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
+  //    mo.check,
+  //    mo.CID,
+  //    IF (
+  //     bdg.barCode <> ''
+  //     OR sortDrug.checkAccept <> '',
+  //     'Y',
+  //     NULL
+  //   ) checkAccept
+  //   FROM
+  //     checkmed pc
+  //   LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
+  //   LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
+  //   LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
+  //   LEFT JOIN (
+  // 	SELECT
+  // 		s.patientID hn,
+  // 		d.check,
+  //     s.CID
+  // 	FROM
+  // 		moph_sync s
+  // 	LEFT JOIN (
+  // 		SELECT
+  // 			cid,
+  // 			'Y' AS 'check'
+  // 		FROM
+  // 			moph_drugs d
+  // 		WHERE
+  // 			d.hospcode <> '10666'
+  // 		GROUP BY
+  // 			cid
+  // 	) AS d ON s.CID = d.cid
+  // ) AS mo ON mo.hn = pc.hn
+  //   LEFT JOIN (
+  //     SELECT
+  //       drugCode,
+  //       drugName,
+  //       device,
+  //       sortOrder,
+  //       checkAccept
+  //     FROM
+  //       (
+  //         SELECT
+  //           dd.drugCode,
+  //           dd.drugName,
+  //           GROUP_CONCAT(
+  //             DISTINCT CASE
+  //             WHEN dv.deviceCode = 'Xmed1' THEN
+  //               NULL
+  //             ELSE
+  //               dv.deviceCode
+  //             END SEPARATOR ','
+  //           ) AS device,
+  //           pd.sortOrder,
+
+  //         IF (
+  //           GROUP_CONCAT(
+  //             DISTINCT CASE
+  //             WHEN dv.deviceCode = 'Xmed1' THEN
+  //               'SEMed'
+  //             ELSE
+  //               dv.deviceCode
+  //             END SEPARATOR ','
+  //           ) LIKE '%SEMed%'
+  //           OR GROUP_CONCAT(DISTINCT dv.deviceCode) LIKE '%J%',
+  //           'Y',
+  //           'N'
+  //         ) checkAccept
+  //         FROM
+  //           pmpf_thailand_mnrh.devicedrugsetting ds
+  //         LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
+  //         LEFT JOIN pmpf_thailand_mnrh.dictdrug dd ON ds.drugID = dd.drugID
+  //         LEFT JOIN pmpf_thailand_mnrh.devicedescription pd ON pd.shortName =
+  //         IF (
+  //           dv.deviceCode = 'CDMed1',
+  //           'C',
+  //           dv.deviceCode
+  //         )
+  //         WHERE
+  //           ds.drugID IS NOT NULL
+  //         AND (
+  //           dv.deviceCode NOT IN (
+  //             'AP',
+  //             'CDMed2',
+  //             'ตู้ฉร',
+  //             'C',
+  //             'CATV'
+  //           )
+  //           AND dv.deviceCode NOT LIKE 'INJ%'
+  //         )
+  //         AND dv.deviceCode NOT LIKE 'H%'
+  //         AND dd.drugCode IS NOT NULL
+  //         AND dv.pharmacyCode <> 'IPD'
+  //         GROUP BY
+  //           dd.drugCode
+  //       ) sortDrug
+  //     GROUP BY
+  //       sortDrug.drugCode
+  //     ORDER BY
+  //       sortDrug.sortOrder
+  //   ) sortDrug ON sortDrug.drugCode = pc.drugCode
+  //    LEFT JOIN center_db.drug_cut dc ON dc.drugCode = pc.drugCode
+  //   WHERE
+  //     cmp_id = '` +
+  //     val.id +
+  //     `'
+  //   GROUP BY
+  //     pc.drugCode,
+  //     pc.seq,
+  //     pc.lastmodified
+  //   ORDER BY
+  //     sortOrder
+
+  //     `;
+  //   console.log(sql);
+
+  //   return new Promise(function (resolve, reject) {
+  //     connection.query(sql, function (err, result, fields) {
+  //       if (err) throw err;
+  //       resolve(result);
+  //     });
+  //   });
+  // };
+
   this.selectcheckmed = function fill(val, DATA) {
     let sql =
       `SELECT
@@ -420,7 +637,7 @@ WHERE patientID = ` +
       GROUP BY
         hn
     ) AS countDrug,
-  
+
   IF (
     TRIM(pc.drugCode) IN (
       'CYCLO3',
@@ -443,7 +660,7 @@ WHERE patientID = ` +
    pc.sex,
    pc.patientdob,
    pc.drugCode,
-  
+
   IF (
     TRIM(pc.drugCode) IN ('OLAZA'),
     CONCAT(
@@ -453,7 +670,7 @@ WHERE patientID = ` +
     pc.drugName
   ) drugName,
    pc.drugNameTh,
-   IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut,dc.qty_cut,pc.qty),pc.qty),pc.qty) qty,
+   IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut,dc.qty_cut,pc.qty),pc.qty),pc.qty) qty,
    pc.unitCode,
    pc.departmentcode,
    pc.righttext1,
@@ -472,9 +689,9 @@ WHERE patientID = ` +
    pc.lamedEng,
    pc.freetext1Eng,
    pc.checkstamp,
-   IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.checkqty >  dc.qty_cut,dc.qty_cut,pc.checkqty),pc.checkqty),pc.checkqty) checkqty,
+   IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.checkqty >  dc.qty_cut,dc.qty_cut,pc.checkqty),pc.checkqty),pc.checkqty) checkqty,
    pc.scantimestamp,
-  
+
   IF (
     sortDrug.sortOrder IS NULL,
     (
@@ -498,46 +715,30 @@ WHERE patientID = ` +
    bdg.barCode,
    sortDrug.device,
    mp.drugCode checkDrug,
-   IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
-   mo.check,
-   mo.CID,
+   IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
+   dc.qty_cut,
+   pc.qty qty_real,
    IF (
-    bdg.barCode <> ''
+    bdg.barCode <> '' OR bdg.barCode = 'null'
     OR sortDrug.checkAccept <> '',
     'Y',
     NULL
-  ) checkAccept
+  ) checkAccept,
+   deviceCheck
   FROM
     checkmed pc
   LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
   LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
   LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
-  LEFT JOIN (
-	SELECT
-		s.patientID hn,
-		d.check,
-    s.CID
-	FROM
-		moph_sync s
-	LEFT JOIN (
-		SELECT
-			cid,
-			'Y' AS 'check'
-		FROM
-			moph_drugs d
-		WHERE
-			d.hospcode <> '10666'
-		GROUP BY
-			cid
-	) AS d ON s.CID = d.cid
-) AS mo ON mo.hn = pc.hn
+
   LEFT JOIN (
     SELECT
       drugCode,
       drugName,
       device,
       sortOrder,
-      checkAccept
+      checkAccept,
+      deviceCheck
     FROM
       (
         SELECT
@@ -565,7 +766,15 @@ WHERE patientID = ` +
           OR GROUP_CONCAT(DISTINCT dv.deviceCode) LIKE '%J%',
           'Y',
           'N'
-        ) checkAccept
+        ) checkAccept,
+         			GROUP_CONCAT(
+  			DISTINCT CASE
+  			WHEN dv.deviceCode = 'Xmed1' THEN
+  				NULL
+  			ELSE
+  				CONCAT(dv.deviceCode, '-', ds.positionID)
+  			END SEPARATOR ','
+  		) AS  deviceCheck
         FROM
           pmpf_thailand_mnrh.devicedrugsetting ds
         LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
@@ -610,7 +819,7 @@ WHERE patientID = ` +
     pc.lastmodified
   ORDER BY
     sortOrder
-     
+
     `;
     console.log(sql);
 
@@ -761,16 +970,9 @@ WHERE patientID = ` +
       });
     });
   };
-
   this.get_compiler = function fill(val, DATA) {
-    val.queue = val.queue ? val.queue : "";
-    let q = val.queue
-      ? val.queue == "W8"
-        ? `AND (LEFT(queue,1) = '2'  OR LEFT(queue,1) = 'P')`
-        : val.queue == "W18"
-        ? `AND (LEFT(queue,1) = '3')`
-        : `AND cmp.queue = '${val.queue}'`
-      : ``;
+    // val.queue = val.queue ? (val.queue.includes("P") ? "W8" : val.queue) : ``;
+    let q = val.queue ? `AND cmp.queue = '${val.queue}'` : ``;
     let sql =
       `SELECT
       cm.drugCode,
@@ -846,308 +1048,90 @@ IF (
       });
     });
   };
-  // this.insert_mederror = function fill(val, DATA) {
-  //   let sql =
-  //     `INSERT INTO med_error (
-  //       id,
-  //       hn,
-  //       hnDT,
-  //       med,
-  //       med_good,
-  //       med_wrong,
-  //       med_good_text,
-  //       med_wrong_text,
-  //       position_text,
-  //       type_text,
-  //       interceptor_id,
-  //       interceptor_name,
-  //       offender_id,
-  //       offender_name,
-  //       note,
-  //       location,
-  //       createDT,
-  //       level,
-  //       occurrence,
-  //       source,
-  //       error_type,
-  //       site,
-  //       type_pre
-  //     )
-  //     VALUES
-  //       (
-  //         UUID(),
-  //         '` +
-  //     val.hn.hn +
-  //     `',
-  //         '` +
-  //     val.hn.hnDT +
-  //     `',
-  //         '` +
-  //     val.med.code +
-  //     `',
-  //         '` +
-  //     val.medGood.code +
-  //     `',
-  //         '` +
-  //     val.medWrong.code +
-  //     `',
-  //         '` +
-  //     val.medGood_text +
-  //     `',
-  //         '` +
-  //     val.medWrong_text +
-  //     `',
-  //         '` +
-  //     val.position_text +
-  //     `',
-  //         '` +
-  //     val.type_text +
-  //     `',
-  //         '` +
-  //     val.interceptor.user +
-  //     `',
-  //         '` +
-  //     val.interceptor.name +
-  //     `',
-  //         '` +
-  //     val.offender.user +
-  //     `',
-  //         '` +
-  //     val.offender.name +
-  //     `',
-  //         '` +
-  //     val.note +
-  //     `',
-  //     '` +
-  //     val.location +
-  //     `',
-  //         CURRENT_TIMESTAMP,
-  //     '${val.level}',
-  //     '${val.occurrence}',
-  //     '${val.source}',
-  //     '${val.error_type}',
-  //     '${val.site}',
-  //     '${val.type_pre ? val.type_pre : ``}'
-  //       )`;
-
-  //   return new Promise(function (resolve, reject) {
-  //     connection.query(sql, function (err, result, fields) {
-  //       if (err) throw err;
-  //       resolve(result);
-  //     });
-  //   });
-  // };
-  // this.checkmederror = (val) => {
-  //   let sql = `SELECT
-  //                 *
-  //               FROM
-  //                 med_error
-  //               WHERE
-  //                 CAST(hnDT AS Date) = CAST('${val.hn.hnDT}' AS Date)
-  //               AND TRIM(hn) = TRIM('${val.hn.hn}')
-  //               AND med = '${val.med.code}'
-  //               AND position_text = '${val.position_text}'
-  //               AND type_text = '${val.type_text}'`;
-
-  //   return new Promise(function (resolve, reject) {
-  //     connection.query(sql, function (err, result, fields) {
-  //       if (err) throw err;
-  //       resolve(result);
-  //     });
-  //   });
-  // };
-
-  // this.get_mederror = function fill(val, DATA) {
-  //   let sql = "";
-  //   let time = val.time1
-  //     ? `    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '` +
-  //       val.time1 +
-  //       `' AND '` +
-  //       val.time2 +
-  //       `' `
-  //     : ``;
-
-  //   if (!val.choice) {
-  //     sql =
-  //       `SELECT
-  //       id,
-  //       hn,
-  //       DATE_FORMAT(
-  //         hnDT,
-  //         '%Y-%m-%d %H:%i:%s'
-  //       ) hnDT,
-  //       med,
-  //       med_good,
-  //       med_wrong,
-  //       med_good_text,
-  //       med_wrong_text,
-  //       position_text,
-  //       if(name_type <> '',name_type,type_text) AS type_text,
-  //       interceptor_id,
-  //       interceptor_name,
-  //       offender_id,
-  //       offender_name,
-  //       note,
-  //       location,
-  //       DATE_FORMAT(
-  //         createDT,
-  //         '%Y-%m-%d %H:%i:%s'
-  //       ) createDT,
-  //       level,
-  //       occurrence,
-  //       source,
-  //       error_type,
-  //       site,
-  //       type_pre,
-  //       IF(cause, cause, '') cause
-  //   FROM
-  //     med_error
-  //   LEFT JOIN med_error_type on type_text = id_type
-  //   WHERE
-  //     hn = '` +
-  //       val.hn.hn +
-  //       `'
-
-  //   AND CAST(hnDT AS Date) = '` +
-  //       val.hn.hnDT.substr(0, val.hn.hnDT.indexOf(" ")) +
-  //       `'
-  //   ${time}
-  //       AND deleteID is null
-  //   ORDER BY createDT desc`;
-  //   } else {
-  //     let checkid = val.id
-  //       ? `
-  //   AND position_text = '` +
-  //         val.type +
-  //         `'
-  //   AND      IF (
-  //           UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
-
-  //         IF (
-  //           LOCATE(
-  //             ' ',
-  //             SUBSTR(
-  //               offender_id,
-  //               2,
-  //               LENGTH(offender_id)
-  //             )
-  //           ),
-  //           SUBSTRING(
-  //             SUBSTR(
-  //               offender_id,
-  //               2,
-  //               LENGTH(offender_id)
-  //             ),
-  //             1,
-  //             LOCATE(
-  //               ' ',
-  //               SUBSTR(
-  //                 offender_id,
-  //                 2,
-  //                 LENGTH(offender_id)
-  //               )
-  //             )
-  //           ),
-  //           SUBSTR(
-  //             offender_id,
-  //             2,
-  //             LENGTH(offender_id)
-  //           )
-  //         ),
-  //          offender_id
-  //         )= IF (
-  //     UPPER(SUBSTR('` +
-  //         val.id +
-  //         `', 1, 1)) = 'P',
-  //     SUBSTR(
-  //       '` +
-  //         val.id +
-  //         `',
-  //       2,
-  //       LENGTH('` +
-  //         val.id +
-  //         `')
-  //     ),
-  //     '` +
-  //         val.id +
-  //         `'
-  //   )`
+  //   this.get_compiler = function fill(val, DATA) {
+  //     val.queue = val.queue ? val.queue : "";
+  //     let q = val.queue
+  //       ? val.queue == "W8"
+  //         ? `AND (LEFT(queue,1) = '2'  OR LEFT(queue,1) = 'P')`
+  //         : val.queue == "W18"
+  //         ? `AND (LEFT(queue,1) = '3')`
+  //         : `AND cmp.queue = '${val.queue}'`
   //       : ``;
-  //     sql =
-  //       `SELECT	id,
-  //       hn,
-  //       DATE_FORMAT(
-  //         hnDT,
-  //         '%Y-%m-%d %H:%i:%s'
-  //       ) hnDT,
-  //       med,
-  //       med_good,
-  //       med_wrong,
-  //       med_good_text,
-  //       med_wrong_text,
-  //       position_text,
-  //       if(name_type <> '',name_type,type_text) AS type_text,
-  //       interceptor_id,
-  //       interceptor_name,
-  //       offender_id,
-  //       offender_name,
-  //       note,
-  //       location,
-  //       DATE_FORMAT(
-  //         createDT,
-  //         '%Y-%m-%d %H:%i:%s'
-  //       ) createDT,
-  //       level,
-  //       occurrence,
-  //       source,
-  //       error_type,
-  //       site,
-  //       type_pre,
-  //       (
-  //         SELECT
-  //           drugName
-  //         FROM
-  //           pmpf_thailand_mnrh.dictdrug
-  //         WHERE
-  //           drugCode = med_good
-  //         GROUP BY
-  //           drugCode
-  //       ) med_good_name,
-  //        (
-  //         SELECT
-  //           drugName
-  //         FROM
-  //           pmpf_thailand_mnrh.dictdrug
-  //         WHERE
-  //           drugCode = med_wrong
-  //         GROUP BY
-  //           drugCode
-  //       ) med_wrong_name,
-  //        IF(cause, cause, '') cause
-  //   FROM
-  //     med_error
-  //   LEFT JOIN med_error_type on type_text = id_type
-  //   WHERE
-  //     CAST(createDT AS Date)  BETWEEN '` +
-  //       val.datestart +
-  //       `'
-  //     AND '` +
-  //       val.dateend +
-  //       `'` +
-  //       checkid +
-  //       `
-  //       ${time}
-  //     AND deleteID is null
-  //       ORDER BY createDT desc`;
-  //   }
+  //     let sql =
+  //       `SELECT
+  //       cm.drugCode,
+  //       GROUP_CONCAT(DISTINCT cml. USER) userCheck,
+  //       CAST(MIN(cml.createDT) AS char) checkDT,
+  //       IF (
+  // 	GROUP_CONCAT(DISTINCT cml.checkAccept) <> '',
 
-  //   return new Promise(function (resolve, reject) {
-  //     connection.query(sql, function (err, result, fields) {
-  //       if (err) throw err;
-  //       resolve(result);
+  // IF (
+  // 	CAST(MIN(cml.createDT) AS CHAR) IS NOT NULL,
+
+  // IF (
+  // 	POSITION(
+  // 		'1' IN GROUP_CONCAT(DISTINCT cml.checkAccept)
+  // 	),
+  // 	'QRCode',
+  // 	'OnClick'
+  // ),
+  //  NULL
+  // ),
+  //  NULL
+  // ) checkAccept,
+  //  dd.location
+  //     FROM
+  //       checkmedpatient cmp
+  //     LEFT JOIN checkmed cm ON cm.cmp_id = cmp.id
+  //     LEFT JOIN checkmed_log cml ON cml.cm_id = cm.id
+  //     LEFT JOIN (SELECT
+  //                   CASE
+  //                 WHEN dd.drugCode = 'CYCL-' THEN
+  //                   'CYCL-'
+  //                 WHEN dd.drugCode = 'DEX-O' THEN
+  //                   'DEX-O'
+  //                 WHEN dd.drugCode = 'DEX-E' THEN
+  //                   'DEX-E'
+  //                 WHEN dd.drugCode = 'POLY-1' THEN
+  //                   'LPOLY-1'
+  //                 ELSE
+  //                   SUBSTRING_INDEX(dd.drugCode, '-', 1)
+  //                 END AS drugCodeFix,
+  //               GROUP_CONCAT(
+  //                 DISTINCT dv.deviceCode
+  //                 ORDER BY
+  //                   dv.deviceCode ASC
+  //               ) AS location
+  //               FROM
+  //                 pmpf_thailand_mnrh.dictdrug dd
+  //               LEFT JOIN pmpf_thailand_mnrh.devicedrugsetting dt ON dt.drugID = dd.drugID
+  //               LEFT JOIN pmpf_thailand_mnrh.device dv ON dv.deviceID = dt.deviceID
+  //               AND dv.deviceCode NOT IN ('AP', 'CDMed2')
+  //               AND dv.isDeleted = 'N'
+  //               AND dv.isEnabled = 'Y'
+  //               AND dv.pharmacyCode <> 'IPD'
+  //               GROUP BY
+  //                 drugCodeFix) dd ON dd.drugCodeFix = cm.drugCode
+  //     WHERE
+  //       cmp.hn = '` +
+  //       val.hn.trim() +
+  //       `'
+  //     AND cmp.date = '` +
+  //       val.date +
+  //       `'
+  //     ${q}
+  //     AND cmp.isDelete IS NULL
+  //     GROUP BY
+  //       cml.cm_id`;
+  //     console.log(sql);
+
+  //     return new Promise(function (resolve, reject) {
+  //       connection.query(sql, function (err, result, fields) {
+  //         if (err) throw err;
+  //         resolve(result);
+  //       });
   //     });
-  //   });
-  // };
+  //   };
 
   this.insert_mederror = function fill(val, DATA) {
     let sql =
@@ -1176,7 +1160,9 @@ IF (
         site,
         type_pre,
         drugAllergy,
-        screening
+        screening,
+        another_offender_id,
+        another_offender_name
       )
       VALUES
         (
@@ -1234,7 +1220,9 @@ IF (
       '${val.site}',
       '${val.type_pre ? val.type_pre : ``}',
       '${val.medcode_err ? val.medcode_err : ``}',
-      '${val.screening ? val.screening : ``}'        
+      '${val.screening ? val.screening : ``}',
+      '${val.offender2 ? val.offender2.user : ``}',
+      '${val.offender2 ? val.offender2.name : ``}'        
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -1250,7 +1238,7 @@ IF (
 
     if (!val.choice) {
       time = val.time1
-        ? `    AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+        ? `    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '` +
           val.time1 +
           `' AND '` +
           val.time2 +
@@ -1307,7 +1295,9 @@ IF (
           ),
           drugAllergy
         ) drugAllergy,
-        screening
+        screening,
+        another_offender_id,
+        another_offender_name
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -1325,7 +1315,7 @@ IF (
     } else {
       val.type = val.type == "จ่าย" ? "DE" : val.type;
       time = val.time1
-        ? `    AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '` +
+        ? `    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '` +
           val.time1 +
           `' AND '` +
           val.time2 +
@@ -1333,9 +1323,11 @@ IF (
         : ``;
       let checkid = val.id
         ? `
-    AND position_text = '` +
-          val.type +
-          `'
+    AND ${
+      val.type == "check"
+        ? `(position_text = 'check' OR position_text = 'จัด&Check'OR position_text = 'Key&Check')`
+        : `position_text = '${val.type}'`
+    }
     AND      IF (
             UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
           
@@ -1467,7 +1459,9 @@ IF (
           ),
           drugAllergy
         ) drugAllergy,
-        screening
+        screening,
+        another_offender_id,
+        another_offender_name
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -1482,7 +1476,7 @@ IF (
         `
         ${time}
       ${val.site ? `AND location = '${val.site}'` : ``}
-        ORDER BY hnDT desc`;
+        ORDER BY createDT desc`;
     }
 
     return new Promise(function (resolve, reject) {
@@ -1593,7 +1587,9 @@ IF (
         site = '${val.site}',
         type_pre = '${val.type_pre ? val.type_pre : ``}',
         drugAllergy = '${val.medcode_err ? val.medcode_err : ``}',
-        screening = '${val.screening ? val.screening : ``}'
+        screening = '${val.screening ? val.screening : ``}',
+        another_offender_id ='${val.offender2 ? val.offender2.user : ``}',
+        another_offender_name ='${val.offender2 ? val.offender2.name : ``}' 
       WHERE
         (
           id = '` +
@@ -1664,7 +1660,10 @@ AND h.locationQ = 'PHAR_A2'`;
   };
   this.getQGroupby = function fill(val, DATA) {
     var sql = ``;
-    let position_text = val.choice == 1 ? "check" : "DE";
+    let position_text =
+      val.choice == 1
+        ? `(position_text = 'check' OR position_text = 'จัด&Check'OR position_text = 'Key&Check')`
+        : "position_text = 'DE'";
     let checkdata = val.choice == 1 ? "checker" : "dispenser";
 
     let pharma = val.site
@@ -1690,169 +1689,170 @@ AND h.locationQ = 'PHAR_A2'`;
     }
     if (val.site == "W8" || val.site == "W18") {
       sql = `
-      SELECT
-    ${checkdata}_id,
-    ${checkdata}_name,
-    a.order,
-    SUM(h.item) item,
-    e.error
+    SELECT
+  ${checkdata}_id,
+  ${checkdata}_name,
+  a.order,
+  SUM(h.item) item,
+  e.error
+FROM
+  hospitalq q
+LEFT JOIN (
+  SELECT
+    hn,
+    COUNT(hn) item,
+    createDate
   FROM
-    hospitalq q
-  LEFT JOIN (
-    SELECT
-      hn,
-      COUNT(hn) item,
-      createDate
-    FROM
-      hospital_order_his
-    WHERE
-      createDate BETWEEN '${val.date1}'
-      AND '${val.date2}' 
-      ${getsite.s}
-    GROUP BY
-    createDate,hn
-  ) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
-  LEFT JOIN (
-    SELECT
-      ${checkdata}_id AS id,
-      COUNT(${checkdata}_id) 'order'
-    FROM
-      hospitalq
-    WHERE
-    date BETWEEN '${val.date1}'
-    AND '${val.date2}'
-    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-    AND '${val.time2}'
-    AND ${checkdata}_id <> '' 
-    AND ${checkdata}_id <> 'M' 
-    ${getsite.h}
-    GROUP BY
-      ${checkdata}_id
-  ) a ON a.id = q.${checkdata}_id
-  LEFT JOIN (
-    SELECT
-      offender_id,
-      SUBSTRING_INDEX(offender_id, " ", 1),
-  
-    IF (
-      UPPER(
-        SUBSTR(
-          SUBSTRING_INDEX(offender_id, " ", 1),
-          1,
-          1
-        )
-      ) = 'P',
-      SUBSTR(
-        SUBSTRING_INDEX(offender_id, " ", 1),
-        2,
-        LENGTH(
-          SUBSTRING_INDEX(offender_id, " ", 1)
-        )
-      ),
-      SUBSTRING_INDEX(offender_id, " ", 1)
-    ) of_id,
-    COUNT(*) error
-  FROM
-    med_error
+    hospital_order_his
   WHERE
-    position_text = '${position_text}'
-  AND deleteDT IS NULL
-  AND CAST(hnDT AS Date) BETWEEN '${val.date1}'
+    createDate BETWEEN '${val.date1}'
+    AND '${val.date2}' 
+    ${getsite.s}
+  GROUP BY
+  createDate,hn
+) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
+LEFT JOIN (
+  SELECT
+    ${checkdata}_id AS id,
+    COUNT(${checkdata}_id) 'order'
+  FROM
+    hospitalq
+  WHERE
+  date BETWEEN '${val.date1}'
   AND '${val.date2}'
-  AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '${val.time1}'
-  AND '${val.time2}' 
-  ${getsite.l}
-  AND (
+  AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  AND '${val.time2}'
+  AND ${checkdata}_id <> '' 
+  AND ${checkdata}_id <> 'M' 
+  ${getsite.h}
+  GROUP BY
+    ${checkdata}_id
+) a ON a.id = q.${checkdata}_id
+LEFT JOIN (
+  SELECT
+    offender_id,
+    SUBSTRING_INDEX(offender_id, " ", 1),
+
+  IF (
     UPPER(
       SUBSTR(
         SUBSTRING_INDEX(offender_id, " ", 1),
         1,
         1
       )
-    ) = 'P'
-    OR SUBSTR(
+    ) = 'P',
+    SUBSTR(
+      SUBSTRING_INDEX(offender_id, " ", 1),
+      2,
+      LENGTH(
+        SUBSTRING_INDEX(offender_id, " ", 1)
+      )
+    ),
+    SUBSTRING_INDEX(offender_id, " ", 1)
+  ) of_id,
+  COUNT(*) error
+FROM
+  med_error
+WHERE
+  ${position_text}
+AND deleteDT IS NULL
+AND CAST(createDT AS Date) BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}' 
+${getsite.l}
+AND (
+  UPPER(
+    SUBSTR(
       SUBSTRING_INDEX(offender_id, " ", 1),
       1,
       1
-    ) REGEXP '^[0-9]+$' = 1
-  )
-  GROUP BY
-    of_id
-  ) e ON e.of_id =
-  IF (
-    UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
-    SUBSTR(
-      q.${checkdata}_id,
-      2,
-      LENGTH(q.${checkdata}_id)
-    ),
-    q.${checkdata}_id
-  )
-  WHERE
-    date BETWEEN '${val.date1}'
-    AND '${val.date2}'
-  AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-  AND '${val.time2}'
-  AND ${checkdata}_id <> ''
-  AND ${checkdata}_id <> 'M' 
-  
-  AND patientNO <> 'test' 
-  ${getsite.h}
-  GROUP BY
-    ${checkdata}_id
-  `;
-    } else {
-      sql = `SELECT
-	offender_id checker_id,
-	offender_name checker_name,
-	'' AS 'order',
-	'' item,
-	COUNT(*) error,
-
-IF (
-	UPPER(
-		SUBSTR(
-			SUBSTRING_INDEX(offender_id, " ", 1),
-			1,
-			1
-		)
-	) = 'P',
-	SUBSTR(
-		SUBSTRING_INDEX(offender_id, " ", 1),
-		2,
-		LENGTH(
-			SUBSTRING_INDEX(offender_id, " ", 1)
-		)
-	),
-	SUBSTRING_INDEX(offender_id, " ", 1)
-) of_id
-FROM
-	med_error
-WHERE
-	position_text = '${position_text}'
-AND deleteDT IS NULL
-AND CAST(hnDT AS Date) BETWEEN '${val.date1}'
-AND '${val.date2}'
-AND TIME_FORMAT(hnDT, '%H:%i:%s') BETWEEN '${val.time1}'
-AND '${val.time2}'
- ${getsite.l}
-AND (
-	UPPER(
-		SUBSTR(
-			SUBSTRING_INDEX(offender_id, " ", 1),
-			1,
-			1
-		)
-	) = 'P'
-	OR SUBSTR(
-		SUBSTRING_INDEX(offender_id, " ", 1),
-		1,
-		1
-	) REGEXP '^[0-9]+$' = 1
+    )
+  ) = 'P'
+  OR SUBSTR(
+    SUBSTRING_INDEX(offender_id, " ", 1),
+    1,
+    1
+  ) REGEXP '^[0-9]+$' = 1
 )
 GROUP BY
-	of_id`;
+  of_id
+) e ON e.of_id =
+IF (
+  UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+  SUBSTR(
+    q.${checkdata}_id,
+    2,
+    LENGTH(q.${checkdata}_id)
+  ),
+  q.${checkdata}_id
+)
+WHERE
+  date BETWEEN '${val.date1}'
+  AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+AND ${checkdata}_id <> ''
+AND ${checkdata}_id <> 'M' 
+
+AND patientNO <> 'test' 
+${getsite.h}
+GROUP BY
+  ${checkdata}_id
+`;
+    } else {
+      sql = `SELECT
+offender_id checker_id,
+offender_name checker_name,
+'' AS 'order',
+'' item,
+COUNT(*) error,
+
+IF (
+UPPER(
+  SUBSTR(
+    SUBSTRING_INDEX(offender_id, " ", 1),
+    1,
+    1
+  )
+) = 'P',
+SUBSTR(
+  SUBSTRING_INDEX(offender_id, " ", 1),
+  2,
+  LENGTH(
+    SUBSTRING_INDEX(offender_id, " ", 1)
+  )
+),
+SUBSTRING_INDEX(offender_id, " ", 1)
+) of_id
+FROM
+med_error
+WHERE
+${position_text}
+AND deleteDT IS NULL
+AND CAST(createDT AS Date) BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+${getsite.l}
+AND (
+UPPER(
+  SUBSTR(
+    SUBSTRING_INDEX(offender_id, " ", 1),
+    1,
+    1
+  )
+) = 'P'
+OR SUBSTR(
+  SUBSTRING_INDEX(offender_id, " ", 1),
+  1,
+  1
+) REGEXP '^[0-9]+$' = 1
+)
+GROUP BY
+of_id`;
     }
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

@@ -812,14 +812,15 @@ module.exports = function () {
   this.checkDrugPatient = async function fill(val, DATA) {
     var sql = `SELECT
     MAX(hn) hn,
-    FORMAT(p.makerDT, 'HH:mm') AS ordertime
+    MAX(drugCode) drugCode,
+    MAX(FORMAT(p.makerDT, 'HH:mm:ss')) AS ordertime
  FROM
     opd.dbo.prescription p
  WHERE
     FORMAT(p.createDT, 'yyyy-MM-dd') = FORMAT(GETDATE(), 'yyyy-MM-dd')
  AND p.hn = '${val}'
  GROUP BY
-    FORMAT(p.makerDT, 'HH:mm')`;
+    FORMAT(p.makerDT, 'HH:mm:ss')`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -1045,6 +1046,8 @@ AND sys_id = '${val.id}'`;
     });
   };
   this.opd3Location = async function fill(val, DATA) {
+    console.log(val);
+
     var sql = `SELECT
 	CONCAT (
 		d.deviceCode,
@@ -1059,7 +1062,13 @@ FROM
 	opd.dbo.device d
 INNER JOIN [opd].[dbo].[devicedrugsetting] s ON d.id = s.device_id
 WHERE
-	d.site = '${val.site}'`;
+	d.site = '${
+    val.queue.substring(0, 1) == "2"
+      ? "W8"
+      : val.queue.substring(0, 1) == "3"
+      ? "W18"
+      : val.queue
+  }'`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

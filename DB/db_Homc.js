@@ -150,7 +150,107 @@ AND mh.invdate = '` +
 AND m.site = '${val.site}'
 AND m.pat_status = 'O'
 AND m.revFlag IS NULL
-AND CONVERT(VARCHAR(5),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
+AND CONVERT(VARCHAR(8),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
+      val.allTimeOld +
+      `)
+ORDER BY
+	p.lastIssTime`;
+    console.log(sqlCommand);
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
+    });
+  };
+  this.fill2 = async function fill(val, DATA) {
+    let site = val.check.sitew1 ? `W9` : `W8`;
+
+    var sqlCommand =
+      `SELECT
+	m.batch_no AS prescriptionno,
+	m.detail_no AS seq,
+	o.hn AS hn,
+	o.VisitNo AS an,
+	Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
+	CASE
+WHEN pt.sex = 'ช' THEN
+	'M'
+ELSE
+	'F'
+END AS sex,
+ pt.birthDay AS patientdob,
+ pt.marital AS maritalstatus,
+ 'H' AS prioritycode,
+ p.lastIssDate AS takedate,
+ mh.lastUpd AS ordercreatedate,
+p.lastIssTime AS lastmodified,
+ m.inv_code AS orderitemcode,
+ v.gen_name AS orderitemname,
+ m.quant AS orderqty,
+ p.unit AS orderunitcode,
+ p.lamedHow AS instructioncode,
+ p.lamedQty AS dosage,
+ p.lamedUnit AS dosageunitcode,
+ p.lamedTime AS timecode,
+ m.maker AS usercreatecode,
+ m.site AS departmentcode,
+ si.site_addr AS departmentdesc,
+ p.lamedTimeText AS freetext1,
+ p.lamedText AS freetext2,
+ m.invTMTCode10 AS tmtcode,
+ (
+	SELECT
+		Rtrim(LTRIM(mi.Description)) + ',' -- ,mif.Med_Inv_Code
+	FROM
+		Med_Info_Group mi
+	LEFT JOIN Med_Info mif ON (mif.Med_Info_Code = mi.Code)
+	WHERE
+		mif.Med_Inv_Code = m.inv_code FOR XML PATH ('')
+) AS itemidentify,
+ m.cost AS cost,
+ m.amount AS totalprice,
+ v.remarks AS orderitemnameTh,
+ b.useDrg AS rightid,
+ t.pay_typedes AS rightname
+
+FROM
+	OPD_H o
+LEFT JOIN Med_logh mh ON o.hn = mh.hn
+AND o.regNo = mh.regNo
+LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+LEFT JOIN Bill_h b ON b.hn = mh.hn
+AND b.regNo = mh.regNo
+LEFT JOIN Paytype t ON t.pay_typecode = b.useDrg
+LEFT JOIN Med_inv v ON (
+	v.code = m.inv_code
+	AND v.[site] = '1'
+)
+LEFT JOIN Patmed p (NOLOCK) ON (
+	p.hn = mh.hn
+	AND p.registNo = mh.regNo
+	AND p.invCode = m.inv_code
+	AND m.quant_diff = p.runNo
+)
+LEFT JOIN PATIENT pt ON (pt.hn = o.hn)
+LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+LEFT JOIN Site si ON m.site = si.site_key
+WHERE
+	mh.hn = '` +
+      val.data.padL(" ") +
+      `'
+AND mh.invdate = '` +
+      val.date +
+      `'
+AND m.pat_status = 'O'
+AND m.site = '${val.site ? val.site : `W8`}'
+AND m.revFlag IS NULL
+AND FORMAT(p.lastIssTime,'HH:mm:ss') not in (` +
       val.allTimeOld +
       `)
 ORDER BY
@@ -167,7 +267,6 @@ ORDER BY
       }
     });
   };
-
   this.dataDrug = async function fill(CMD, DATA) {
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -522,7 +621,7 @@ ORDER BY
       AND p.invCode = ml.inv_code
       AND ml.quant_diff = p.runNo
     )
-    LEFT JOIN DOCC d on d.docCode = p.orderDoc
+    LEFT JOIN DOCC_670924 d on d.docCode = p.orderDoc
   WHERE
     mlh.hn = '` +
       hn +
@@ -531,15 +630,22 @@ ORDER BY
       val.date +
       `
   AND ml.pat_status = 'O'
-  AND ml.site = '${val.site ? val.site : `W8`}'
+  AND ml.site = '` +
+      val.site +
+      `'
   AND ml.revFlag IS NULL
   AND TRIM (ml.inv_code) = TRIM('` +
       val.drugCode +
       `')`;
     return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sqlCommand);
-      resolve(result.recordset);
+      try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(sqlCommand);
+        resolve(result.recordset);
+      } catch (error) {
+        console.log(sqlCommand);
+        console.log(error);
+      }
     });
   };
 
@@ -781,4 +887,18 @@ WHERE
       resolve(result.recordset);
     });
   };
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    const pad = (n) => n.toString().padStart(2, "0");
+
+    // Convert the date to local time if needed
+    const year = date.getUTCFullYear();
+    const month = pad(date.getUTCMonth() + 1);
+    const day = pad(date.getUTCDate());
+    const hours = pad(date.getUTCHours());
+    const minutes = pad(date.getUTCMinutes());
+    const seconds = pad(date.getUTCSeconds());
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
 };

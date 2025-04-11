@@ -165,7 +165,34 @@ exports.checkpatientController = async (req, res, next) => {
           return item;
         }
       });
-      let patientDrug = await pmpf.drugSEPack(drugjoin);
+      patientDrug = [];
+      if (datasend.site != "W8") {
+        let getLocation = await GD4Unit_101.opd3Location(datasend);
+        getLocation = getLocation.map((item) => ({
+          deviceCheck: item.location,
+        }));
+        datadrugpatient = datadrugpatient.map((item) => {
+          let location = getLocation.find(
+            (loc) => loc.drugCode == item.orderitemcode
+          );
+          if (location) {
+            item.deviceCheck = location.deviceCheck;
+            item.device = location.deviceCheck
+              ? location.deviceCheck.substring(0, 1)
+              : "";
+            item.checkAccept = "Y";
+          } else {
+            item.deviceCheck = "";
+            item.device = "";
+            item.checkAccept = "";
+          }
+          return item;
+        });
+      } else {
+        patientDrug = await pmpf.drugSEPack(drugjoin);
+      }
+
+      // let patientDrug = await pmpf.drugSEPack(drugjoin);
       res.send({ datadrugpatient, patientDrug });
 
       if (datadrugpatient.length) {
@@ -230,6 +257,7 @@ exports.updatecheckmedController = async (req, res, next) => {
     let insertloginsertlogcheckmed = await center102.insertlogcheckmed(
       req.body
     );
+
     if (insertloginsertlogcheckmed.affectedRows) {
       // let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
       let datadrugpatient = await center102.selectcheckmed({
@@ -477,6 +505,24 @@ exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
   let user_list = await center101.getUser();
   let drug_list = await homc.getDrughomc();
+
+  if (
+    req.body.queue.substring(0, 1) != "2" &&
+    req.body.queue.substring(0, 1) != "P"
+  ) {
+    if (get_compiler.length) {
+      let getLocation = await GD4Unit_101.opd3Location(req.body);
+      get_compiler = get_compiler.map((item) => {
+        return {
+          ...item,
+          ...(getLocation.find(
+            (loc) => loc.orderitemcode == item.drugCode.trim()
+          ) ?? { location: "" }),
+        };
+      });
+    }
+  }
+
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 
@@ -503,8 +549,8 @@ exports.positionerrorController = async (req, res, next) => {
   let dataKey = await homc.getMaker(data);
 
   if (dataKey.length) {
-    // let dataUser = await center101.getUser();
-    let dataUser = [];
+    let dataUser = await center101.getUser();
+    // let dataUser = [];
     key = dataUser.find(
       (val) => val.name.replace(" ", "").trim() === dataKey[0].maker.trim()
     ) ?? { user: "", name: dataKey[0].name };
