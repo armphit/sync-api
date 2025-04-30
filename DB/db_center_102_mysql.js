@@ -713,7 +713,7 @@ WHERE patientID = ` +
       img.typeNum ASC
   ) typeNum,
    bdg.barCode,
-   sortDrug.device,
+   deviceCheck device,
    mp.drugCode checkDrug,
    IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
    dc.qty_cut,
@@ -821,7 +821,6 @@ WHERE patientID = ` +
     sortOrder
 
     `;
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1478,6 +1477,7 @@ IF (
       ${val.site ? `AND location = '${val.site}'` : ``}
         ORDER BY createDT desc`;
     }
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1852,7 +1852,6 @@ OR SUBSTR(
 GROUP BY
 of_id`;
     }
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

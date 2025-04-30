@@ -28,7 +28,7 @@ var yurim = new db_yurim();
 //   "utf-8"
 // );
 var token =
-  "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTczODc3NDg3OSwiZXhwIjoxNzM4ODYxMTk5fQ.o2xLXumRr8FI8bl49pWQKvyplO4uEVYhdfKtfZRw5yg";
+  "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTc0NjAwNDQwMSwiZXhwIjoxNzQ2MDMyMzk5fQ.OgZZDgGj9_tXBVYhiFF48Pei0mUdT62WhzoayndMXF0";
 // var token = fs.readFileSync(
 //   "D:\\Projacts\\NodeJS\\MHRdashboard\\node\\model\\token.txt",
 //   "utf-8"
@@ -1554,7 +1554,8 @@ async function getPrescriptionSite(data, check) {
     }
     let allTimeOld = null;
     if (check) {
-      allTimeOld = await GD4Unit_101.checkDrugPatient(data.data);
+      // allTimeOld = await GD4Unit_101.checkDrugPatient(data.data);
+      allTimeOld = [];
       if (allTimeOld.length) {
         allTimeOld = allTimeOld.map((u) => u.ordertime).join("','");
         allTimeOld = `'${allTimeOld}'`;
@@ -1571,9 +1572,17 @@ async function getPrescriptionSite(data, check) {
     }
 
     if (listDrug.length) {
-      let opd3Location = await GD4Unit_101.opd3Location(data);
+      let checkcut = await gd4unit101.checkCut();
+      const cutMap = new Map();
+      checkcut.forEach(({ drugCode, qty_cut }) => {
+        cutMap.set(drugCode.trim(), parseInt(qty_cut));
+      });
+
+      // let opd3Location = await GD4Unit_101.opd3Location(data);
+      let opd3Location = [];
       let yulimLocation = await yurim.dataDrug();
       listDrug = listDrug.map((val) => {
+        checkcut = cutMap.get(val.orderitemcode.trim());
         return {
           ...val,
           qn: data.qn,
@@ -1589,13 +1598,18 @@ async function getPrescriptionSite(data, check) {
           ipPrint: data.check.ip_print,
           maker: data.check.user,
           site: data.site,
+          orderqty: checkcut
+            ? parseInt(val.orderqty) >= checkcut
+              ? checkcut
+              : parseInt(val.orderqty)
+            : parseInt(val.orderqty),
         };
       });
-
+      console.log("listDrug", listDrug);
       let dataYulim = [];
       if (data.check.yulim) {
-        let dataPack = await GD4Unit_101.packYurim();
-
+        // let dataPack = await GD4Unit_101.packYurim();
+        let dataPack = [];
         let setyulimLocation = new Set(
           yulimLocation.map((item) => item.orderitemcode)
         );
@@ -1668,7 +1682,6 @@ async function getPrescriptionSite(data, check) {
           dataYulim = dataYulim.filter((item) => item.orderqty);
           dataYulim = await splitOrders(dataYulim, dataPack);
           dataYulim = await separateByType(dataYulim);
-          console.log(dataYulim);
           let filexml = await createXML(dataYulim, dataPack);
           if (filexml == 1) {
             return await dataResult(listDrug, check, { check: data.check });
@@ -1909,19 +1922,226 @@ function createXML(data, dataPack) {
     };
   }
 }
+// async function dataResult(listDrug, check, data) {
+//   listDrug = listDrug.sort((a, b) => {
+//     if (a.sortOrder === "") return 1;
+//     if (b.sortOrder === "") return -1;
+//     return a.sortOrder - b.sortOrder;
+//   });
+
+//   let sendv = {};
+
+//   if (check) {
+//     if (data.check.print) {
+//       try {
+//         const url = `http://localhost:1200/drugLocation`;
+//         const instance = axios.create({
+//           httpsAgent: new https.Agent({
+//             rejectUnauthorized: false,
+//             keepAlive: true,
+//           }),
+//           // baseURL: url,
+//           // timeout: 1000,
+//         });
+
+//         let dataPrint = await instance.post(url, listDrug);
+
+//         if (dataPrint.data.status == 1) {
+//           let insertSys = await GD4Unit_101.insertSys(listDrug[0]);
+//           if (insertSys.rowsAffected[0]) {
+//             let sysId = await GD4Unit_101.getSys(listDrug[0]);
+//             let arr = [];
+
+//             if (sysId.length) {
+//               for (const key in listDrug) {
+//                 arr.push(`(
+//                   NEWID(),
+//                   '${sysId[0].id}',
+//                   ${listDrug[key].seq},
+//                   '${
+//                     listDrug[key].orderitemcode
+//                       ? listDrug[key].orderitemcode.trim()
+//                       : listDrug[key].orderitemcode
+//                   }',
+//                   N'${
+//                     listDrug[key].orderitemname
+//                       ? listDrug[key].orderitemname.trim()
+//                       : listDrug[key].orderitemname
+//                   }',
+//                   '${
+//                     listDrug[key].orderqty
+//                       ? listDrug[key].orderqty.trim()
+//                       : listDrug[key].orderqty
+//                   }',
+//                   '${
+//                     listDrug[key].orderunitcode
+//                       ? listDrug[key].orderunitcode.trim()
+//                       : listDrug[key].orderunitcode
+//                   }',
+//                   '${
+//                     listDrug[key].lastmodified
+//                       ? formatDate(listDrug[key].lastmodified)
+//                       : formatDate(listDrug[key].ordercreatedate)
+//                   }',
+//                   GetDate(),
+//                   FORMAT (GetDate(), 'yyyyMMdd'),
+//                   FORMAT (GetDate(), 'HHmm'),
+//                   '${listDrug[key].prescriptionno}',
+//                   '${
+//                     listDrug[key].hn
+//                       ? listDrug[key].hn.trim()
+//                       : listDrug[key].hn
+//                   }'
+//                   )`);
+//               }
+//               arr = arr.join(",");
+//               let insertPre = await GD4Unit_101.insertPre(arr);
+
+//               if (insertPre.rowsAffected[0]) {
+//               } else {
+//                 sendv.status = 2;
+//                 return sendv;
+//               }
+//             } else {
+//               sendv.status = {
+//                 err: 8,
+//                 message: "Insert Sys Fail : 0",
+//               };
+//               return sendv;
+//             }
+//           } else {
+//             sendv.status = {
+//               err: 8,
+//               message: "Insert Sys Fail : " + err,
+//             };
+//             return sendv;
+//           }
+//         } else {
+//           sendv.status = {
+//             err: 8,
+//             message: `HN : ${listDrug[0].hn} : PDF OPD3 Print Unsuccessfully!!!`,
+//           };
+//           return sendv;
+//         }
+//       } catch (error) {
+//         console.log(error);
+//         sendv.status = {
+//           err: 8,
+//           message: `HN : ${listDrug[0].hn} : PDF OPD3 generated Unsuccessfully!!!`,
+//         };
+//         return sendv;
+//       }
+//     } else {
+//       let insertSys = await GD4Unit_101.insertSys(listDrug[0]);
+//       if (insertSys.rowsAffected[0]) {
+//         let sysId = await GD4Unit_101.getSys(listDrug[0]);
+//         let arr = [];
+
+//         if (sysId.length) {
+//           for (const key in listDrug) {
+//             arr.push(`(
+//               NEWID(),
+//               '${sysId[0].id}',
+//               ${listDrug[key].seq},
+//               '${
+//                 listDrug[key].orderitemcode
+//                   ? listDrug[key].orderitemcode.trim()
+//                   : listDrug[key].orderitemcode
+//               }',
+//               N'${
+//                 listDrug[key].orderitemname
+//                   ? listDrug[key].orderitemname.trim()
+//                   : listDrug[key].orderitemname
+//               }',
+//               '${
+//                 listDrug[key].orderqty
+//                   ? listDrug[key].orderqty.trim()
+//                   : listDrug[key].orderqty
+//               }',
+//               '${
+//                 listDrug[key].orderunitcode
+//                   ? listDrug[key].orderunitcode.trim()
+//                   : listDrug[key].orderunitcode
+//               }',
+//               '${
+//                 listDrug[key].lastmodified
+//                   ? formatDate(listDrug[key].lastmodified)
+//                   : formatDate(listDrug[key].ordercreatedate)
+//               }',
+//               GetDate(),
+//               FORMAT (GetDate(), 'yyyyMMdd'),
+//               FORMAT (GetDate(), 'HHmm'),
+//               '${listDrug[key].prescriptionno}',
+//               '${listDrug[key].hn ? listDrug[key].hn.trim() : listDrug[key].hn}'
+//               )`);
+//           }
+//           arr = arr.join(",");
+//           let insertPre = await GD4Unit_101.insertPre(arr);
+
+//           if (insertPre.rowsAffected[0]) {
+//           } else {
+//             sendv.status = 2;
+//             return sendv;
+//           }
+//         } else {
+//           sendv.status = {
+//             err: 8,
+//             message: "Insert Sys Fail : 0",
+//           };
+//           return sendv;
+//         }
+//       } else {
+//         sendv.status = {
+//           err: 8,
+//           message: "Insert Sys Fail : " + err,
+//         };
+//         return sendv;
+//       }
+//       sendv.status = 1;
+//       return sendv;
+//     }
+//   } else {
+//     if (data.check.print) {
+//       try {
+//         const url = `http://localhost:1200/drugLocation`;
+//         const instance = axios.create({
+//           httpsAgent: new https.Agent({
+//             rejectUnauthorized: false,
+//             keepAlive: true,
+//           }),
+//           // baseURL: url,
+//           // timeout: 1000,
+//         });
+
+//         let dataPrint = await instance.post(url, listDrug);
+
+//         return dataPrint.data;
+//       } catch (error) {
+//         console.log(error);
+//         sendv.status = {
+//           err: 8,
+//           message: `HN : ${listDrug[0].hn} : PDF OPD3 generated Unsuccessfully!!!`,
+//         };
+//         return sendv;
+//       }
+//     } else {
+//       sendv.status = 1;
+//       return sendv;
+//     }
+//   }
+// }
+
 async function dataResult(listDrug, check, data) {
   listDrug = listDrug.sort((a, b) => {
     if (a.sortOrder === "") return 1;
     if (b.sortOrder === "") return -1;
     return a.sortOrder - b.sortOrder;
   });
-
   let sendv = {};
-
   if (check) {
     if (data.check.print) {
       try {
-        const url = `http://localhost:1200/drugLocation`;
+        const url = `http://192.168.185.160:5000/drugLocation`;
         const instance = axios.create({
           httpsAgent: new https.Agent({
             rejectUnauthorized: false,
@@ -1932,84 +2152,84 @@ async function dataResult(listDrug, check, data) {
         });
 
         let dataPrint = await instance.post(url, listDrug);
+        return dataPrint.data;
+        // if (dataPrint.data.status == 1) {
+        //   let insertSys = await GD4Unit_101.insertSys(listDrug[0]);
+        //   if (insertSys.rowsAffected[0]) {
+        //     let sysId = await GD4Unit_101.getSys(listDrug[0]);
+        //     let arr = [];
 
-        if (dataPrint.data.status == 1) {
-          let insertSys = await GD4Unit_101.insertSys(listDrug[0]);
-          if (insertSys.rowsAffected[0]) {
-            let sysId = await GD4Unit_101.getSys(listDrug[0]);
-            let arr = [];
+        //     if (sysId.length) {
+        //       for (const key in listDrug) {
+        //         arr.push(`(
+        //           NEWID(),
+        //           '${sysId[0].id}',
+        //           ${listDrug[key].seq},
+        //           '${
+        //             listDrug[key].orderitemcode
+        //               ? listDrug[key].orderitemcode.trim()
+        //               : listDrug[key].orderitemcode
+        //           }',
+        //           N'${
+        //             listDrug[key].orderitemname
+        //               ? listDrug[key].orderitemname.trim()
+        //               : listDrug[key].orderitemname
+        //           }',
+        //           '${
+        //             listDrug[key].orderqty
+        //               ? String(listDrug[key].orderqty).trim()
+        //               : listDrug[key].orderqty
+        //           }',
+        //           '${
+        //             listDrug[key].orderunitcode
+        //               ? listDrug[key].orderunitcode.trim()
+        //               : listDrug[key].orderunitcode
+        //           }',
+        //           '${
+        //             listDrug[key].lastmodified
+        //               ? formatDate(listDrug[key].lastmodified)
+        //               : formatDate(listDrug[key].ordercreatedate)
+        //           }',
+        //           GetDate(),
+        //           FORMAT (GetDate(), 'yyyyMMdd'),
+        //           FORMAT (GetDate(), 'HHmm'),
+        //           '${listDrug[key].prescriptionno}',
+        //           '${
+        //             listDrug[key].hn
+        //               ? listDrug[key].hn.trim()
+        //               : listDrug[key].hn
+        //           }'
+        //           )`);
+        //       }
+        //       arr = arr.join(",");
+        //       let insertPre = await GD4Unit_101.insertPre(arr);
 
-            if (sysId.length) {
-              for (const key in listDrug) {
-                arr.push(`(
-                  NEWID(),
-                  '${sysId[0].id}',
-                  ${listDrug[key].seq},
-                  '${
-                    listDrug[key].orderitemcode
-                      ? listDrug[key].orderitemcode.trim()
-                      : listDrug[key].orderitemcode
-                  }',
-                  N'${
-                    listDrug[key].orderitemname
-                      ? listDrug[key].orderitemname.trim()
-                      : listDrug[key].orderitemname
-                  }',
-                  '${
-                    listDrug[key].orderqty
-                      ? listDrug[key].orderqty.trim()
-                      : listDrug[key].orderqty
-                  }',
-                  '${
-                    listDrug[key].orderunitcode
-                      ? listDrug[key].orderunitcode.trim()
-                      : listDrug[key].orderunitcode
-                  }',
-                  '${
-                    listDrug[key].lastmodified
-                      ? formatDate(listDrug[key].lastmodified)
-                      : formatDate(listDrug[key].ordercreatedate)
-                  }',
-                  GetDate(),
-                  FORMAT (GetDate(), 'yyyyMMdd'),
-                  FORMAT (GetDate(), 'HHmm'),
-                  '${listDrug[key].prescriptionno}',
-                  '${
-                    listDrug[key].hn
-                      ? listDrug[key].hn.trim()
-                      : listDrug[key].hn
-                  }'
-                  )`);
-              }
-              arr = arr.join(",");
-              let insertPre = await GD4Unit_101.insertPre(arr);
-
-              if (insertPre.rowsAffected[0]) {
-              } else {
-                sendv.status = 2;
-                return sendv;
-              }
-            } else {
-              sendv.status = {
-                err: 8,
-                message: "Insert Sys Fail : 0",
-              };
-              return sendv;
-            }
-          } else {
-            sendv.status = {
-              err: 8,
-              message: "Insert Sys Fail : " + err,
-            };
-            return sendv;
-          }
-        } else {
-          sendv.status = {
-            err: 8,
-            message: `HN : ${listDrug[0].hn} : PDF OPD3 Print Unsuccessfully!!!`,
-          };
-          return sendv;
-        }
+        //       if (insertPre.rowsAffected[0]) {
+        //       } else {
+        //         sendv.status = 2;
+        //         return sendv;
+        //       }
+        //     } else {
+        //       sendv.status = {
+        //         err: 8,
+        //         message: "Insert Sys Fail : 0",
+        //       };
+        //       return sendv;
+        //     }
+        //   } else {
+        //     sendv.status = {
+        //       err: 8,
+        //       message: "Insert Sys Fail : " + err,
+        //     };
+        //     return sendv;
+        //   }
+        // } else {
+        //   sendv.status = {
+        //     err: 8,
+        //     message: `HN : ${listDrug[0].hn} : PDF OPD3 Print Unsuccessfully!!!`,
+        //   };
+        //   return sendv;
+        // }
       } catch (error) {
         console.log(error);
         sendv.status = {
@@ -2019,78 +2239,78 @@ async function dataResult(listDrug, check, data) {
         return sendv;
       }
     } else {
-      let insertSys = await GD4Unit_101.insertSys(listDrug[0]);
-      if (insertSys.rowsAffected[0]) {
-        let sysId = await GD4Unit_101.getSys(listDrug[0]);
-        let arr = [];
+      // let insertSys = await GD4Unit_101.insertSys(listDrug[0]);
+      // if (insertSys.rowsAffected[0]) {
+      //   let sysId = await GD4Unit_101.getSys(listDrug[0]);
+      //   let arr = [];
 
-        if (sysId.length) {
-          for (const key in listDrug) {
-            arr.push(`(
-              NEWID(),
-              '${sysId[0].id}',
-              ${listDrug[key].seq},
-              '${
-                listDrug[key].orderitemcode
-                  ? listDrug[key].orderitemcode.trim()
-                  : listDrug[key].orderitemcode
-              }',
-              N'${
-                listDrug[key].orderitemname
-                  ? listDrug[key].orderitemname.trim()
-                  : listDrug[key].orderitemname
-              }',
-              '${
-                listDrug[key].orderqty
-                  ? listDrug[key].orderqty.trim()
-                  : listDrug[key].orderqty
-              }',
-              '${
-                listDrug[key].orderunitcode
-                  ? listDrug[key].orderunitcode.trim()
-                  : listDrug[key].orderunitcode
-              }',
-              '${
-                listDrug[key].lastmodified
-                  ? formatDate(listDrug[key].lastmodified)
-                  : formatDate(listDrug[key].ordercreatedate)
-              }',
-              GetDate(),
-              FORMAT (GetDate(), 'yyyyMMdd'),
-              FORMAT (GetDate(), 'HHmm'),
-              '${listDrug[key].prescriptionno}',
-              '${listDrug[key].hn ? listDrug[key].hn.trim() : listDrug[key].hn}'
-              )`);
-          }
-          arr = arr.join(",");
-          let insertPre = await GD4Unit_101.insertPre(arr);
+      //   if (sysId.length) {
+      //     for (const key in listDrug) {
+      //       arr.push(`(
+      //         NEWID(),
+      //         '${sysId[0].id}',
+      //         ${listDrug[key].seq},
+      //         '${
+      //           listDrug[key].orderitemcode
+      //             ? listDrug[key].orderitemcode.trim()
+      //             : listDrug[key].orderitemcode
+      //         }',
+      //         N'${
+      //           listDrug[key].orderitemname
+      //             ? listDrug[key].orderitemname.trim()
+      //             : listDrug[key].orderitemname
+      //         }',
+      //         '${
+      //           listDrug[key].orderqty
+      //             ? listDrug[key].orderqty.trim()
+      //             : listDrug[key].orderqty
+      //         }',
+      //         '${
+      //           listDrug[key].orderunitcode
+      //             ? listDrug[key].orderunitcode.trim()
+      //             : listDrug[key].orderunitcode
+      //         }',
+      //         '${
+      //           listDrug[key].lastmodified
+      //             ? formatDate(listDrug[key].lastmodified)
+      //             : formatDate(listDrug[key].ordercreatedate)
+      //         }',
+      //         GetDate(),
+      //         FORMAT (GetDate(), 'yyyyMMdd'),
+      //         FORMAT (GetDate(), 'HHmm'),
+      //         '${listDrug[key].prescriptionno}',
+      //         '${listDrug[key].hn ? listDrug[key].hn.trim() : listDrug[key].hn}'
+      //         )`);
+      //     }
+      //     arr = arr.join(",");
+      //     let insertPre = await GD4Unit_101.insertPre(arr);
 
-          if (insertPre.rowsAffected[0]) {
-          } else {
-            sendv.status = 2;
-            return sendv;
-          }
-        } else {
-          sendv.status = {
-            err: 8,
-            message: "Insert Sys Fail : 0",
-          };
-          return sendv;
-        }
-      } else {
-        sendv.status = {
-          err: 8,
-          message: "Insert Sys Fail : " + err,
-        };
-        return sendv;
-      }
+      //     if (insertPre.rowsAffected[0]) {
+      //     } else {
+      //       sendv.status = 2;
+      //       return sendv;
+      //     }
+      //   } else {
+      //     sendv.status = {
+      //       err: 8,
+      //       message: "Insert Sys Fail : 0",
+      //     };
+      //     return sendv;
+      //   }
+      // } else {
+      //   sendv.status = {
+      //     err: 8,
+      //     message: "Insert Sys Fail : " + err,
+      //   };
+      //   return sendv;
+      // }
       sendv.status = 1;
       return sendv;
     }
   } else {
     if (data.check.print) {
       try {
-        const url = `http://localhost:1200/drugLocation`;
+        const url = `http://192.168.185.160:5000/drugLocation`;
         const instance = axios.create({
           httpsAgent: new https.Agent({
             rejectUnauthorized: false,
