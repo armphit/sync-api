@@ -370,6 +370,7 @@ exports.updatecheckmedController = async (req, res, next) => {
 };
 exports.reportcheckmedController = async (req, res, next) => {
   let datadrugcheck = [];
+  console.log(req.body);
   if (req.body.choice == "1") {
     // let countcheck = await center102.getCountcheck(req.body);
     // let user = await center101.getUser();

@@ -1038,7 +1038,6 @@ IF (
     AND cmp.isDelete IS NULL
     GROUP BY
       cml.cm_id`;
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1233,6 +1232,265 @@ IF (
       });
     });
   };
+  // this.get_mederror = function fill(val, DATA) {
+  //   let sql = "";
+  //   let time = "";
+
+  //   if (!val.choice) {
+  //     time = val.time1
+  //       ? `    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '` +
+  //         val.time1 +
+  //         `' AND '` +
+  //         val.time2 +
+  //         `' `
+  //       : ``;
+  //     sql =
+  //       `SELECT
+  //       id,
+  //       hn,
+  //       DATE_FORMAT(
+  //         hnDT,
+  //         '%Y-%m-%d %H:%i:%s'
+  //       ) hnDT,
+  //       med,
+  //       med_good,
+  //       med_wrong,
+  //       med_good_text,
+  //       med_wrong_text,
+  //       position_text,
+  //       if(name_type <> '',name_type,type_text) AS type_text,
+  //       interceptor_id,
+  //       interceptor_name,
+  //       offender_id,
+  //       offender_name,
+  //       note,
+  //       location,
+  //       DATE_FORMAT(
+  //         createDT,
+  //         '%Y-%m-%d %H:%i:%s'
+  //       ) createDT,
+  //       level,
+  //       occurrence,
+  //       source,
+  //       error_type,
+  //       site,
+  //       type_pre,
+  //       IF(cause <> '' ,cause,'') cause,
+  //       IF (
+  //         (
+  //           SELECT
+  //             COUNT(*)
+  //           FROM
+  //             pmpf_thailand_mnrh.dictdrug
+  //           WHERE
+  //             drugCode = drugAllergy
+  //         ),
+  //         (
+  //           SELECT
+  //             drugName
+  //           FROM
+  //             pmpf_thailand_mnrh.dictdrug
+  //           WHERE
+  //             drugCode = drugAllergy
+  //         ),
+  //         drugAllergy
+  //       ) drugAllergy,
+  //       screening,
+  //       another_offender_id,
+  //       another_offender_name
+  //   FROM
+  //     med_error
+  //   LEFT JOIN med_error_type on type_text = id_type
+  //   WHERE
+  //     hn = '` +
+  //       val.hn.hn +
+  //       `'
+
+  //   AND CAST(hnDT AS Date) = '` +
+  //       val.hn.hnDT.substr(0, val.hn.hnDT.indexOf(" ")) +
+  //       `'
+  //   ${time}
+  //       AND deleteID is null
+  //   ORDER BY createDT desc`;
+  //   } else {
+  //     val.type = val.type == "จ่าย" ? "DE" : val.type;
+  //     time = val.time1
+  //       ? `    AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '` +
+  //         val.time1 +
+  //         `' AND '` +
+  //         val.time2 +
+  //         `' `
+  //       : ``;
+  //     let checkid = val.id
+  //       ? `
+  //       AND ${
+  //         val.type == "check"
+  //           ? `(position_text = 'check' OR position_text = 'จัด&Check'OR position_text = 'Key&Check')`
+  //           : val.type == "จัด"
+  //           ? `(position_text = 'จัด' OR position_text = 'จัด&Check')`
+  //           : val.type == "key"
+  //           ? `(position_text = 'key' OR  position_text = 'Key&Check')`
+  //           : `position_text = '${val.type}'`
+  //       }
+  //   AND      IF (
+  //           UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
+
+  //         IF (
+  //           LOCATE(
+  //             ' ',
+  //             SUBSTR(
+  //               offender_id,
+  //               2,
+  //               LENGTH(offender_id)
+  //             )
+  //           ),
+  //           SUBSTRING(
+  //             SUBSTR(
+  //               offender_id,
+  //               2,
+  //               LENGTH(offender_id)
+  //             ),
+  //             1,
+  //             LOCATE(
+  //               ' ',
+  //               SUBSTR(
+  //                 offender_id,
+  //                 2,
+  //                 LENGTH(offender_id)
+  //               )
+  //             )
+  //           ),
+  //           SUBSTR(
+  //             offender_id,
+  //             2,
+  //             LENGTH(offender_id)
+  //           )
+  //         ),
+  //         IF (
+  //           LOCATE(' ', offender_id),
+  //           SUBSTR(
+  //             offender_id,
+  //             1,
+  //             LOCATE(' ', offender_id)
+  //           ),
+  //           offender_id
+  //         )
+  //         )= IF (
+  //     UPPER(SUBSTR('` +
+  //         val.id +
+  //         `', 1, 1)) = 'P',
+  //     SUBSTR(
+  //       '` +
+  //         val.id +
+  //         `',
+  //       2,
+  //       LENGTH('` +
+  //         val.id +
+  //         `')
+  //     ),
+  //     '` +
+  //         val.id +
+  //         `'
+  //   )`
+  //       : ``;
+  //     sql =
+  //       `SELECT	id,
+  //       hn,
+  //       DATE_FORMAT(
+  //         hnDT,
+  //         '%Y-%m-%d %H:%i:%s'
+  //       ) hnDT,
+  //       med,
+  //       med_good,
+  //       med_wrong,
+  //       med_good_text,
+  //       med_wrong_text,
+  //       position_text,
+  //       if(name_type <> '',name_type,type_text) AS type_text,
+  //       interceptor_id,
+  //       interceptor_name,
+  //       offender_id,
+  //       offender_name,
+  //       note,
+  //       location,
+  //       DATE_FORMAT(
+  //         createDT,
+  //         '%Y-%m-%d %H:%i:%s'
+  //       ) createDT,
+  //       level,
+  //       occurrence,
+  //       source,
+  //       error_type,
+  //       site,
+  //       type_pre,
+  //       (
+  //         SELECT
+  //           drugName
+  //         FROM
+  //           pmpf_thailand_mnrh.dictdrug
+  //         WHERE
+  //           drugCode = med_good
+  //         GROUP BY
+  //           drugCode
+  //       ) med_good_name,
+  //        (
+  //         SELECT
+  //           drugName
+  //         FROM
+  //           pmpf_thailand_mnrh.dictdrug
+  //         WHERE
+  //           drugCode = med_wrong
+  //         GROUP BY
+  //           drugCode
+  //       ) med_wrong_name,
+  //       IF(cause <> '' ,cause,'') cause,
+  //       IF (
+  //         (
+  //           SELECT
+  //             COUNT(*)
+  //           FROM
+  //             pmpf_thailand_mnrh.dictdrug
+  //           WHERE
+  //             drugCode = drugAllergy
+  //         ),
+  //         (
+  //           SELECT
+  //             drugName
+  //           FROM
+  //             pmpf_thailand_mnrh.dictdrug
+  //           WHERE
+  //             drugCode = drugAllergy
+  //         ),
+  //         drugAllergy
+  //       ) drugAllergy,
+  //       screening,
+  //       another_offender_id,
+  //       another_offender_name
+  //   FROM
+  //     med_error
+  //   LEFT JOIN med_error_type on type_text = id_type
+  //   WHERE
+  //     CAST(createDT AS Date)  BETWEEN '` +
+  //       val.datestart +
+  //       `'
+  //     AND '` +
+  //       val.dateend +
+  //       `'` +
+  //       checkid +
+  //       `
+  //       ${time}
+  //     ${val.site ? `AND location = '${val.site}'` : ``}
+  //     AND deleteID  IS NULL
+  //       ORDER BY createDT desc`;
+  //   }
+
+  //   return new Promise(function (resolve, reject) {
+  //     connection.query(sql, function (err, result, fields) {
+  //       if (err) throw err;
+  //       resolve(result);
+  //     });
+  //   });
+  // };
   this.get_mederror = function fill(val, DATA) {
     let sql = "";
     let time = "";
@@ -1262,7 +1520,9 @@ IF (
         if(name_type <> '',name_type,type_text) AS type_text,
         interceptor_id,
         interceptor_name,
-        offender_id,
+        ${
+          val.type == `check` ? `another_offender_id` : `offender_id`
+        } offender_id,
         offender_name,
         note,
         location,
@@ -1276,7 +1536,11 @@ IF (
         error_type,
         site,
         type_pre,
-        IF(cause <> '' ,cause,'') cause,
+        ${
+          val.type == `check`
+            ? `IF(cause_code <> '' ,cause_code,'')`
+            : `IF(cause <> '' ,cause,'')`
+        } cause,
         IF (
           (
             SELECT
@@ -1298,7 +1562,9 @@ IF (
         ) drugAllergy,
         screening,
         another_offender_id,
-        another_offender_name
+        another_offender_name,
+        another_offender_cause,
+        cause_code
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -1327,50 +1593,70 @@ IF (
     AND ${
       val.type == "check"
         ? `(position_text = 'check' OR position_text = 'จัด&Check'OR position_text = 'Key&Check')`
+        : val.type == "จัด"
+        ? `(position_text = 'จัด' OR position_text = 'จัด&Check')`
+        : val.type == "key"
+        ? `(position_text = 'key' OR  position_text = 'Key&Check')`
         : `position_text = '${val.type}'`
     }
     AND      IF (
-            UPPER(SUBSTR(offender_id, 1, 1)) = 'P',
+            UPPER(SUBSTR(${
+              val.type == `check` ? `another_offender_id` : `offender_id`
+            }, 1, 1)) = 'P',
           
           IF (
             LOCATE(
               ' ',
               SUBSTR(
-                offender_id,
+                ${val.type == `check` ? `another_offender_id` : `offender_id`},
                 2,
-                LENGTH(offender_id)
+                LENGTH(${
+                  val.type == `check` ? `another_offender_id` : `offender_id`
+                })
               )
             ),
             SUBSTRING(
               SUBSTR(
-                offender_id,
+                ${val.type == `check` ? `another_offender_id` : `offender_id`},
                 2,
-                LENGTH(offender_id)
+                LENGTH(${
+                  val.type == `check` ? `another_offender_id` : `offender_id`
+                })
               ),
               1,
               LOCATE(
                 ' ',
                 SUBSTR(
-                  offender_id,
+                  ${
+                    val.type == `check` ? `another_offender_id` : `offender_id`
+                  },
                   2,
-                  LENGTH(offender_id)
+                  LENGTH(${
+                    val.type == `check` ? `another_offender_id` : `offender_id`
+                  })
                 )
               )
             ),
             SUBSTR(
-              offender_id,
+              ${val.type == `check` ? `another_offender_id` : `offender_id`},
               2,
-              LENGTH(offender_id)
+              LENGTH(${
+                val.type == `check` ? `another_offender_id` : `offender_id`
+              })
             )
           ),
           IF (
-            LOCATE(' ', offender_id),
+            LOCATE(' ', ${
+              val.type == `check` ? `another_offender_id` : `offender_id`
+            }),
             SUBSTR(
-              offender_id,
+              ${val.type == `check` ? `another_offender_id` : `offender_id`},
               1,
-              LOCATE(' ', offender_id)
+              LOCATE(' ', ${
+                val.type == `check` ? `another_offender_id` : `offender_id`
+              })
             ),
-            offender_id
+            ${val.type == `check` ? `another_offender_id` : `offender_id`}
           )
           )= IF (
       UPPER(SUBSTR('` +
@@ -1406,7 +1692,9 @@ IF (
         if(name_type <> '',name_type,type_text) AS type_text,
         interceptor_id,
         interceptor_name,
-        offender_id,
+        ${
+          val.type == `check` ? `another_offender_id` : `offender_id`
+        } offender_id,
         offender_name,
         note,
         location,
@@ -1440,7 +1728,11 @@ IF (
           GROUP BY
             drugCode
         ) med_wrong_name,
-        IF(cause <> '' ,cause,'') cause,
+                ${
+                  val.type == `check`
+                    ? `IF(cause_code <> '' ,cause_code,'')`
+                    : `IF(cause <> '' ,cause,'')`
+                } cause,
         IF (
           (
             SELECT
@@ -1462,7 +1754,10 @@ IF (
         ) drugAllergy,
         screening,
         another_offender_id,
-        another_offender_name
+        another_offender_name,
+        another_offender_cause,
+        cause_code
+        
     FROM
       med_error
     LEFT JOIN med_error_type on type_text = id_type
@@ -1479,6 +1774,7 @@ IF (
       ${val.site ? `AND location = '${val.site}'` : ``}
         ORDER BY createDT desc`;
     }
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -1659,6 +1955,268 @@ AND h.locationQ = 'PHAR_A2'`;
       });
     });
   };
+  //   this.getQGroupby = function fill(val, DATA) {
+  //     var sql = ``;
+  //     let position_text =
+  //       val.choice == 1
+  //         ? `(position_text = 'check' OR position_text = 'จัด&Check'OR position_text = 'Key&Check')`
+  //         : "position_text = 'DE'";
+  //     let checkdata = val.choice == 1 ? "checker" : "dispenser";
+
+  //     let pharma = val.site
+  //       ? val.site == "W8"
+  //         ? "PHAR_A2"
+  //         : val.site == "W9"
+  //         ? "PHAR_A1"
+  //         : val.site == "W18"
+  //         ? "PHAR_A3"
+  //         : val.site == "W19"
+  //         ? "PHAR_M-Park"
+  //         : `AND location = '${val.site}'`
+  //       : "";
+  //     let getsite = {
+  //       h: "",
+  //       l: "",
+  //       s: "",
+  //     };
+  //     if (pharma) {
+  //       getsite.l = `AND location = '${val.site}'`;
+  //       getsite.h = `AND locationQ =  '${pharma}'`;
+  //       getsite.s = `AND site = '${val.site}'`;
+  //     }
+  //     if (val.site) {
+  //       sql = `
+  //     SELECT
+  //   ${checkdata}_id,
+  //   ${checkdata}_name,
+  //   a.order,
+  //   SUM(h.item) item,
+  //   e.error
+  // FROM
+  //   hospitalq q
+  // LEFT JOIN (
+  //   SELECT
+  //     hn,
+  //     COUNT(hn) item,
+  //     createDate
+  //   FROM
+  //     hospital_order_his
+  //   WHERE
+  //     createDate BETWEEN '${val.date1}'
+  //     AND '${val.date2}'
+  //     ${getsite.s}
+  //   GROUP BY
+  //   createDate,hn
+  // ) AS h ON h.hn = q.patientNO AND h.createDate = q.date
+  // LEFT JOIN (
+  //   SELECT
+  //     ${checkdata}_id AS id,
+  //     COUNT(${checkdata}_id) 'order'
+  //   FROM
+  //     hospitalq
+  //   WHERE
+  //   date BETWEEN '${val.date1}'
+  //   AND '${val.date2}'
+  //   AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  //   AND '${val.time2}'
+  //   AND ${checkdata}_id <> ''
+  //   AND ${checkdata}_id <> 'M'
+  //   ${getsite.h}
+  //   GROUP BY
+  //     ${checkdata}_id
+  // ) a ON a.id = q.${checkdata}_id
+  // LEFT JOIN (
+  //   SELECT
+  //     offender_id,
+  //     SUBSTRING_INDEX(offender_id, " ", 1),
+
+  //   IF (
+  //     UPPER(
+  //       SUBSTR(
+  //         SUBSTRING_INDEX(offender_id, " ", 1),
+  //         1,
+  //         1
+  //       )
+  //     ) = 'P',
+  //     SUBSTR(
+  //       SUBSTRING_INDEX(offender_id, " ", 1),
+  //       2,
+  //       LENGTH(
+  //         SUBSTRING_INDEX(offender_id, " ", 1)
+  //       )
+  //     ),
+  //     SUBSTRING_INDEX(offender_id, " ", 1)
+  //   ) of_id,
+  //   COUNT(*) error
+  // FROM
+  //   med_error
+  // WHERE
+  //   ${position_text}
+  // AND deleteDT IS NULL
+  // AND CAST(createDT AS Date) BETWEEN '${val.date1}'
+  // AND '${val.date2}'
+  // AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  // AND '${val.time2}'
+  // ${getsite.l}
+  // AND (
+  //   UPPER(
+  //     SUBSTR(
+  //       SUBSTRING_INDEX(offender_id, " ", 1),
+  //       1,
+  //       1
+  //     )
+  //   ) = 'P'
+  //   OR SUBSTR(
+  //     SUBSTRING_INDEX(offender_id, " ", 1),
+  //     1,
+  //     1
+  //   ) REGEXP '^[0-9]+$' = 1
+  // )
+  // GROUP BY
+  //   of_id
+  // ) e ON e.of_id =
+  // IF (
+  //   UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+  //   SUBSTR(
+  //     q.${checkdata}_id,
+  //     2,
+  //     LENGTH(q.${checkdata}_id)
+  //   ),
+  //   q.${checkdata}_id
+  // )
+  // WHERE
+  //   date BETWEEN '${val.date1}'
+  //   AND '${val.date2}'
+  // AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  // AND '${val.time2}'
+  // AND ${checkdata}_id <> ''
+  // AND ${checkdata}_id <> 'M'
+
+  // AND patientNO <> 'test'
+  // ${getsite.h}
+  // GROUP BY
+  //   ${checkdata}_id
+  // `;
+  //     } else {
+  //       sql = `SELECT
+  //   ${checkdata}_id,
+  //   ${checkdata}_name,
+  //   a.order,
+  //   SUM(h.item) item,
+  //   e.error
+  // FROM
+  //   hospitalq q
+  // LEFT JOIN (
+  //   SELECT
+  //     hn,
+  //     COUNT(hn) item,
+  //     createDate
+  //   FROM
+  //     hospital_order_his
+  //   WHERE
+  //     createDate BETWEEN '${val.date1}'
+  //     AND '${val.date2}'
+
+  //   GROUP BY
+  //   createDate,hn
+  // ) AS h ON h.hn = q.patientNO AND h.createDate = q.date
+  // LEFT JOIN (
+  //   SELECT
+  //     ${checkdata}_id AS id,
+  //     COUNT(${checkdata}_id) 'order'
+  //   FROM
+  //     hospitalq
+  //   WHERE
+  //   date BETWEEN '${val.date1}'
+  //   AND '${val.date2}'
+  //   AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  //   AND '${val.time2}'
+  //   AND ${checkdata}_id <> ''
+  //   AND ${checkdata}_id <> 'M'
+
+  //   GROUP BY
+  //     ${checkdata}_id
+  // ) a ON a.id = q.${checkdata}_id
+  // LEFT JOIN (
+  //   SELECT
+  //     offender_id,
+  //     SUBSTRING_INDEX(offender_id, " ", 1),
+
+  //   IF (
+  //     UPPER(
+  //       SUBSTR(
+  //         SUBSTRING_INDEX(offender_id, " ", 1),
+  //         1,
+  //         1
+  //       )
+  //     ) = 'P',
+  //     SUBSTR(
+  //       SUBSTRING_INDEX(offender_id, " ", 1),
+  //       2,
+  //       LENGTH(
+  //         SUBSTRING_INDEX(offender_id, " ", 1)
+  //       )
+  //     ),
+  //     SUBSTRING_INDEX(offender_id, " ", 1)
+  //   ) of_id,
+  //   COUNT(*) error
+  // FROM
+  //   med_error
+  // WHERE
+  //   ${position_text}
+  // AND deleteDT IS NULL
+  // AND CAST(createDT AS Date) BETWEEN '${val.date1}'
+  // AND '${val.date2}'
+  // AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  // AND '${val.time2}'
+
+  // AND (
+  //   UPPER(
+  //     SUBSTR(
+  //       SUBSTRING_INDEX(offender_id, " ", 1),
+  //       1,
+  //       1
+  //     )
+  //   ) = 'P'
+  //   OR SUBSTR(
+  //     SUBSTRING_INDEX(offender_id, " ", 1),
+  //     1,
+  //     1
+  //   ) REGEXP '^[0-9]+$' = 1
+  // )
+  // GROUP BY
+  //   of_id
+  // ) e ON e.of_id =
+  // IF (
+  //   UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+  //   SUBSTR(
+  //     q.${checkdata}_id,
+  //     2,
+  //     LENGTH(q.${checkdata}_id)
+  //   ),
+  //   q.${checkdata}_id
+  // )
+  // WHERE
+  //   date BETWEEN '${val.date1}'
+  //   AND '${val.date2}'
+  // AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+  // AND '${val.time2}'
+  // AND ${checkdata}_id <> ''
+  // AND ${checkdata}_id <> 'M'
+
+  // AND patientNO <> 'test'
+
+  // GROUP BY
+  //   ${checkdata}_id`;
+  //     }
+  //     console.log(sql);
+  //     return new Promise(function (resolve, reject) {
+  //       connection.query(sql, function (err, result, fields) {
+  //         if (err) throw err;
+  //         resolve(result);
+  //       });
+  //     });
+  //   };
   this.getQGroupby = function fill(val, DATA) {
     var sql = ``;
     let position_text =
@@ -1666,7 +2224,7 @@ AND h.locationQ = 'PHAR_A2'`;
         ? `(position_text = 'check' OR position_text = 'จัด&Check'OR position_text = 'Key&Check')`
         : "position_text = 'DE'";
     let checkdata = val.choice == 1 ? "checker" : "dispenser";
-
+    let offen = val.choice == 1 ? "another_offender_id" : "offender_id";
     let pharma = val.site
       ? val.site == "W8"
         ? "PHAR_A2"
@@ -1688,144 +2246,70 @@ AND h.locationQ = 'PHAR_A2'`;
       getsite.h = `AND locationQ =  '${pharma}'`;
       getsite.s = `AND site = '${val.site}'`;
     }
-    if (val.site == "W8" || val.site == "W18") {
+    if (val.site) {
       sql = `
-    SELECT
-  ${checkdata}_id,
-  ${checkdata}_name,
-  a.order,
-  SUM(h.item) item,
-  e.error
-FROM
-  hospitalq q
-LEFT JOIN (
   SELECT
-    hn,
-    COUNT(hn) item,
-    createDate
-  FROM
-    hospital_order_his
-  WHERE
-    createDate BETWEEN '${val.date1}'
-    AND '${val.date2}' 
-    ${getsite.s}
-  GROUP BY
-  createDate,hn
+${checkdata}_id,
+${checkdata}_name,
+a.order,
+SUM(h.item) item,
+e.error
+FROM
+hospitalq q
+LEFT JOIN (
+SELECT
+  hn,
+  COUNT(hn) item,
+  createDate
+FROM
+  hospital_order_his
+WHERE
+  createDate BETWEEN '${val.date1}'
+  AND '${val.date2}' 
+  ${getsite.s}
+GROUP BY
+createDate,hn
 ) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
 LEFT JOIN (
-  SELECT
-    ${checkdata}_id AS id,
-    COUNT(${checkdata}_id) 'order'
-  FROM
-    hospitalq
-  WHERE
-  date BETWEEN '${val.date1}'
-  AND '${val.date2}'
-  AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-  AND '${val.time2}'
-  AND ${checkdata}_id <> '' 
-  AND ${checkdata}_id <> 'M' 
-  ${getsite.h}
-  GROUP BY
-    ${checkdata}_id
-) a ON a.id = q.${checkdata}_id
-LEFT JOIN (
-  SELECT
-    offender_id,
-    SUBSTRING_INDEX(offender_id, " ", 1),
-
-  IF (
-    UPPER(
-      SUBSTR(
-        SUBSTRING_INDEX(offender_id, " ", 1),
-        1,
-        1
-      )
-    ) = 'P',
-    SUBSTR(
-      SUBSTRING_INDEX(offender_id, " ", 1),
-      2,
-      LENGTH(
-        SUBSTRING_INDEX(offender_id, " ", 1)
-      )
-    ),
-    SUBSTRING_INDEX(offender_id, " ", 1)
-  ) of_id,
-  COUNT(*) error
+SELECT
+  ${checkdata}_id AS id,
+  COUNT(${checkdata}_id) 'order'
 FROM
-  med_error
+  hospitalq
 WHERE
-  ${position_text}
-AND deleteDT IS NULL
-AND CAST(createDT AS Date) BETWEEN '${val.date1}'
+date BETWEEN '${val.date1}'
 AND '${val.date2}'
 AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-AND '${val.time2}' 
-${getsite.l}
-AND (
-  UPPER(
-    SUBSTR(
-      SUBSTRING_INDEX(offender_id, " ", 1),
-      1,
-      1
-    )
-  ) = 'P'
-  OR SUBSTR(
-    SUBSTRING_INDEX(offender_id, " ", 1),
-    1,
-    1
-  ) REGEXP '^[0-9]+$' = 1
-)
-GROUP BY
-  of_id
-) e ON e.of_id =
-IF (
-  UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
-  SUBSTR(
-    q.${checkdata}_id,
-    2,
-    LENGTH(q.${checkdata}_id)
-  ),
-  q.${checkdata}_id
-)
-WHERE
-  date BETWEEN '${val.date1}'
-  AND '${val.date2}'
-AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
-AND ${checkdata}_id <> ''
+AND ${checkdata}_id <> '' 
 AND ${checkdata}_id <> 'M' 
-
-AND patientNO <> 'test' 
 ${getsite.h}
 GROUP BY
   ${checkdata}_id
-`;
-    } else {
-      sql = `SELECT
-offender_id checker_id,
-offender_name checker_name,
-'' AS 'order',
-'' item,
-COUNT(*) error,
+) a ON a.id = q.${checkdata}_id
+LEFT JOIN (
+SELECT
+  ${offen} offender_id,
+  SUBSTRING_INDEX(${offen}, " ", 1),
 
 IF (
-UPPER(
+  UPPER(
+    SUBSTR(
+      SUBSTRING_INDEX(${offen}, " ", 1),
+      1,
+      1
+    )
+  ) = 'P',
   SUBSTR(
-    SUBSTRING_INDEX(offender_id, " ", 1),
-    1,
-    1
-  )
-) = 'P',
-SUBSTR(
-  SUBSTRING_INDEX(offender_id, " ", 1),
-  2,
-  LENGTH(
-    SUBSTRING_INDEX(offender_id, " ", 1)
-  )
-),
-SUBSTRING_INDEX(offender_id, " ", 1)
-) of_id
+    SUBSTRING_INDEX(${offen}, " ", 1),
+    2,
+    LENGTH(
+      SUBSTRING_INDEX(${offen}, " ", 1)
+    )
+  ),
+  SUBSTRING_INDEX(${offen}, " ", 1)
+) of_id,
+COUNT(*) error
 FROM
 med_error
 WHERE
@@ -1834,24 +2318,158 @@ AND deleteDT IS NULL
 AND CAST(createDT AS Date) BETWEEN '${val.date1}'
 AND '${val.date2}'
 AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
-AND '${val.time2}'
+AND '${val.time2}' 
 ${getsite.l}
 AND (
 UPPER(
   SUBSTR(
-    SUBSTRING_INDEX(offender_id, " ", 1),
+    SUBSTRING_INDEX(${offen}, " ", 1),
     1,
     1
   )
 ) = 'P'
 OR SUBSTR(
-  SUBSTRING_INDEX(offender_id, " ", 1),
+  SUBSTRING_INDEX(${offen}, " ", 1),
   1,
   1
 ) REGEXP '^[0-9]+$' = 1
 )
 GROUP BY
-of_id`;
+of_id
+) e ON e.of_id =
+IF (
+UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+SUBSTR(
+  q.${checkdata}_id,
+  2,
+  LENGTH(q.${checkdata}_id)
+),
+q.${checkdata}_id
+)
+WHERE
+date BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+AND ${checkdata}_id <> ''
+AND ${checkdata}_id <> 'M' 
+
+AND patientNO <> 'test' 
+${getsite.h}
+GROUP BY
+${checkdata}_id
+`;
+    } else {
+      sql = `SELECT
+${checkdata}_id,
+${checkdata}_name,
+a.order,
+SUM(h.item) item,
+e.error
+FROM
+hospitalq q
+LEFT JOIN (
+SELECT
+  hn,
+  COUNT(hn) item,
+  createDate
+FROM
+  hospital_order_his
+WHERE
+  createDate BETWEEN '${val.date1}'
+  AND '${val.date2}' 
+ 
+GROUP BY
+createDate,hn
+) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
+LEFT JOIN (
+SELECT
+  ${checkdata}_id AS id,
+  COUNT(${checkdata}_id) 'order'
+FROM
+  hospitalq
+WHERE
+date BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+AND ${checkdata}_id <> '' 
+AND ${checkdata}_id <> 'M' 
+
+GROUP BY
+  ${checkdata}_id
+) a ON a.id = q.${checkdata}_id
+LEFT JOIN (
+SELECT
+  ${offen} offender_id,
+  SUBSTRING_INDEX(${offen}, " ", 1),
+
+IF (
+  UPPER(
+    SUBSTR(
+      SUBSTRING_INDEX(${offen}, " ", 1),
+      1,
+      1
+    )
+  ) = 'P',
+  SUBSTR(
+    SUBSTRING_INDEX(${offen}, " ", 1),
+    2,
+    LENGTH(
+      SUBSTRING_INDEX(${offen}, " ", 1)
+    )
+  ),
+  SUBSTRING_INDEX(${offen}, " ", 1)
+) of_id,
+COUNT(*) error
+FROM
+med_error
+WHERE
+${position_text}
+AND deleteDT IS NULL
+AND CAST(createDT AS Date) BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}' 
+
+AND (
+UPPER(
+  SUBSTR(
+    SUBSTRING_INDEX(${offen}, " ", 1),
+    1,
+    1
+  )
+) = 'P'
+OR SUBSTR(
+  SUBSTRING_INDEX(${offen}, " ", 1),
+  1,
+  1
+) REGEXP '^[0-9]+$' = 1
+)
+GROUP BY
+of_id
+) e ON e.of_id =
+IF (
+UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
+SUBSTR(
+  q.${checkdata}_id,
+  2,
+  LENGTH(q.${checkdata}_id)
+),
+q.${checkdata}_id
+)
+WHERE
+date BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND '${val.time2}'
+AND ${checkdata}_id <> ''
+AND ${checkdata}_id <> 'M' 
+
+AND patientNO <> 'test' 
+
+GROUP BY
+${checkdata}_id`;
     }
 
     return new Promise(function (resolve, reject) {
