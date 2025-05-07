@@ -583,8 +583,6 @@ exports.getCompilerController = async (req, res, next) => {
 };
 
 exports.mederrorController = async (req, res, next) => {
-  console.log(req.body);
-
   let insertMederror = await center102.insert_mederror(req.body);
   let get_data = [];
   if (insertMederror.affectedRows) {
@@ -611,12 +609,23 @@ exports.positionerrorController = async (req, res, next) => {
       (val) => val.name.replace(" ", "").trim() === dataKey[0].maker.trim()
     ) ?? { user: "", name: dataKey[0].name };
   }
+  let getNote = await center102.getNote();
+
+  if (getNote.length) {
+    getNote = groupAndSortNotes(getNote);
+  } else {
+    getNote = {
+      groupedNotes: [],
+      noteCodes: [],
+    };
+  }
 
   let datasend = {
     key: key ? key.user + " " + key.name : "",
     check: getCheck.length ? getCheck[0].userName : "",
     dispend: getCheck.length ? getCheck[0].userDispen : "",
     pe: dataKey.length ? dataKey[0].pe : "",
+    note: getNote,
   };
 
   res.send(datasend);
@@ -731,4 +740,25 @@ function getTimeDiff(start, end) {
     2,
     "0"
   )}:${String(seconds).padStart(2, "0")}`;
+}
+function groupAndSortNotes(data) {
+  const groupedNotes = data.reduce((acc, curr) => {
+    if (!acc[curr.note_code]) {
+      acc[curr.note_code] = [];
+    }
+    acc[curr.note_code].push(curr);
+    return acc;
+  }, {});
+
+  for (const code in groupedNotes) {
+    groupedNotes[code].sort((a, b) => {
+      if (a.note_num !== b.note_num) {
+        return a.note_num - b.note_num;
+      }
+      return a.note_sort - b.note_sort;
+    });
+  }
+  const noteCodes = Object.keys(groupedNotes);
+
+  return { groupedNotes, noteCodes };
 }

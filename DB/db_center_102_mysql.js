@@ -1161,7 +1161,8 @@ IF (
         drugAllergy,
         screening,
         another_offender_id,
-        another_offender_name
+        another_offender_name,
+        cause_code
       )
       VALUES
         (
@@ -1221,7 +1222,8 @@ IF (
       '${val.medcode_err ? val.medcode_err : ``}',
       '${val.screening ? val.screening : ``}',
       '${val.offender2 ? val.offender2.user : ``}',
-      '${val.offender2 ? val.offender2.name : ``}'        
+      '${val.offender2 ? val.offender2.name : ``}',
+      '${val.note_code ? val.note_code : ``}'        
         )`;
 
     return new Promise(function (resolve, reject) {
@@ -1477,7 +1479,6 @@ IF (
       ${val.site ? `AND location = '${val.site}'` : ``}
         ORDER BY createDT desc`;
     }
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -2747,6 +2748,24 @@ ${select}
 
 ORDER BY
 	cs.createDT DESC
+    `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getNote = function fill(val, DATA) {
+    var sql = `SELECT
+	*
+FROM
+	center.med_error_note
+
+
+ORDER BY
+	note_num,note_sort
     `;
 
     return new Promise(function (resolve, reject) {
