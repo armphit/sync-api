@@ -2140,6 +2140,9 @@ async function dataResult(listDrug, check, data) {
   let sendv = {};
   if (check) {
     if (data.check.print) {
+      console.log(data);
+      const ip = data.check.ip_print.split("\\")[2];
+      console.log(ip); // 192.168.181.240
       try {
         const url = `http://192.168.185.160:5000/drugLocation`;
         const instance = axios.create({
@@ -2310,6 +2313,9 @@ async function dataResult(listDrug, check, data) {
   } else {
     if (data.check.print) {
       try {
+        console.log(data);
+        const ip = data.check.ip_print.split("\\")[2];
+        console.log(ip); // 192.168.181.240
         const url = `http://192.168.185.160:5000/drugLocation`;
         const instance = axios.create({
           httpsAgent: new https.Agent({
