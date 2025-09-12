@@ -1,6 +1,6 @@
 const moment = require("moment");
-// var db_mysql101center = require("../DB/db_center_101_mysql");
-// var center101 = new db_mysql101center();
+var db_mysql101center = require("../DB/db_center_101_mysql");
+var center101 = new db_mysql101center();
 var db_mysql102 = require("../DB/db_center_102_mysql");
 var center102 = new db_mysql102();
 
@@ -12,19 +12,18 @@ var db_pmpf = require("../DB/db_pmpf_thailand_mnrh");
 var pmpf = new db_pmpf();
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-var db_mysql101center = require("../DB/db_center_101_mysql");
-var center101 = new db_mysql101center();
+const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
+var gd4unit_101_mysql = new db_gd4unit_101_mysql();
+var db_Xmed = require("../DB/db_Xed_102_sqlserver");
+var Xmed = new db_Xmed();
+var db_onCube = require("../DB/db_onCube");
+var onCube = new db_onCube();
 var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
 var GD4Unit_101 = new db_GD4Unit_101();
-const net = require("net");
 var db_yurim = require("../DB/db_yurim_sqlserver");
 var yurim = new db_yurim();
-// const SERVER_HOST = "127.0.0.1"; // Receiver Server IP
-// const SERVER_PORT = 5000; // Receiver Server Port
-
-const client = new net.Socket();
-// const db_gd4unit_101_mysql = require("../DB/db_gd4unit_101_mysql");
-// var gd4unit_101_mysql = new db_gd4unit_101_mysql();
+var db_104_mysql = require("../DB/db_104_mysql");
+var db_104 = new db_104_mysql();
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
@@ -140,10 +139,11 @@ exports.checkpatientController = async (req, res, next) => {
             count: b.length,
             date: datecurrent,
             cmp_id: dataPatient.id,
+            drugCode: data.drugCode ? data.drugCode.trim() : data.drugCode,
           });
         }
       }
-
+      // let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
       let datadrugpatient = await center102.selectcheckmed({
         id: dataPatient.id,
         site: datasend.site,
@@ -167,14 +167,15 @@ exports.checkpatientController = async (req, res, next) => {
           return item;
         }
       });
-      patientDrug = [];
+      let patientDrug = await pmpf.drugSEPack(drugjoin);
+      // patientDrug = [];
       if (datasend.site != "W8") {
         let getLocation = await GD4Unit_101.opd3Location(datasend);
-
         getLocation = getLocation.map((item) => ({
           deviceCheck: item.location,
           orderitemcode: item.orderitemcode,
         }));
+
         datadrugpatient = datadrugpatient.map((item) => {
           let location = getLocation.find(
             (loc) => loc.orderitemcode == item.drugCode.trim()
@@ -191,64 +192,25 @@ exports.checkpatientController = async (req, res, next) => {
           }
           return item;
         });
-        if (datasend.site == "W18") {
-          let yu = await yurim.dataDrug();
-          datadrugpatient = datadrugpatient.map((item) => {
-            let location = yu.find(
-              (loc) => loc.orderitemcode == item.drugCode.trim()
-            );
-            if (location) {
-              item.deviceCheck = location.location;
-              item.device = location.location;
-
-              item.checkAccept = "Y";
-            }
-            return item;
-          });
-        }
-        console.log(datadrugpatient);
-        // datadrugpatient = datadrugpatient
-        //   .map((i) => {
-        //     return {
-        //       ...i,
-        //       drugCode: i.drugCode.trim(),
-        //     };
-        //   })
-        //   .map((item) => {
-        //     return {
-        //       ...item,
-        //       ...(getLocation.find(
-        //         (loc) => loc.orderitemcode == item.drugCode
-        //       ) ?? { deviceCheck: null }),
-        //     };
-        //   })
-        //   .map((j) => {
-        //     return {
-        //       ...j,
-        //     };
-        //   });
-
-        // .map((item) => {
-        //   let location = getLocation.find(
-        //     (loc) => loc.orderitemcode == item.drugCode
-        //   );
-        //   console.log(location);
-        //   if (location) {
-        //     item.deviceCheck = location.deviceCheck;
-        //     item.device = location.deviceCheck;
-
-        //     item.checkAccept = "Y";
-        //   } else {
-        //     item.deviceCheck = "";
-        //     item.device = "";
-        //     item.checkAccept = "";
-        //   }
-        //   return item;
-        // });
       }
-      patientDrug = await pmpf.drugSEPack(drugjoin);
+      if (datasend.site == "W18") {
+        let yu = await yurim.dataDrug();
+        datadrugpatient = datadrugpatient.map((item) => {
+          let location = yu.find(
+            (loc) => loc.orderitemcode == item.drugCode.trim()
+          );
+          if (location) {
+            item.deviceCheck = location.location;
+            item.device = location.location;
 
-      // let patientDrug = await pmpf.drugSEPack(drugjoin);
+            item.checkAccept = "Y";
+          }
+          return item;
+        });
+      }
+      // else {
+      //   patientDrug = await pmpf.drugSEPack(drugjoin);
+      // }
       res.send({ datadrugpatient, patientDrug });
 
       if (datadrugpatient.length) {
@@ -267,27 +229,21 @@ exports.checkpatientController = async (req, res, next) => {
           await center102.updatePatient(data);
         }
       }
+      // if (datasend.check) {
+      //   let ab = datadrugpatient
+      //     .filter((item) => item.device.includes("M2"))
+      //     .every((item) => item.checkqty === 0);
 
+      //   if (ab) {
+      //     await gd4unit_101_mysql.updateDrugL(datasend);
+      //   }
+      // }
       datasend.PrescriptionNo =
         datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
       try {
         if (datasend.site == "W8") {
-          // await center104.insertLED(datasend);
-          // client.connect(SERVER_PORT, SERVER_PORT, () => {
-          //   console.log(
-          //     `Connected to Receiver Server at ${SERVER_HOST}:${SERVER_PORT}`
-          //   );
-          //   client.write(text);
-          //   console.log(`Sent: ${text}`);
-          // });
-          // // Handle errors
-          // client.on("error", (err) => {
-          //   console.error(`Error: ${err.message}`);
-          //   // setTimeout(() => {
-          //   //   connectClient(text); // เชื่อมต่อใหม่
-          //   // }, 5000);
-          // });
+          await center104.insertLED(datasend);
         }
       } catch (e) {
         console.log("insertLED");
@@ -313,7 +269,6 @@ exports.updatecheckmedController = async (req, res, next) => {
     let insertloginsertlogcheckmed = await center102.insertlogcheckmed(
       req.body
     );
-
     if (insertloginsertlogcheckmed.affectedRows) {
       // let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
       let datadrugpatient = await center102.selectcheckmed({
@@ -340,14 +295,59 @@ exports.updatecheckmedController = async (req, res, next) => {
         try {
           if (datadrugpatient.length) {
             if (datadrugpatient[0].departmentcode.trim() == "W8") {
-              // await center104.update_led(req.body);
+              await center104.update_led(req.body);
+            } else {
+              datadrugpatient[0].queue =
+                datadrugpatient[0].departmentcode.trim();
+              let getLocation = await GD4Unit_101.opd3Location(
+                datadrugpatient[0]
+              );
+              getLocation = getLocation.map((item) => ({
+                deviceCheck: item.location,
+                orderitemcode: item.orderitemcode,
+              }));
+
+              datadrugpatient = datadrugpatient.map((item) => {
+                let location = getLocation.find(
+                  (loc) => loc.orderitemcode == item.drugCode.trim()
+                );
+                if (location) {
+                  item.deviceCheck = location.deviceCheck;
+                  item.device = location.deviceCheck;
+
+                  item.checkAccept = "Y";
+                } else {
+                  item.deviceCheck = "";
+                  item.device = "";
+                  item.checkAccept = "";
+                }
+                return item;
+              });
+              if (datadrugpatient[0].departmentcode.trim() == "W18") {
+                let yu = await yurim.dataDrug();
+                datadrugpatient = datadrugpatient.map((item) => {
+                  let location = yu.find(
+                    (loc) => loc.orderitemcode == item.drugCode.trim()
+                  );
+                  if (location) {
+                    item.deviceCheck = location.location;
+                    item.device = location.location;
+
+                    item.checkAccept = "Y";
+                  }
+                  return item;
+                });
+              }
             }
           }
         } catch (e) {
           console.log("update_led");
-          console.log(datasend);
+
           console.error(e);
         }
+      }
+
+      if (datadrugpatient[0].departmentcode.trim() != "W8") {
       }
       res.send({ datadrugpatient });
       if (datadrugpatient.length) {
@@ -359,6 +359,7 @@ exports.updatecheckmedController = async (req, res, next) => {
             patient: req.body.cmp_id,
           };
           await center102.updatePatient(send);
+          await db_104.updatePre(datadrugpatient[0].hn);
         }
       }
     } else {
@@ -370,7 +371,6 @@ exports.updatecheckmedController = async (req, res, next) => {
 };
 exports.reportcheckmedController = async (req, res, next) => {
   let datadrugcheck = [];
-  console.log(req.body);
   if (req.body.choice == "1") {
     // let countcheck = await center102.getCountcheck(req.body);
     // let user = await center101.getUser();
@@ -423,172 +423,74 @@ exports.reportcheckmedController = async (req, res, next) => {
     }
     res.send({ datadrugcheck });
   } else {
-    res.send({ datadrugcheck: [] });
-    //   let data101 = await gd4unit_101_mysql.getDrug101(req.body);
-    //   let data = await center102.getQ(req.body);
+    let data101 = await gd4unit_101_mysql.getDrug101(req.body);
+    let data = await center102.getQ(req.body);
 
-    //   let result = data.map((val) => {
-    //     return {
-    //       ...val,
-    //       ...data101.find((dt) => dt.queue == val.QN && dt.date == val.date),
-    //     };
-    //   });
-    //   result = result.filter((val) => val.queue);
+    let result = data.map((val) => {
+      return {
+        ...val,
+        ...data101.find((dt) => dt.queue == val.QN && dt.date == val.date),
+      };
+    });
+    result = result.filter((val) => val.queue);
 
-    //   datadrugcheck = result
-    //     .map((val) => {
-    //       return {
-    //         ...val,
-    //         time: get_time_difference(val.timestamp, val.checkComplete),
-    //       };
-    //     })
-    //     .sort((a, b) => {
-    //       let da = new Date(a.timestamp),
-    //         db = new Date(b.timestamp);
-    //       return db - da;
-    //     });
-    //   arr = datadrugcheck
-    //     .map(({ time }) => time)
-    //     .filter((t) => t !== null)
-    //     .filter((i) => !i.includes("-"));
+    datadrugcheck = result
+      .map((val) => {
+        return {
+          ...val,
+          time: get_time_difference(val.timestamp, val.checkComplete),
+        };
+      })
+      .sort((a, b) => {
+        let da = new Date(a.timestamp),
+          db = new Date(b.timestamp);
+        return db - da;
+      });
+    arr = datadrugcheck
+      .map(({ time }) => time)
+      .filter((t) => t !== null)
+      .filter((i) => !i.includes("-"));
 
-    //   let average = null;
-    //   if (arr.length) {
-    //     average = arr.reduce(function (a, b) {
-    //       return a + +new Date("1970T" + b + "Z");
-    //     }, 0);
-    //     average = new Date(average / arr.length + 500).toJSON().slice(11, 19);
-    //   }
+    let average = null;
+    if (arr.length) {
+      average = arr.reduce(function (a, b) {
+        return a + +new Date("1970T" + b + "Z");
+      }, 0);
+      average = new Date(average / arr.length + 500).toJSON().slice(11, 19);
+    }
 
-    //   res.send({ datadrugcheck, average });
+    res.send({ datadrugcheck, average });
   }
 };
-// exports.reportcheckmedController = async (req, res, next) => {
-//   let datadrugcheck = [];
-//   console.log(req.body.choice);
-
-//   if (req.body.choice == "1") {
-//     // let countcheck = await center102.getCountcheck(req.body);
-//     // let user = await center101.getUser();
-
-//     // if (countcheck.length) {
-//     //   datadrugcheck = countcheck.map((emp) => ({
-//     //     ...emp,
-//     //     ...user.find((item) => item.user.trim() === emp.userCheck.trim()),
-//     //   }));
-
-//     // }
-//     let get_mederror = await center102.get_mederror(req.body);
-//     let getname = [];
-//     if (get_mederror.length) {
-//       for (let data of get_mederror) {
-//         data.createDT = data.createDT
-//           ? moment(data.createDT).format("YYYY-MM-DD HH:mm:ss")
-//           : "";
-//         data.hnDT = data.hnDT
-//           ? moment(data.hnDT).format("YYYY-MM-DD HH:mm:ss")
-//           : "";
-//         if (!data.med_wrong_name) {
-//           getname = await homc.getDrugstar(data.med_wrong);
-//           if (getname.length) {
-//             data.med_wrong_name = getname[0].name;
-//           }
-//         }
-//         if (!data.med_good_name) {
-//           if (data.med_good == data.med_wrong) {
-//             if (getname.length) {
-//               data.med_good_name = getname[0].name;
-//             } else {
-//               getname = await homc.getDrugstar(data.med_good);
-
-//               if (getname.length) {
-//                 data.med_good_name = getname[0].name;
-//               }
-//             }
-//           } else {
-//             getname = await homc.getDrugstar(data.med_good);
-
-//             if (getname.length) {
-//               data.med_good_name = getname[0].name;
-//             }
-//           }
-//         }
-//       }
-
-//       datadrugcheck = get_mederror;
-//     }
-//     res.send({ datadrugcheck });
-//   } else {
-//     let data101 = await gd4unit_101_mysql.getDrug101(req.body);
-//     let data = await center102.getQ(req.body);
-
-//     let result = data.map((val) => {
-//       return {
-//         ...val,
-//         ...data101.find((dt) => dt.queue == val.QN && dt.date == val.date),
-//       };
-//     });
-//     result = result.filter((val) => val.queue);
-
-//     datadrugcheck = result
-//       .map((val) => {
-//         return {
-//           ...val,
-//           time: get_time_difference(val.timestamp, val.checkComplete),
-//         };
-//       })
-//       .sort((a, b) => {
-//         let da = new Date(a.timestamp),
-//           db = new Date(b.timestamp);
-//         return db - da;
-//       });
-//     arr = datadrugcheck
-//       .map(({ time }) => time)
-//       .filter((t) => t !== null)
-//       .filter((i) => !i.includes("-"));
-
-//     let average = null;
-//     if (arr.length) {
-//       average = arr.reduce(function (a, b) {
-//         return a + +new Date("1970T" + b + "Z");
-//       }, 0);
-//       average = new Date(average / arr.length + 500).toJSON().slice(11, 19);
-//     }
-
-//     res.send({ datadrugcheck, average });
-//   }
-// };
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
   let user_list = await center101.getUser();
   let drug_list = await homc.getDrughomc();
-
-  if (
-    req.body.queue.substring(0, 1) != "2" &&
-    req.body.queue.substring(0, 1) != "P"
-  ) {
-    if (get_compiler.length) {
-      let getLocation = await GD4Unit_101.opd3Location(req.body);
-      get_compiler = get_compiler.map((item) => {
-        return {
-          ...item,
-          ...(getLocation.find(
-            (loc) => loc.orderitemcode == item.drugCode.trim()
-          ) ?? { location: "" }),
-        };
-      });
-    }
-  }
-
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 
+// exports.mederrorController = async (req, res, next) => {
+//   let insertMederror = await center102.insert_mederror(req.body);
+//   let get_data = [];
+//   if (insertMederror.affectedRows) {
+//     get_data = await center102.get_mederror(req.body);
+//     res.send(get_data);
+//   } else {
+//     res.send(get_data);
+//   }
+// };
 exports.mederrorController = async (req, res, next) => {
-  let insertMederror = await center102.insert_mederror(req.body);
+  let checkMederror = await center102.checkmederror(req.body);
   let get_data = [];
-  if (insertMederror.affectedRows) {
-    get_data = await center102.get_mederror(req.body);
-    res.send(get_data);
+  if (checkMederror.length == 0) {
+    let insertMederror = await center102.insert_mederror(req.body);
+
+    if (insertMederror.affectedRows) {
+      get_data = await center102.get_mederror(req.body);
+      res.send(get_data);
+    } else {
+      res.send(get_data);
+    }
   } else {
     res.send(get_data);
   }
@@ -605,20 +507,9 @@ exports.positionerrorController = async (req, res, next) => {
 
   if (dataKey.length) {
     let dataUser = await center101.getUser();
-    // let dataUser = [];
     key = dataUser.find(
       (val) => val.name.replace(" ", "").trim() === dataKey[0].maker.trim()
     ) ?? { user: "", name: dataKey[0].name };
-  }
-  let getNote = await center102.getNote();
-
-  if (getNote.length) {
-    getNote = groupAndSortNotes(getNote);
-  } else {
-    getNote = {
-      groupedNotes: [],
-      noteCodes: [],
-    };
   }
 
   let datasend = {
@@ -626,7 +517,6 @@ exports.positionerrorController = async (req, res, next) => {
     check: getCheck.length ? getCheck[0].userName : "",
     dispend: getCheck.length ? getCheck[0].userDispen : "",
     pe: dataKey.length ? dataKey[0].pe : "",
-    note: getNote,
   };
 
   res.send(datasend);
@@ -671,11 +561,10 @@ exports.timedispendController = async (req, res, next) => {
           .map((val4) => {
             return {
               ...val4,
-              time: getTimeDiff(val4.starttime, val4.endtime),
+              time: get_time_difference(val4.starttime, val4.endtime),
             };
           });
       }
-
       const times = gettime.map((v) => v.time);
 
       // Helper function to convert "HH:MM:SS" to total seconds
@@ -698,6 +587,40 @@ exports.timedispendController = async (req, res, next) => {
   }
 
   res.send({ gettime, averageTime: averageTime });
+};
+
+exports.cutqtyController = async (req, res, next) => {
+  let obj1 = {
+    rowCount: 0,
+    result: [],
+  };
+  let obj2 = { rowCount: 0, result: [] };
+  let obj3 = { rowCount: 0, result: [] };
+
+  let sendapi1 = await Xmed.cutxmed(req.body);
+  if (sendapi1.length) {
+    obj1 = {
+      rowCount: sendapi1.length,
+      result: sendapi1,
+    };
+  } else {
+    let sendapi2 = await onCube.cutoncube(req.body);
+    if (sendapi2.length) {
+      obj2 = {
+        rowCount: sendapi2.length,
+        result: sendapi2,
+      };
+    } else {
+      let sendapi3 = await pmpf.cutbarmanual(req.body);
+      if (sendapi3.length) {
+        obj3 = {
+          rowCount: sendapi3.length,
+          result: sendapi3,
+        };
+      }
+    }
+  }
+  res.send([obj1, obj2, obj3]);
 };
 
 function get_time_difference(date1, date2) {
@@ -724,42 +647,4 @@ function get_time_difference(date1, date2) {
   } else {
     return null;
   }
-}
-
-function getTimeDiff(start, end) {
-  const date1 = new Date(start);
-  const date2 = new Date(end);
-
-  let diffMs = Math.abs(date2 - date1); // Difference in milliseconds
-
-  let hours = Math.floor(diffMs / 3600000);
-  let minutes = Math.floor((diffMs % 3600000) / 60000);
-  let seconds = Math.floor((diffMs % 60000) / 1000);
-
-  // Format as HH:MM:SS
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-    2,
-    "0"
-  )}:${String(seconds).padStart(2, "0")}`;
-}
-function groupAndSortNotes(data) {
-  const groupedNotes = data.reduce((acc, curr) => {
-    if (!acc[curr.note_code]) {
-      acc[curr.note_code] = [];
-    }
-    acc[curr.note_code].push(curr);
-    return acc;
-  }, {});
-
-  for (const code in groupedNotes) {
-    groupedNotes[code].sort((a, b) => {
-      if (a.note_num !== b.note_num) {
-        return a.note_num - b.note_num;
-      }
-      return a.note_sort - b.note_sort;
-    });
-  }
-  const noteCodes = Object.keys(groupedNotes);
-
-  return { groupedNotes, noteCodes };
 }

@@ -155,7 +155,6 @@ AND CONVERT(VARCHAR(8),CONVERT(DATETIME, p.lastIssTime, 0), 108) not in (` +
       `)
 ORDER BY
 	p.lastIssTime`;
-    console.log(sqlCommand);
 
     return new Promise(async (resolve, reject) => {
       try {

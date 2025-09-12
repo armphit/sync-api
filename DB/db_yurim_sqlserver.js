@@ -10,7 +10,7 @@ module.exports = function () {
     poolPromise = new sql.ConnectionPool({
       user: "sa",
       password: "123456",
-      server: "192.168.180.161",
+      server: "192.168.181.45",
       requestTimeout: 180000, // for timeout setting
       connectionTimeout: 180000, // for timeout setting
       options: {

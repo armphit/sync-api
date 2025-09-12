@@ -89,6 +89,7 @@ module.exports = function () {
           ) ;
         END
         END`;
+    console.log(sqlgetdrug);
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -845,6 +846,8 @@ VALUES
       [center].[dbo].[gd4_report]
     WHERE
       ${val}`;
+    console.log(sql);
+
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
       const result = await pool.request().query(sql);
@@ -871,6 +874,35 @@ FROM
 	center.dbo.drug_qrcode
 WHERE
 	drugCode = '${val}'`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+
+  this.getPre = async function fill(val, DATA) {
+    var sql = `
+SELECT
+	TOP 1 hn,
+	queue,
+	vn,
+	FORMAT (
+		p.timeregit,
+		'yyyy-MM-dd hh:mm:ss'
+	) timeregit,
+	FORMAT (
+		p.timeconfirm,
+		'yyyy-MM-dd hh:mm:ss'
+	) timeconfirm
+FROM
+	queue_phar.dbo.prescription p
+WHERE
+ hn = '${val}'
+ORDER BY  p.timeregit DESC
+
+`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

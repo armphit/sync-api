@@ -1110,7 +1110,7 @@ module.exports = function () {
     var sql =
       `SELECT
       hn,
-      DATE_FORMAT(p.lastmodified, '%H:%i') AS ordertime
+      DATE_FORMAT(p.lastmodified, '%H:%i:%s') AS ordertime
    FROM
       prescription p
    WHERE
@@ -1119,7 +1119,7 @@ module.exports = function () {
       val +
       `'
    GROUP BY
-      date_format(p.lastmodified, '%H:%i')`;
+      date_format(p.lastmodified, '%H:%i:%s')`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

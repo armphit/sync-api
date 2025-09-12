@@ -645,7 +645,9 @@ WHERE patientID = ` +
       'LEVO25',
       'DESOX',
       'ISOSO3',
-      'TRIA5'
+      'TRIA5',
+      'CLOBE3',
+      'CLOBC3'
     ),
     1,
     0
@@ -724,7 +726,16 @@ WHERE patientID = ` +
     'Y',
     NULL
   ) checkAccept,
-   deviceCheck
+   deviceCheck,
+   IF (
+        (
+          LENGTH(pc.indication) > 125
+          AND (pc.qrCode IS NULL OR pc.qrCode = '')
+        )
+        OR pc.drugCode IN ('DOXOF'),
+        1,
+        0
+      ) checkIndication
   FROM
     checkmed pc
   LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
@@ -1774,7 +1785,6 @@ IF (
       ${val.site ? `AND location = '${val.site}'` : ``}
         ORDER BY createDT desc`;
     }
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -2225,6 +2235,7 @@ AND h.locationQ = 'PHAR_A2'`;
         : "position_text = 'DE'";
     let checkdata = val.choice == 1 ? "checker" : "dispenser";
     let offen = val.choice == 1 ? "another_offender_id" : "offender_id";
+    let check_time = val.choice == 1 ? "check_time" : "dispens_time";
     let pharma = val.site
       ? val.site == "W8"
         ? "PHAR_A2"
@@ -2274,12 +2285,12 @@ LEFT JOIN (
 SELECT
   ${checkdata}_id AS id,
   COUNT(${checkdata}_id) 'order'
-FROM
+FROMreportcheckmed
   hospitalq
 WHERE
 date BETWEEN '${val.date1}'
 AND '${val.date2}'
-AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND TIME_FORMAT(${check_time}, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
 AND ${checkdata}_id <> '' 
 AND ${checkdata}_id <> 'M' 
@@ -2349,7 +2360,7 @@ q.${checkdata}_id
 WHERE
 date BETWEEN '${val.date1}'
 AND '${val.date2}'
-AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND TIME_FORMAT(${check_time}, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
 AND ${checkdata}_id <> ''
 AND ${checkdata}_id <> 'M' 
@@ -2391,7 +2402,7 @@ FROM
 WHERE
 date BETWEEN '${val.date1}'
 AND '${val.date2}'
-AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND TIME_FORMAT(${check_time}, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
 AND ${checkdata}_id <> '' 
 AND ${checkdata}_id <> 'M' 
@@ -2461,7 +2472,7 @@ q.${checkdata}_id
 WHERE
 date BETWEEN '${val.date1}'
 AND '${val.date2}'
-AND TIME_FORMAT(createDT, '%H:%i:%s') BETWEEN '${val.time1}'
+AND TIME_FORMAT(${check_time}, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
 AND ${checkdata}_id <> ''
 AND ${checkdata}_id <> 'M' 
@@ -2471,6 +2482,7 @@ AND patientNO <> 'test'
 GROUP BY
 ${checkdata}_id`;
     }
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

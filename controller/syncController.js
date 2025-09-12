@@ -23,6 +23,10 @@ var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
 var GD4Unit_101 = new db_GD4Unit_101();
 var db_yurim = require("../DB/db_yurim_sqlserver");
 var yurim = new db_yurim();
+var db_center104 = require("../DB/db_104_Center");
+var center104 = new db_center104();
+var db_104_mysql = require("../DB/db_104_mysql");
+var db_104 = new db_104_mysql();
 // var token = fs.readFileSync(
 //   "D:\\Projacts\\NodeJS\\MHRdashboard\\node\\model\\token.txt",
 //   "utf-8"
@@ -35,7 +39,7 @@ var token =
 // );
 //แก้นับตอนยิง
 // const html2json = require("html2json").html2json;
-yurim;
+
 exports.syncOPDController = async (req, res, next) => {
   let data = req.body;
 
@@ -49,7 +53,8 @@ exports.syncOPDController = async (req, res, next) => {
 
     if (parseInt(hn) != NaN) {
       let dataP = [];
-      let q = await center102.queue({ hn: hn });
+      // let q = await center102.queue({ hn: hn });
+      let q = await db_104.getPre(hn);
 
       if (!q.length) {
         // q = await gd4unit101.getsiteQ();
@@ -61,18 +66,14 @@ exports.syncOPDController = async (req, res, next) => {
       } else {
         q = q[0].QN;
       }
-
-      let checkAllergic = await listPatientAllergicController({ hn: hn });
-      console.log(req.body);
+      // let checkAllergic = await listPatientAllergicController({ hn: hn });
+      // let checkAllergic = await listPatientAllergicController({ hn: hn });
 
       let moph_patient = await center102.hn_moph_patient({
         hn: hn,
         site: req.body.site,
       });
 
-      console.log(moph_patient[0].drugcode);
-      console.log(moph_patient[0].timestamp);
-      console.log(moph_patient.length);
       if (moph_patient.length) {
         if (
           moph_patient[0].timestamp === null &&
@@ -82,7 +83,8 @@ exports.syncOPDController = async (req, res, next) => {
           res.send(sendv);
         } else {
           let allTimeOld = "";
-          let time = await gd4unit101.checkPatient(hn);
+          // let time = await gd4unit101.checkPatient(hn);
+          let time = [];
 
           if (time.length != 0) {
             for (let d of time) {
@@ -100,11 +102,11 @@ exports.syncOPDController = async (req, res, next) => {
 
           if (b.length > 0) {
             let drugarr = [];
-            if (!q.length) {
-              // let send = {};
-              q = await gd4unit101.getsiteQ();
-              q = q.length ? `P${Number(q[0].num) + 1}` : "P1";
-            }
+            // if (!q.length) {
+            //   // let send = {};
+            //   q = await gd4unit101.getsiteQ();
+            //   q = q.length ? `P${Number(q[0].num) + 1}` : "P1";
+            // }
 
             let c = {
               hn: b[0].hn.trim(),
@@ -188,55 +190,75 @@ exports.syncOPDController = async (req, res, next) => {
               // dataP = null;
               // send = {};
             }
+            // let getPreSame = null;
+            // let obj = null;
+            // getPreSame = await db_104.getPre(b[0].prescriptionno);
 
-            gd4unit101.fill(val).then((result) => {
-              if (result.affectedRows > 0) {
-                b.forEach(async function (b) {
-                  b.lastmodified = b.lastmodified
-                    ? b.lastmodified
-                        .toISOString()
-                        .replace(/T/, " ")
-                        .replace(/\..+/, "")
-                    : "";
-                  b.ordercreatedate = b.ordercreatedate
-                    ? b.ordercreatedate
-                        .toISOString()
-                        .replace(/T/, " ")
-                        .replace(/\..+/, "")
-                    : "";
-                  b.takedate = b.takedate
-                    ? b.takedate.toISOString().substr(0, 10)
-                    : "";
-                  b.queue = c.queue;
-                  await gd4unit101.insertDrug(b);
-                });
-                getdataHomc(drugarr, c)
-                  .then((value) => {
-                    if (value.dih === 1 && value.jvm === 1) {
-                      console.log("HN : " + b[0].hn.trim() + " :success");
-                      console.log("successDT : " + new Date().toLocaleString());
-                      console.log(
-                        "-------------------------------------------------"
-                      );
-                      res.status(200).json({
-                        // Authorization: Bearer,
-                        status: 1,
-                      });
-                    } else {
-                      sendv.status = 2;
-                      res.send(sendv);
-                    }
-                  })
-                  .catch((err) => {
-                    console.log(err);
-                    sendv.status = err;
-                    res.send(sendv);
-                  });
-              } else {
-                sendv.status = 0;
-                res.send(sendv);
-              }
+            // if (!getPreSame.length) {
+            //   getPreSame = await center104.getPre(b[0].hn);
+            //   obj = Object.assign(b[0], getPreSame.length ? getPreSame[0] : {});
+            //   await db_104.addPre(obj);
+            // } else {
+            //   obj = Object.assign(b[0], getPreSame.length ? getPreSame[0] : {});
+            //   await db_104.updatePresame(obj);
+            // }
+
+            console.log("-------------------------------------------------");
+            console.log("HN : " + b[0].hn + " :success");
+            console.log("successDT : " + new Date().toLocaleString());
+            res.status(200).json({
+              // Authorization: Bearer,
+              status: 1,
             });
+
+            // gd4unit101.fill(val).then((result) => {
+            //   if (result.affectedRows > 0) {
+            //     b.forEach(async function (b) {
+            //       b.lastmodified = b.lastmodified
+            //         ? b.lastmodified
+            //             .toISOString()
+            //             .replace(/T/, " ")
+            //             .replace(/\..+/, "")
+            //         : "";
+            //       b.ordercreatedate = b.ordercreatedate
+            //         ? b.ordercreatedate
+            //             .toISOString()
+            //             .replace(/T/, " ")
+            //             .replace(/\..+/, "")
+            //         : "";
+            //       b.takedate = b.takedate
+            //         ? b.takedate.toISOString().substr(0, 10)
+            //         : "";
+            //       b.queue = c.queue;
+            //       await gd4unit101.insertDrug(b);
+            //     });
+            //     getdataHomc(drugarr, c)
+            //       .then((value) => {
+            //         if (value.dih === 1 && value.jvm === 1) {
+            //           console.log("HN : " + b[0].hn.trim() + " :success");
+            //           console.log("successDT : " + new Date().toLocaleString());
+            //           console.log(
+            //             "-------------------------------------------------"
+            //           );
+            //           res.status(200).json({
+            //             // Authorization: Bearer,
+            //             status: 1,
+            //           });
+            //         } else {
+            //           sendv.status = 2;
+            //           res.send(sendv);
+            //         }
+            //       })
+            //       .catch((err) => {
+            //         console.log(err);
+            //         sendv.status = err;
+            //         res.send(sendv);
+            //       });
+            //   } else {
+            //     sendv.status = 0;
+            //     res.send(sendv);
+            //   }
+            // });
           } else {
             sendv.status = {
               err: 3,
@@ -247,7 +269,8 @@ exports.syncOPDController = async (req, res, next) => {
         }
       } else {
         let allTimeOld = "";
-        let time = await gd4unit101.checkPatient(hn);
+        // let time = await gd4unit101.checkPatient(hn);
+        let time = [];
 
         if (time.length != 0) {
           for (let d of time) {
@@ -349,64 +372,68 @@ exports.syncOPDController = async (req, res, next) => {
             // dataP = null;
             // send = {};
           }
+          console.log("-------------------------------------");
 
-          gd4unit101.fill(val).then((result) => {
-            if (result.affectedRows > 0) {
-              b.forEach(async function (b) {
-                b.lastmodified = b.lastmodified
-                  ? b.lastmodified
-                      .toISOString()
-                      .replace(/T/, " ")
-                      .replace(/\..+/, "")
-                  : "";
-                b.ordercreatedate = b.ordercreatedate
-                  ? b.ordercreatedate
-                      .toISOString()
-                      .replace(/T/, " ")
-                      .replace(/\..+/, "")
-                  : "";
-                b.takedate = b.takedate
-                  ? b.takedate.toISOString().substr(0, 10)
-                  : "";
-                b.queue = c.queue;
-                await gd4unit101.insertDrug(b);
-              });
-              getdataHomc(drugarr, c)
-                .then((value) => {
-                  if (value.dih === 1 && value.jvm === 1) {
-                    console.log("HN : " + b[0].hn.trim() + " :success");
-                    console.log("successDT : " + new Date().toLocaleString());
-                    console.log(
-                      "-------------------------------------------------"
-                    );
-                    res.status(200).json({
-                      // Authorization: Bearer,
-                      status: 1,
-                    });
-                  } else {
-                    sendv.status = 2;
-                    res.send(sendv);
-                  }
-                })
-                .catch((err) => {
-                  console.log(err);
-                  sendv.status = err;
-                  res.send(sendv);
-                });
-            } else {
-              sendv.status = 0;
-              res.send(sendv);
-            }
+          // let aa = await center104.getPre(b[0].hn);
+
+          // let obj = Object.assign(b[0], aa.length ? aa[0] : {});
+
+          // let bb = await db_104.addPre(obj);
+          console.log(bb);
+          console.log("-------------------------------------------------");
+          console.log("HN : " + b[0].hn + " :success");
+          console.log("successDT : " + new Date().toLocaleString());
+          res.status(200).json({
+            // Authorization: Bearer,
+            status: 1,
           });
-
-          //   sendv.status = 2;
-          //   res.send(sendv);
-          // }
-          // })
-          // .catch((err) => {
-          //   console.log(err);
-          //   sendv.status = err;
-          //   res.send(sendv);
+          // gd4unit101.fill(val).then((result) => {
+          //   if (result.affectedRows > 0) {
+          //     b.forEach(async function (b) {
+          //       b.lastmodified = b.lastmodified
+          //         ? b.lastmodified
+          //             .toISOString()
+          //             .replace(/T/, " ")
+          //             .replace(/\..+/, "")
+          //         : "";
+          //       b.ordercreatedate = b.ordercreatedate
+          //         ? b.ordercreatedate
+          //             .toISOString()
+          //             .replace(/T/, " ")
+          //             .replace(/\..+/, "")
+          //         : "";
+          //       b.takedate = b.takedate
+          //         ? b.takedate.toISOString().substr(0, 10)
+          //         : "";
+          //       b.queue = c.queue;
+          //       await gd4unit101.insertDrug(b);
+          //     });
+          //     getdataHomc(drugarr, c)
+          //       .then((value) => {
+          //         if (value.dih === 1 && value.jvm === 1) {
+          //           console.log("HN : " + b[0].hn.trim() + " :success");
+          //           console.log("successDT : " + new Date().toLocaleString());
+          //           console.log(
+          //             "-------------------------------------------------"
+          //           );
+          //           res.status(200).json({
+          //             // Authorization: Bearer,
+          //             status: 1,
+          //           });
+          //         } else {
+          //           sendv.status = 2;
+          //           res.send(sendv);
+          //         }
+          //       })
+          //       .catch((err) => {
+          //         console.log(err);
+          //         sendv.status = err;
+          //         res.send(sendv);
+          //       });
+          //   } else {
+          //     sendv.status = 0;
+          //     res.send(sendv);
+          //   }
           // });
         } else {
           sendv.status = {
@@ -1408,7 +1435,6 @@ async function listPatientAllergicController(data) {
         if (getCid[0].CardID) {
           const cid = getCid[0].CardID.trim();
           let dataAllergic = await getAllergic(cid);
-          console.log(dataAllergic);
 
           let stampDB = {
             hn: data.hn,
@@ -1518,19 +1544,64 @@ async function getAllergic(cid) {
   // instance.defaults.headers.get["jwt-token"] =
   //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
   let dataAllegy = await instance.get(url);
-  console.log("-----------------------------------------");
-  console.log(`${cid}`);
-  console.log(dataAllegy.data);
-  console.log("-----------------------------------------");
-  if (dataAllegy.data.data) {
-    return dataAllegy.data.data;
+  if (dataAllegy.data.status != 204) {
+    console.log("-----------------------------------------");
+    console.log(dataAllegy.data);
+    console.log(`Token Expired`);
+    token = await getToken();
+    await getAllergic(cid);
+    console.log("-----------------------------------------");
   } else {
-    return [];
+    console.log("-----------------------------------------");
+    console.log(`${cid}`);
+    console.log(dataAllegy.data);
+
+    console.log("-----------------------------------------");
+    if (dataAllegy.data.data) {
+      return dataAllegy.data.data;
+    } else {
+      return [];
+    }
   }
 }
+async function getToken() {
+  try {
+    console.log("Get to ken");
+    const data = {
+      username: "m2000ka@gmail.com",
+      password: "123456",
+    };
+    const url = `https://smarthealth.service.moph.go.th/phps/public/api/v3/gettoken`;
+    const instance = axios.create({
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+        keepAlive: true,
+      }),
+      baseURL: url,
+      timeout: 1000,
+    });
 
+    let dataAllegy = await instance.post(url, data);
+    if (dataAllegy.data.jwt_token) {
+      console.log("----------------------------------");
+      console.log(
+        `GET TOKEN SUCCESS : ${new Date().toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+        })}`
+      );
+      console.log("----------------------------------");
+      return dataAllegy.data.jwt_token;
+    }
+  } catch (error) {
+    console.error("Error fetching token:", error);
+    return;
+  }
+}
 async function getPrescriptionSite(data, check) {
-  let checkAllergic = await listPatientAllergicController({ hn: data.data });
+  // let checkAllergic = await listPatientAllergicController({ hn: data.data });
   let sendv = {};
 
   let moph_patient = await center102.hn_moph_patient({
@@ -1608,8 +1679,8 @@ async function getPrescriptionSite(data, check) {
       console.log("listDrug", listDrug);
       let dataYulim = [];
       if (data.check.yulim) {
-        // let dataPack = await GD4Unit_101.packYurim();
-        let dataPack = [];
+        let dataPack = await GD4Unit_101.packYurim();
+        // let dataPack = [];
         let setyulimLocation = new Set(
           yulimLocation.map((item) => item.orderitemcode)
         );

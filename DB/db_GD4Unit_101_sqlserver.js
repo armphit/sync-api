@@ -63,36 +63,115 @@ module.exports = function () {
   this.doorReport = async function fill(val, DATA) {
     let val_type = val.type == "in" ? "MIN" : "MAX";
     var sqlgetdrug =
-      `SELECT
-      MAX (u.Badgenumber) AS USERID,
-      CASE
-    WHEN MAX (u.lastname) <> '' THEN
-      MAX (u.Name) + ' ' + MAX (u.lastname)
-    ELSE
-      MAX (u.Name)
-    END AS Name,
-     MAX (d.DEPTNAME) DEPTNAME,
-     MAX (aml.device_name) deviceName,
-     CONVERT(varchar, ` +
-      val_type +
-      `(aml. TIME), 120) datetime
-    FROM
-      ZKAccess.dbo.acc_monitor_log aml
-    LEFT JOIN ZKAccess.dbo.USERINFO u ON u.Badgenumber = aml.pin
-    LEFT JOIN ZKAccess.dbo.DEPARTMENTS d ON d.DEPTID = u.DEFAULTDEPTID
-    WHERE
+      `
+      WITH Dates AS (
+	  	SELECT
+		CAST('${val.date1}' AS DATE) AS dateday
+	UNION ALL
+		SELECT
+			DATEADD(DAY, 1, dateday)
+		FROM
+			Dates
+		WHERE
+			dateday < CAST('${val.date2}' AS DATE) 
+) SELECT
+	val.USERID,
+	val.userName,
+	CONVERT(VARCHAR(10), val.dateday, 120) datestamp,
+	CONVERT(VARCHAR(19), ud.check_in, 120) check_in,
+	CONVERT(VARCHAR(19), ud.check_out, 120)   check_out,
+  lu.type_leave,
+	lu.leave_note,
+  lu.leave_time
+FROM
+	(
+		SELECT
+			d.dateday,
+			u.USERID,
+			userName
+		FROM
+			Dates d
+		CROSS JOIN (
+			SELECT
+				u.Badgenumber USERID,
+				CASE
+			WHEN (u.lastname) <> '' THEN
+				(u.Name) + ' ' + (u.lastname)
+			ELSE
+				(u.Name)
+			END AS userName
+			FROM
+				ZKAccess.dbo.USERINFO u
+			WHERE
+				u.Badgenumber IN (
+					15358,
+					202,
+					3793,
+					62150,
+					36161,
+					4507,
+					45942
+				)
+			AND u.DEFAULTDEPTID = 2
+		) u
+		WHERE
+			DATENAME(WEEKDAY, d.dateday) NOT IN ('Saturday', 'Sunday')
+	) AS val
+LEFT JOIN (
+	SELECT
+		CONVERT (DATE, aml. TIME) datestamp,
+		MAX (u.Badgenumber) AS USERID,
+		CASE
+	WHEN MAX (u.lastname) <> '' THEN
+		MAX (u.Name) + ' ' + MAX (u.lastname)
+	ELSE
+		MAX (u.Name)
+	END AS Name,
+	MAX (d.DEPTNAME) DEPTNAME,
+	MAX (aml.device_name) deviceName,
+	CONVERT (VARCHAR, MIN(aml. TIME), 120) check_in,
+	CONVERT (VARCHAR, MAX(aml. TIME), 120) check_out
+FROM
+	ZKAccess.dbo.acc_monitor_log aml
+LEFT JOIN ZKAccess.dbo.USERINFO u ON u.Badgenumber = aml.pin
+LEFT JOIN ZKAccess.dbo.DEPARTMENTS d ON d.DEPTID = u.DEFAULTDEPTID
+WHERE
       CONVERT (DATE, aml. TIME) BETWEEN '` +
       val.date1 +
       `'
     AND '` +
       val.date2 +
       `'
-    AND USERID IS NOT NULL
-    AND aml.device_name = 'MHR-OPD1'
-    AND u.Badgenumber NOT IN (68,70,29252,69,72,208,212,29237)
-    GROUP BY
-      CONVERT (DATE, aml. TIME),
-      u.Badgenumber`;
+AND USERID IS NOT NULL
+AND aml.device_name = 'MHR-OPD1'
+AND u.Badgenumber NOT IN (
+	68,
+	70,
+	29252,
+	69,
+	72,
+	208,
+	212,
+	29237,
+	62662
+)
+AND d.DEPTNAME = 'ROBOT'
+GROUP BY
+	CONVERT (DATE, aml. TIME),
+	u.Badgenumber
+) AS ud ON val.USERID = ud.USERID
+AND val.dateday = ud.datestamp
+LEFT JOIN msr.dbo.leave_user lu ON lu.user_id = val.USERID
+AND lu.leave_date =  val.dateday
+ORDER BY
+	val.USERID,
+	val.dateday OPTION (MAXRECURSION 0);
+      
+      
+      
+      
+      
+    `;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -1085,7 +1164,7 @@ WHERE
 	*, 'YU' location,
 	22 sortOrder
 FROM
-	opd.dbo.pack_yurim`;
+	opd.dbo.pack_yurim_copy`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
