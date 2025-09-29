@@ -100,6 +100,31 @@ app.post("/getTimedispenddrug", timedispendController);
 
 app.post("/test", testController);
 app.post("/test2", testController2);
+
+// Route สำหรับ SSE
+const cors = require("cors");
+const watcher = require("./controller/watcher"); // EventEmitter
+app.use(cors());
+
+app.get("/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  console.log("Client connected to SSE");
+
+  const onFileAdded = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  watcher.on("fileAdded", onFileAdded);
+
+  req.on("close", () => {
+    console.log("Client disconnected from SSE");
+    watcher.off("fileAdded", onFileAdded); // ป้องกัน memory leak
+  });
+});
+
 module.exports = app;
 
 app.get("/", (req, res) => {

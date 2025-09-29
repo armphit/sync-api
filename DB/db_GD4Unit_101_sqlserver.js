@@ -1196,4 +1196,38 @@ AND CAST(REPLACE('${val.dateend}', '-', '') AS INT)
       resolve(result.recordset);
     });
   };
+  this.addLeave = async function fill(val, DATA) {
+    var sql = `INSERT INTO [msr].[dbo].[leave_user] (
+	[user_id],
+	[leave_note],
+	[leave_date],
+	[create_dt],
+	[update_dt],
+	[dateindex],
+	[leave_time],
+	[type_leave],
+	[leave_num],
+  [user_name]
+)
+VALUES
+	(
+		'${val.USERID}',
+		'${val.leave_note}',
+				'${val.datestamp}',
+		GETDATE(),
+		GETDATE(),
+				'${val.datestamp.replace(/-/g, "")}',
+		'${val.leave_time}',
+		'${val.type_leave}',
+		'${val.leave_num}',
+    '${val.userName}'
+	);
+`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
 };

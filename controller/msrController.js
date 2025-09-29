@@ -29,8 +29,11 @@ exports.doorreportController = async (req, res, next) => {
     //       : "";
     //   }
     // }
-  } else {
-    getDoorreport = await GD4Unit_101.freqdoorReport(req.body);
+  } else if (req.body.choice === 2) {
+    console.log(req.body);
+
+    await GD4Unit_101.addLeave(req.body);
+    getDoorreport = await GD4Unit_101.doorReport(req.body);
   }
   res.send(getDoorreport);
 };

@@ -515,7 +515,16 @@ exports.managereportgd4Controller = async (req, res, next) => {
         : `date_index = ${req.body.date}`;
 
       let getReport = await center104.getReport(date);
-      res.send(getReport);
+      // let getProgram = await center104.getProgram();
+      res.send({ getReport });
+    } else if (req.body.choice == 4) {
+      let getmanage = null;
+      if (req.body.text == "INSERT") {
+        getmanage = await center104.insertProgram(req.body);
+      } else {
+        getmanage = await center104.deleteProgram(req.body);
+      }
+      res.send({ getmanage });
     }
   } catch (error) {
     res.send({
@@ -523,3 +532,37 @@ exports.managereportgd4Controller = async (req, res, next) => {
     });
   }
 };
+
+// const path = require("path");
+// const chokidar = require("chokidar");
+// const receiveFolder = path.join(__dirname, "receive");
+// let batchQueue = [];
+// let batchTimeout = null;
+
+// const watcher = chokidar.watch(receiveFolder, { persistent: true });
+
+// watcher.on("add", (filePath) => {
+//   batchQueue.push(filePath);
+
+//   if (batchTimeout) clearTimeout(batchTimeout);
+//   batchTimeout = setTimeout(() => {
+//     console.log(`\nProcessing batch of ${batchQueue.length} files:`);
+
+//     batchQueue.forEach((file) => {
+//       fs.readFile(file, "utf-8", (err, data) => {
+//         if (err) return console.error(err);
+//         console.log(`File "${path.basename(file)}" content:`, data);
+
+//         // ลบไฟล์หลังอ่านเสร็จ
+//         fs.unlink(file, (err) => {
+//           if (err) return console.error(err);
+//           console.log(
+//             `File "${path.basename(file)}" deleted from ${receiveFolder}`
+//           );
+//         });
+//       });
+//     });
+
+//     batchQueue = [];
+//   }, 200);
+// });

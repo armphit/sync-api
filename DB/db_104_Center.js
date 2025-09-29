@@ -832,21 +832,24 @@ VALUES
   };
   this.getReport = function fill(val, DATA) {
     var sql = `SELECT
-    	id,
-	department,
-	system,
-	status,
-	issue_reason,
-	solution,
-	username,
-	date_index,
-	time_index,
-	CONVERT (VARCHAR(25), createDT, 120) createDT
-    FROM
-      [center].[dbo].[gd4_report]
-    WHERE
-      ${val}`;
-    console.log(sql);
+	r.id,
+	p.department,
+	p.system,
+	IIF(r.status IS NULL,1,r.status) status,
+	r.issue_reason,
+	r.solution,
+	r.username,
+	r.date_index,
+	r.time_index,
+	CONVERT (VARCHAR(25), r.createDT, 120) createDT
+FROM
+	center.dbo.gd4_programs p
+LEFT JOIN center.dbo.gd4_report r ON p.department = r.department
+AND p.system = r.system
+AND  ${val}
+ORDER BY  department , system
+	
+      `;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -908,6 +911,109 @@ ORDER BY  p.timeregit DESC
       const pool = await poolPromise;
       const result = await pool.request().query(sql);
       resolve(result.recordset);
+    });
+  };
+  this.getProgram = function fill(val, DATA) {
+    var sql = `select * from center.dbo.gd4_programs`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+
+  this.insertProgram = function fill(val, DATA) {
+    var sql = `INSERT INTO [center].[dbo].[gd4_programs] 
+    ([department], [system], [status]) VALUES ('${val.department}', '${val.system}', '1')`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+
+  this.insertProgram = function fill(val, DATA) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const pool = await poolPromise;
+
+        // INSERT
+        const insertSql = `
+        INSERT INTO [center].[dbo].[gd4_programs] 
+        ([department], [system], [status]) 
+        VALUES (@department, @system, '1');
+      `;
+        await pool
+          .request()
+          .input("department", val.department)
+          .input("system", val.system)
+          .query(insertSql);
+
+        // SELECT
+        const selectSql = `SELECT
+	r.id,
+	p.department,
+	p.system,
+	IIF(r.status IS NULL,1,r.status) status,
+	r.issue_reason,
+	r.solution,
+	r.username,
+	r.date_index,
+	r.time_index,
+	CONVERT (VARCHAR(25), r.createDT, 120) createDT
+FROM
+	center.dbo.gd4_programs p
+LEFT JOIN center.dbo.gd4_report r ON p.department = r.department
+AND p.system = r.system
+AND  date_index = ${val.date}`;
+        const result = await pool.request().query(selectSql);
+
+        resolve(result.recordset);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  this.deleteProgram = function fill(val, DATA) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const pool = await poolPromise;
+
+        // INSERT
+        const insertSql = `DELETE FROM [center].[dbo].[gd4_programs] WHERE ([department]=@department) AND ([system]=@system)
+      `;
+        await pool
+          .request()
+          .input("department", val.department)
+          .input("system", val.system)
+          .query(insertSql);
+
+        // SELECT
+        const selectSql = `SELECT
+	r.id,
+	p.department,
+	p.system,
+	IIF(r.status IS NULL,1,r.status) status,
+	r.issue_reason,
+	r.solution,
+	r.username,
+	r.date_index,
+	r.time_index,
+	CONVERT (VARCHAR(25), r.createDT, 120) createDT
+FROM
+	center.dbo.gd4_programs p
+LEFT JOIN center.dbo.gd4_report r ON p.department = r.department
+AND p.system = r.system
+AND  date_index = ${val.date}`;
+        const result = await pool.request().query(selectSql);
+
+        resolve(result.recordset);
+      } catch (err) {
+        reject(err);
+      }
     });
   };
 };
