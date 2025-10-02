@@ -116,7 +116,8 @@ p.lastIssTime AS lastmodified,
  m.amount AS totalprice,
  v.remarks AS orderitemnameTh,
  b.useDrg AS rightid,
- t.pay_typedes AS rightname
+ t.pay_typedes AS rightname,
+  TRIM(o.dept) dept
 
 FROM
 	OPD_H o
@@ -355,7 +356,8 @@ ORDER BY
         Lamed lam
       WHERE
         lam.lamed_code = p.lamedUnit
-    ) AS freetext1_eng
+    ) AS freetext1_eng,
+      p.lamedDayText
     FROM
       OPD_H o
     LEFT JOIN Med_logh mh ON o.hn = mh.hn

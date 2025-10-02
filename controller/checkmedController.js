@@ -24,6 +24,16 @@ var db_yurim = require("../DB/db_yurim_sqlserver");
 var yurim = new db_yurim();
 var db_104_mysql = require("../DB/db_104_mysql");
 var db_104 = new db_104_mysql();
+const dayMap = {
+  M: "จันทร์",
+  T: "อังคาร",
+  W: "พุธ",
+  TH: "พฤหัสฯ",
+  F: "ศุกร์",
+  S: "เสาร์",
+  SU: "อาทิตย์",
+};
+
 exports.checkpatientController = async (req, res, next) => {
   if (req.body) {
     let allTimeOld = "";
@@ -125,6 +135,16 @@ exports.checkpatientController = async (req, res, next) => {
             ? data.lamed_eng.replace("'", "''")
             : "";
           data.drugName = data.drugName ? data.drugName.replace("'", "''") : "";
+
+          data.freetext1 = ` ${
+            data.lamedDayText
+              ? `ทุกวัน ${data.lamedDayText
+                  .split(" ")
+                  .map((code) => dayMap[code])
+                  .join(" ")}`
+              : ""
+          } ${data.freetext1 ? data.freetext1.trim() : ""}`;
+          delete data.lamedDayText;
           let comma = Object.keys(data)
             .map(function (k) {
               return data[k];

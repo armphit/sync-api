@@ -1680,7 +1680,7 @@ ORDER BY checkstamp
     prescription
   WHERE
   departmentcode = 'W8'
-	AND queue LIKE 'P%'
+	AND queue LIKE '${val}%'
   AND takedate = CURDATE()
   GROUP BY
     queue
