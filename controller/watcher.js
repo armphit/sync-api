@@ -11,6 +11,7 @@ class Watcher extends EventEmitter {
     this.batchQueue = [];
     this.batchTimeout = null;
     this.init();
+    console.log("Watcher initialized and listening for file changes...");
   }
 
   init() {
@@ -20,6 +21,8 @@ class Watcher extends EventEmitter {
   }
 
   onAdd(filePath) {
+    console.log(`File added: ${filePath}`);
+
     this.batchQueue.push(filePath);
     if (this.batchTimeout) clearTimeout(this.batchTimeout);
 
@@ -28,10 +31,11 @@ class Watcher extends EventEmitter {
         fs.readFile(file, "utf-8", (err, data) => {
           if (err) return console.error(err);
 
-          let result = file.replace(`${receiveFolder}\\ID`, "");
-          result = result.substr(0, result.indexOf("["));
-          result = result.substr(0, result.lastIndexOf("_")).split("_");
-
+          // let result = file.replace(`${receiveFolder}\\ID`, "");
+          let result = data.match(/#\|0*(\d+)\|/);
+          result = result ? parseInt(result[1], 10) : null;
+          // result = result.substr(0, result.lastIndexOf("_")).split("_");
+          console.log(result);
           // ส่งข้อมูลผ่าน EventEmitter
           this.emit("fileAdded", { file, result, data });
         });

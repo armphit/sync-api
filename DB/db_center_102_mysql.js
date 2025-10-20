@@ -2285,7 +2285,7 @@ LEFT JOIN (
 SELECT
   ${checkdata}_id AS id,
   COUNT(${checkdata}_id) 'order'
-FROMreportcheckmed
+FROM reportcheckmed
   hospitalq
 WHERE
 date BETWEEN '${val.date1}'
