@@ -172,6 +172,7 @@ ORDER BY
       
       
     `;
+    console.log(sqlgetdrug);
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

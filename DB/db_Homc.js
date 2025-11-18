@@ -902,4 +902,62 @@ WHERE
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
+  this.getCpoeData = async function fill(val, DATA) {
+    var sql = `SELECT
+        h.hn,
+        Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
+        CASE
+WHEN pt.sex = 'ช' THEN
+        'ชาย'
+ELSE
+        'หญิง'
+END AS sex,
+RIGHT(pt.birthDay , 2) + '/' +
+    SUBSTRING(pt.birthDay , 5, 2) + '/' +
+    LEFT(pt.birthDay , 4)  AS birthDay,
+ DATEDIFF(
+        YEAR,
+        DATEFROMPARTS (
+                SUBSTRING (pt.birthDay, 1, 4) - 543,
+                SUBSTRING (pt.birthDay, 5, 2),
+                SUBSTRING (pt.birthDay, 7, 2)
+        ),
+        GETDATE()
+) - CASE
+WHEN FORMAT (GETDATE(), 'MMdd') < SUBSTRING (pt.birthDay, 5, 4) THEN
+        1
+ELSE
+        0
+END AS Age,
+ TRIM(h.toSite)toSite,
+ h.lastIssTime,
+ d.runNo,
+ MAX (d.runNo) OVER () maxRunNo,
+ TRIM(d.invCode)invCode,
+  TRIM (v.name) invName,
+ d.qtyReq,
+ TRIM(d.unit)unit,
+TRIM(p.relativeAddress) addr,
+CardID
+FROM
+        InvReqH h
+LEFT JOIN InvReqD d ON d.reqNo = h.reqNo
+LEFT JOIN PATIENT pt ON pt.hn = h.hn
+LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+LEFT JOIN PatSS p ON p.hn = h.hn
+LEFT JOIN Med_inv v ON (
+	v.code = d.invCode
+	AND v.[site] = '1'
+)
+WHERE
+	h.hn = ${val.hn}
+AND h.reqDate ='${val.date}'
+ORDER BY  d.runNo`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
 };

@@ -484,8 +484,31 @@ exports.reportcheckmedController = async (req, res, next) => {
 };
 exports.getCompilerController = async (req, res, next) => {
   let get_compiler = await center102.get_compiler(req.body);
+  if (
+    req.body.queue.substring(0, 1) != "2" &&
+    req.body.queue.substring(0, 1) != "P" &&
+    req.body.queue.substring(0, 1) != "M"
+  ) {
+    if (get_compiler.length) {
+      let getLocation = await GD4Unit_101.opd3Location(req.body);
+      get_compiler = get_compiler.map((item) => {
+        return {
+          ...item,
+          ...(getLocation.find(
+            (loc) => loc.orderitemcode == item.drugCode.trim()
+          ) ?? { location: "" }),
+        };
+      });
+    }
+  }
   let user_list = await center101.getUser();
   let drug_list = await homc.getDrughomc();
+  res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
+  // let get_compiler = await center102.get_compiler(req.body);
+  // let user_list = await center101.getUser();
+  // let drug_list = await homc.getDrughomc();
+  console.log(get_compiler);
+
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 

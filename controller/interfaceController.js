@@ -532,7 +532,25 @@ exports.managereportgd4Controller = async (req, res, next) => {
     });
   }
 };
+exports.getdatacpoeController = async (req, res, next) => {
+  try {
+    let datapatient = await homc.getCpoeData(req.body);
 
+    if (datapatient.length) {
+      console.log(datapatient.length);
+      res.status(200).json(datapatient);
+    } else {
+      console.log(datapatient.length);
+      res.status(404).json({
+        message: "No Data",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+};
 // const path = require("path");
 // const chokidar = require("chokidar");
 // const receiveFolder = path.join(__dirname, "receive");

@@ -2259,7 +2259,7 @@ AND h.locationQ = 'PHAR_A2'`;
     }
     if (val.site) {
       sql = `
-  SELECT
+SELECT
 ${checkdata}_id,
 ${checkdata}_name,
 a.order,
@@ -2269,24 +2269,24 @@ FROM
 hospitalq q
 LEFT JOIN (
 SELECT
-  hn,
-  COUNT(hn) item,
-  createDate
+hn,
+COUNT(hn) item,
+createDate
 FROM
-  hospital_order_his
+hospital_order_his
 WHERE
-  createDate BETWEEN '${val.date1}'
-  AND '${val.date2}' 
-  ${getsite.s}
+createDate BETWEEN '${val.date1}'
+AND '${val.date2}' 
+${getsite.s}
 GROUP BY
 createDate,hn
 ) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
 LEFT JOIN (
 SELECT
-  ${checkdata}_id AS id,
-  COUNT(${checkdata}_id) 'order'
-FROM reportcheckmed
-  hospitalq
+${checkdata}_id AS id,
+COUNT(${checkdata}_id) 'order'
+FROM
+hospitalq
 WHERE
 date BETWEEN '${val.date1}'
 AND '${val.date2}'
@@ -2296,29 +2296,29 @@ AND ${checkdata}_id <> ''
 AND ${checkdata}_id <> 'M' 
 ${getsite.h}
 GROUP BY
-  ${checkdata}_id
+${checkdata}_id
 ) a ON a.id = q.${checkdata}_id
 LEFT JOIN (
 SELECT
-  ${offen} offender_id,
-  SUBSTRING_INDEX(${offen}, " ", 1),
+${offen} offender_id,
+SUBSTRING_INDEX(${offen}, " ", 1),
 
 IF (
-  UPPER(
-    SUBSTR(
-      SUBSTRING_INDEX(${offen}, " ", 1),
-      1,
-      1
-    )
-  ) = 'P',
+UPPER(
   SUBSTR(
     SUBSTRING_INDEX(${offen}, " ", 1),
-    2,
-    LENGTH(
-      SUBSTRING_INDEX(${offen}, " ", 1)
-    )
-  ),
-  SUBSTRING_INDEX(${offen}, " ", 1)
+    1,
+    1
+  )
+) = 'P',
+SUBSTR(
+  SUBSTRING_INDEX(${offen}, " ", 1),
+  2,
+  LENGTH(
+    SUBSTRING_INDEX(${offen}, " ", 1)
+  )
+),
+SUBSTRING_INDEX(${offen}, " ", 1)
 ) of_id,
 COUNT(*) error
 FROM
@@ -2333,16 +2333,16 @@ AND '${val.time2}'
 ${getsite.l}
 AND (
 UPPER(
-  SUBSTR(
-    SUBSTRING_INDEX(${offen}, " ", 1),
-    1,
-    1
-  )
-) = 'P'
-OR SUBSTR(
+SUBSTR(
   SUBSTRING_INDEX(${offen}, " ", 1),
   1,
   1
+)
+) = 'P'
+OR SUBSTR(
+SUBSTRING_INDEX(${offen}, " ", 1),
+1,
+1
 ) REGEXP '^[0-9]+$' = 1
 )
 GROUP BY
@@ -2351,9 +2351,9 @@ of_id
 IF (
 UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
 SUBSTR(
-  q.${checkdata}_id,
-  2,
-  LENGTH(q.${checkdata}_id)
+q.${checkdata}_id,
+2,
+LENGTH(q.${checkdata}_id)
 ),
 q.${checkdata}_id
 )
@@ -2364,7 +2364,7 @@ AND TIME_FORMAT(${check_time}, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
 AND ${checkdata}_id <> ''
 AND ${checkdata}_id <> 'M' 
-
+AND SUBSTRING(SUBSTRING_INDEX(QN, '-', 1), -1) NOT IN ('E','F')
 AND patientNO <> 'test' 
 ${getsite.h}
 GROUP BY
@@ -2381,24 +2381,24 @@ FROM
 hospitalq q
 LEFT JOIN (
 SELECT
-  hn,
-  COUNT(hn) item,
-  createDate
+hn,
+COUNT(hn) item,
+createDate
 FROM
-  hospital_order_his
+hospital_order_his
 WHERE
-  createDate BETWEEN '${val.date1}'
-  AND '${val.date2}' 
- 
+createDate BETWEEN '${val.date1}'
+AND '${val.date2}' 
+
 GROUP BY
 createDate,hn
 ) AS h ON h.hn = q.patientNO AND h.createDate = q.date 
 LEFT JOIN (
 SELECT
-  ${checkdata}_id AS id,
-  COUNT(${checkdata}_id) 'order'
+${checkdata}_id AS id,
+COUNT(${checkdata}_id) 'order'
 FROM
-  hospitalq
+hospitalq
 WHERE
 date BETWEEN '${val.date1}'
 AND '${val.date2}'
@@ -2408,29 +2408,29 @@ AND ${checkdata}_id <> ''
 AND ${checkdata}_id <> 'M' 
 
 GROUP BY
-  ${checkdata}_id
+${checkdata}_id
 ) a ON a.id = q.${checkdata}_id
 LEFT JOIN (
 SELECT
-  ${offen} offender_id,
-  SUBSTRING_INDEX(${offen}, " ", 1),
+${offen} offender_id,
+SUBSTRING_INDEX(${offen}, " ", 1),
 
 IF (
-  UPPER(
-    SUBSTR(
-      SUBSTRING_INDEX(${offen}, " ", 1),
-      1,
-      1
-    )
-  ) = 'P',
+UPPER(
   SUBSTR(
     SUBSTRING_INDEX(${offen}, " ", 1),
-    2,
-    LENGTH(
-      SUBSTRING_INDEX(${offen}, " ", 1)
-    )
-  ),
-  SUBSTRING_INDEX(${offen}, " ", 1)
+    1,
+    1
+  )
+) = 'P',
+SUBSTR(
+  SUBSTRING_INDEX(${offen}, " ", 1),
+  2,
+  LENGTH(
+    SUBSTRING_INDEX(${offen}, " ", 1)
+  )
+),
+SUBSTRING_INDEX(${offen}, " ", 1)
 ) of_id,
 COUNT(*) error
 FROM
@@ -2445,16 +2445,16 @@ AND '${val.time2}'
 
 AND (
 UPPER(
-  SUBSTR(
-    SUBSTRING_INDEX(${offen}, " ", 1),
-    1,
-    1
-  )
-) = 'P'
-OR SUBSTR(
+SUBSTR(
   SUBSTRING_INDEX(${offen}, " ", 1),
   1,
   1
+)
+) = 'P'
+OR SUBSTR(
+SUBSTRING_INDEX(${offen}, " ", 1),
+1,
+1
 ) REGEXP '^[0-9]+$' = 1
 )
 GROUP BY
@@ -2463,9 +2463,9 @@ of_id
 IF (
 UPPER(SUBSTR(q.${checkdata}_id, 1, 1)) = 'P',
 SUBSTR(
-  q.${checkdata}_id,
-  2,
-  LENGTH(q.${checkdata}_id)
+q.${checkdata}_id,
+2,
+LENGTH(q.${checkdata}_id)
 ),
 q.${checkdata}_id
 )
@@ -2476,7 +2476,7 @@ AND TIME_FORMAT(${check_time}, '%H:%i:%s') BETWEEN '${val.time1}'
 AND '${val.time2}'
 AND ${checkdata}_id <> ''
 AND ${checkdata}_id <> 'M' 
-
+AND SUBSTRING(SUBSTRING_INDEX(QN, '-', 1), -1) NOT IN ('E','F')
 AND patientNO <> 'test' 
 
 GROUP BY
@@ -2944,89 +2944,110 @@ GROUP BY
   //   };
   this.listPatientQpost = function fill(val, DATA) {
     var sql = `SELECT
-q.patientNO,
-q.QN,
-q.patientName,
-CAST(q.createDT AS char)  createdDT,
-CAST(c.timestamp AS char) timestamp,
-s.cid,
-d.check,
-cdd. STATUS as status
+  q.patientNO,
+  q.QN,
+  q.patientName,
+  CAST(q.createDT AS char)  createdDT,
+  CAST(c.timestamp AS char) timestamp,
+  s.cid,
+  d.check,
+  cdd. STATUS as status
 FROM
 (SELECT
 *
 FROM
 (
-SELECT
-  q.QN,
-  q.patientNO,
-  q.patientName,
-  q.date,
-  q.createDT
-FROM
-  hospitalq q
-WHERE
-  q.createDT BETWEEN '${val.date1}'
-  AND '${val.date2}'
-AND locationQ = 'PHAR_A2'
-UNION
   SELECT
     q.QN,
     q.patientNO,
     q.patientName,
     q.date,
-    q.updateDT 'createDT'
+    q.createDT
   FROM
-    queue_p q
+    hospitalq q
   WHERE
-    q.updateDT BETWEEN '${val.date1}'
+    q.createDT BETWEEN '${val.date1}'
     AND '${val.date2}'
-    AND (q.QN LIKE 'P%' OR q.QN = '')
+  AND locationQ = 'PHAR_A2'
+  UNION
+  SELECT
+IF (p.queue <> '', p.queue, q.QN) QN,
+	q.patientNO,
+	q.patientName,
+	q.date,
+	q.updateDT 'createDT'
+FROM
+	queue_p q
+LEFT JOIN (
+	SELECT
+		p.queue,
+		p.hn,
+		p.takedate
+	FROM
+		gd4unit.prescription p
+	WHERE
+		(
+			p.queue LIKE 'P%'
+			OR p.queue LIKE 'M%'
+		)
+	GROUP BY
+		p.queue
+) as p ON p.hn = q.patientNO
+AND p.takedate = q.date
+WHERE
+	q.updateDT BETWEEN '${val.date1}'
+AND '${val.date2}'
+AND (
+	q.QN LIKE 'P%'
+	OR q.QN = ''
+	OR q.QN LIKE 'M%'
+)
 ) AS a
 ORDER BY
 createDT DESC) AS q
-LEFT JOIN moph_sync s ON q.patientNO = s.patientID
-AND CAST(s.updateDT AS Date) = CURDATE()
-
+  LEFT JOIN moph_sync s ON q.patientNO = s.patientID
+  AND CAST(s.updateDT AS Date) = CURDATE()
+  
+  LEFT JOIN (
+    SELECT
+      cid,
+      'Y' as 'check'
+    FROM
+      moph_drugs d
+    WHERE
+      d.hospcode <> '10666'
+    GROUP BY
+      cid
+  ) AS d ON s.CID = d.cid
 LEFT JOIN (
   SELECT
-    cid,
-    'Y' as 'check'
+      TIMESTAMP,
+      hn,
+      queue
   FROM
-    moph_drugs d
+      moph_confirm
   WHERE
-    d.hospcode <> '10666'
-  GROUP BY
-    cid
-) AS d ON s.CID = d.cid
-LEFT JOIN (
-SELECT
-    TIMESTAMP,
-    hn,
-    queue
-FROM
-    moph_confirm
-WHERE
-    CAST(TIMESTAMP AS Date) BETWEEN CAST('${val.date1}' AS Date)
-    AND CAST('${val.date2}' AS Date)
-    AND site = 'W8'
+      CAST(TIMESTAMP AS Date) BETWEEN CAST('${val.date1}' AS Date)
+      AND CAST('${val.date2}' AS Date)
+      AND site = 'W8'
 ) AS c ON q.patientNO = c.hn
 LEFT JOIN (
-SELECT
-    hn,
-    STATUS
-FROM
-    cut_dispend_drug
-WHERE
-    STATUS = 'Y'
-AND deleteDT IS NULL
-
-GROUP BY
-    hn
-) AS cdd ON trim(q.patientNO) = trim(cdd.hn)
+  SELECT
+  TRIM(hn) hn,
+      STATUS
+  FROM
+      cut_dispend_drug
+  WHERE
+      STATUS = 'Y'
+  AND deleteDT IS NULL
+  
+  GROUP BY
+     TRIM(hn)
+) AS cdd ON q.patientNO = cdd.hn
 
 ORDER BY
-q.createDT`;
+  q.createDT`;
+    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
