@@ -24,6 +24,8 @@ var db_yurim = require("../DB/db_yurim_sqlserver");
 var yurim = new db_yurim();
 var db_104_mysql = require("../DB/db_104_mysql");
 var db_104 = new db_104_mysql();
+var db_104_center = require("../DB/db_104_center");
+var db_1042 = new db_104_center();
 const dayMap = {
   M: "จันทร์",
   T: "อังคาร",
@@ -66,7 +68,8 @@ exports.checkpatientController = async (req, res, next) => {
     if (dataPatient.length) {
       dataPatient = dataPatient[0];
 
-      let time = await center102.checkPatientcheckmed(dataPatient.id);
+      let time = await center102.checkPatientcheckmed(datasend);
+
       if (time.length != 0) {
         for (let d of time) {
           allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
@@ -81,7 +84,6 @@ exports.checkpatientController = async (req, res, next) => {
       let x = {};
 
       x = await homc.checkmed(datasend);
-
       let b = x.recordset;
 
       if (b.length) {
@@ -135,7 +137,6 @@ exports.checkpatientController = async (req, res, next) => {
             ? data.lamed_eng.replace("'", "''")
             : "";
           data.drugName = data.drugName ? data.drugName.replace("'", "''") : "";
-
           data.freetext1 = ` ${
             data.lamedDayText
               ? `ทุกวัน ${data.lamedDayText
@@ -164,10 +165,8 @@ exports.checkpatientController = async (req, res, next) => {
         }
       }
       // let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
-      let datadrugpatient = await center102.selectcheckmed({
-        id: dataPatient.id,
-        site: datasend.site,
-      });
+      let datadrugpatient = await center102.selectcheckmed(datasend);
+
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -258,18 +257,18 @@ exports.checkpatientController = async (req, res, next) => {
       //     await gd4unit_101_mysql.updateDrugL(datasend);
       //   }
       // }
-      datasend.PrescriptionNo =
-        datadrugpatient[datadrugpatient.length - 1].prescriptionno;
+      // datasend.PrescriptionNo =
+      //   datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
-      try {
-        if (datasend.site == "W8") {
-          await center104.insertLED(datasend);
-        }
-      } catch (e) {
-        console.log("insertLED");
-        console.log(datasend);
-        console.error(e);
-      }
+      // try {
+      //   if (datasend.site == "W8") {
+      //     await center104.insertLED(datasend);
+      //   }
+      // } catch (e) {
+      //   console.log("insertLED");
+      //   console.log(datasend);
+      //   console.error(e);
+      // }
     } else {
       res.send({ datadrugpatient: [], patientDrug: [] });
     }
@@ -291,10 +290,7 @@ exports.updatecheckmedController = async (req, res, next) => {
     );
     if (insertloginsertlogcheckmed.affectedRows) {
       // let datadrugpatient = await center102.selectcheckmed(req.body.cmp_id);
-      let datadrugpatient = await center102.selectcheckmed({
-        id: req.body.cmp_id,
-        site: req.body.site,
-      });
+      let datadrugpatient = await center102.selectcheckmed(req.body);
       datadrugpatient.map((item) => {
         if (item.pathImage) {
           item.pathImage = item.pathImage.split(",");
@@ -315,7 +311,7 @@ exports.updatecheckmedController = async (req, res, next) => {
         try {
           if (datadrugpatient.length) {
             if (datadrugpatient[0].departmentcode.trim() == "W8") {
-              await center104.update_led(req.body);
+              // await center104.update_led(req.body);
             } else {
               datadrugpatient[0].queue =
                 datadrugpatient[0].departmentcode.trim();
@@ -379,7 +375,7 @@ exports.updatecheckmedController = async (req, res, next) => {
             patient: req.body.cmp_id,
           };
           await center102.updatePatient(send);
-          await db_104.updatePre(datadrugpatient[0].hn);
+          await db_1042.updatePre(datadrugpatient[0].hn);
         }
       }
     } else {

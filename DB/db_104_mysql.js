@@ -77,19 +77,26 @@ WHERE
       });
     });
   };
-  this.updatePre = function fill(val, DATA) {
-    var sql = `UPDATE queue_phar.dbo.prescription
-SET prepare_time = CURRENT_TIMESTAMP
-WHERE
-	hn = '374821'
-AND timeconfirm <> ''
-AND FORMAT (ordercreate, 'yyyy-MM-dd') = FORMAT (GETDATE(), 'yyyy-MM-dd')`;
+  this.updatePre = async function fill(val, DATA) {
+    var sql = `WITH CTE AS (
+	SELECT
+		TOP 1 *
+	FROM
+		queue_phar.dbo.prescription
+	WHERE
+		hn = '${val}'
+	AND timeconfirm <> ''
+	AND prepare_time IS NULL
+	AND CAST (ordercreate AS DATE) = CAST (GETDATE() AS DATE)
+	ORDER BY
+		ordercreate DESC
+) UPDATE CTE
+SET prepare_time = CURRENT_TIMESTAMP;`;
 
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
-      });
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result);
     });
   };
   this.getPre = function fill(val, DATA) {

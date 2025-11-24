@@ -29,8 +29,8 @@ module.exports = function () {
       val.site == "W8" ? `'PHAR_A2'` : val.site == "W18" ? `'PHAR_A3'` : `''`;
     var sql = ``;
     if (val.site == "W8") {
-      sql = `SELECT
-        p.queue QN
+      sql = `SELECT * FROM (SELECT
+        p.queue QN,p.datetimestamp
       FROM
         gd4unit.prescription p
       WHERE
@@ -41,7 +41,7 @@ module.exports = function () {
         p.hn,p.queue
       UNION
         SELECT
-          p.queue QN
+          p.queue QN,p.datetimestamp
         FROM
           gd4unit_bk.prescription p
         WHERE
@@ -49,9 +49,10 @@ module.exports = function () {
             AND hn = '${val.hn.trim()}'
         GROUP BY
           p.takedate,
-          p.hn,p.queue`;
+          p.hn,p.queue) AS x ORDER BY x.datetimestamp DESC`;
     } else {
-      sql = `SELECT
+      sql = `
+          SELECT
             QN
           FROM
             hospitalq
@@ -339,16 +340,19 @@ WHERE patientID = ` +
   this.checkPatientcheckmed = function fill(val, DATA) {
     var sql =
       `SELECT
-      hn,
-      DATE_FORMAT(p.lastmodified, '%H:%i') AS ordertime
-   FROM
-      checkmed  p
-   WHERE
-      p.cmp_id = '` +
-      val +
+	c.hn,
+	DATE_FORMAT(p.lastmodified, '%H:%i') AS ordertime
+FROM
+	checkmedpatient c
+LEFT JOIN checkmed p ON c.id = p.cmp_id
+WHERE
+    c.hn = '` +
+      val.hn +
       `'
-   GROUP BY
-      date_format(p.lastmodified, '%H:%i')`;
+      AND c.date = '${val.dateEN}'
+      AND isDelete IS NULL
+GROUP BY
+	date_format(p.lastmodified, '%H:%i')`;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
@@ -405,9 +409,9 @@ WHERE patientID = ` +
     });
   };
 
-  // this.selectcheckmed = function fill(val, DATA) {
-  //   let sql =
-  //     `SELECT
+  //   this.selectcheckmed = function fill(val, DATA) {
+  //     let sql =
+  //       `SELECT
   //     (
   //       SELECT
   //         MAX(seq)
@@ -415,8 +419,8 @@ WHERE patientID = ` +
   //         checkmed
   //       WHERE
   //         cmp_id = '` +
-  //     val.id +
-  //     `'
+  //       val.id +
+  //       `'
   //       GROUP BY
   //         hn
   //     ) AS countDrug,
@@ -428,7 +432,9 @@ WHERE patientID = ` +
   //       'LEVO25',
   //       'DESOX',
   //       'ISOSO3',
-  //       'TRIA5'
+  //       'TRIA5',
+  //       'CLOBE3',
+  //       'CLOBC3'
   //     ),
   //     1,
   //     0
@@ -453,7 +459,7 @@ WHERE patientID = ` +
   //     pc.drugName
   //   ) drugName,
   //    pc.drugNameTh,
-  //    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut,dc.qty_cut,pc.qty),pc.qty),pc.qty) qty,
+  //    IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut,dc.qty_cut,pc.qty),pc.qty),pc.qty) qty,
   //    pc.unitCode,
   //    pc.departmentcode,
   //    pc.righttext1,
@@ -472,7 +478,7 @@ WHERE patientID = ` +
   //    pc.lamedEng,
   //    pc.freetext1Eng,
   //    pc.checkstamp,
-  //    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.checkqty >  dc.qty_cut,dc.qty_cut,pc.checkqty),pc.checkqty),pc.checkqty) checkqty,
+  //    IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.checkqty >  dc.qty_cut,dc.qty_cut,pc.checkqty),pc.checkqty),pc.checkqty) checkqty,
   //    pc.scantimestamp,
 
   //   IF (
@@ -496,48 +502,41 @@ WHERE patientID = ` +
   //       img.typeNum ASC
   //   ) typeNum,
   //    bdg.barCode,
-  //    sortDrug.device,
+  //    deviceCheck device,
   //    mp.drugCode checkDrug,
-  //    IF('${val.site}'='W8',IF(dc.qty_cut<>'',IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
-  //    mo.check,
-  //    mo.CID,
+  //    IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
+  //    dc.qty_cut,
+  //    pc.qty qty_real,
   //    IF (
-  //     bdg.barCode <> ''
+  //     bdg.barCode <> '' OR bdg.barCode = 'null'
   //     OR sortDrug.checkAccept <> '',
   //     'Y',
   //     NULL
-  //   ) checkAccept
+  //   ) checkAccept,
+  //    deviceCheck,
+  //    IF (
+  //         (
+  //           LENGTH(pc.indication) > 125
+  //           AND (pc.qrCode IS NULL OR pc.qrCode = '')
+  //         )
+  //         OR pc.drugCode IN ('DOXOF'),
+  //         1,
+  //         0
+  //       ) checkIndication
   //   FROM
   //     checkmed pc
   //   LEFT JOIN images_drugs img ON img.drugCode = pc.drugCode
   //   LEFT JOIN barcode_drug bdg ON pc.drugCode = bdg.drugCode
   //   LEFT JOIN med_print mp ON pc.drugCode = mp.drugCode
-  //   LEFT JOIN (
-  // 	SELECT
-  // 		s.patientID hn,
-  // 		d.check,
-  //     s.CID
-  // 	FROM
-  // 		moph_sync s
-  // 	LEFT JOIN (
-  // 		SELECT
-  // 			cid,
-  // 			'Y' AS 'check'
-  // 		FROM
-  // 			moph_drugs d
-  // 		WHERE
-  // 			d.hospcode <> '10666'
-  // 		GROUP BY
-  // 			cid
-  // 	) AS d ON s.CID = d.cid
-  // ) AS mo ON mo.hn = pc.hn
+
   //   LEFT JOIN (
   //     SELECT
   //       drugCode,
   //       drugName,
   //       device,
   //       sortOrder,
-  //       checkAccept
+  //       checkAccept,
+  //       deviceCheck
   //     FROM
   //       (
   //         SELECT
@@ -565,7 +564,15 @@ WHERE patientID = ` +
   //           OR GROUP_CONCAT(DISTINCT dv.deviceCode) LIKE '%J%',
   //           'Y',
   //           'N'
-  //         ) checkAccept
+  //         ) checkAccept,
+  //          			GROUP_CONCAT(
+  //   			DISTINCT CASE
+  //   			WHEN dv.deviceCode = 'Xmed1' THEN
+  //   				NULL
+  //   			ELSE
+  //   				CONCAT(dv.deviceCode, '-', ds.positionID)
+  //   			END SEPARATOR ','
+  //   		) AS  deviceCheck
   //         FROM
   //           pmpf_thailand_mnrh.devicedrugsetting ds
   //         LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
@@ -602,8 +609,8 @@ WHERE patientID = ` +
   //    LEFT JOIN center_db.drug_cut dc ON dc.drugCode = pc.drugCode
   //   WHERE
   //     cmp_id = '` +
-  //     val.id +
-  //     `'
+  //       val.id +
+  //       `'
   //   GROUP BY
   //     pc.drugCode,
   //     pc.seq,
@@ -612,28 +619,49 @@ WHERE patientID = ` +
   //     sortOrder
 
   //     `;
-  //   console.log(sql);
-
-  //   return new Promise(function (resolve, reject) {
-  //     connection.query(sql, function (err, result, fields) {
-  //       if (err) throw err;
-  //       resolve(result);
+  // log
+  //     return new Promise(function (resolve, reject) {
+  //       connection.query(sql, function (err, result, fields) {
+  //         if (err) throw err;
+  //         resolve(result);
+  //       });
   //     });
-  //   });
-  // };
+  //   };
+  this.selectcheckmed = async function (val, DATA) {
+    try {
+      // 1️⃣ ดึง id จาก checkmedpatient
+      const [idsResult] = await new Promise((resolve, reject) => {
+        val.dateEN = val.dateEN
+          ? val.dateEN
+          : new Date().toISOString().split("T")[0];
+        const sqlIds = `
+        SELECT id 
+        FROM checkmedpatient 
+        WHERE hn = ${val.hn} AND date = CAST('${val.dateEN}' AS Date ) AND isDelete IS NULL
+      `;
 
-  this.selectcheckmed = function fill(val, DATA) {
-    let sql =
-      `SELECT
+        connection.query(sqlIds, [val.hn, val.date], (err, results) => {
+          if (err) return reject(err);
+          resolve([results]);
+        });
+      });
+
+      // แปลงเป็น array ของ id
+      const ids = idsResult.map((row) => row.id);
+      if (ids.length === 0) return []; // ถ้าไม่มี id ให้ return ว่าง
+
+      const placeholders = `('${ids.join("','")}')`;
+      // 2️⃣ ใช้ ids ใน query checkmed
+      const checkmedResult = await new Promise((resolve, reject) => {
+        const sqlCheckmed = `
+            SELECT
     (
       SELECT
         MAX(seq)
       FROM
         checkmed
       WHERE
-        cmp_id = '` +
-      val.id +
-      `'
+      cmp_id IN ${placeholders}
       GROUP BY
         hn
     ) AS countDrug,
@@ -647,7 +675,8 @@ WHERE patientID = ` +
       'ISOSO3',
       'TRIA5',
       'CLOBE3',
-      'CLOBC3'
+      'CLOBC3',
+      'DESOX1'
     ),
     1,
     0
@@ -715,7 +744,7 @@ WHERE patientID = ` +
       img.typeNum ASC
   ) typeNum,
    bdg.barCode,
-   deviceCheck device,
+   sortDrug.device,
    mp.drugCode checkDrug,
    IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
    dc.qty_cut,
@@ -778,14 +807,14 @@ WHERE patientID = ` +
           'Y',
           'N'
         ) checkAccept,
-         			GROUP_CONCAT(
-  			DISTINCT CASE
-  			WHEN dv.deviceCode = 'Xmed1' THEN
-  				NULL
-  			ELSE
-  				CONCAT(dv.deviceCode, '-', ds.positionID)
-  			END SEPARATOR ','
-  		) AS  deviceCheck
+               GROUP_CONCAT(
+        DISTINCT CASE
+        WHEN dv.deviceCode = 'Xmed1' THEN
+          NULL
+        ELSE
+          CONCAT(dv.deviceCode, '-', ds.positionID)
+        END SEPARATOR ','
+      ) AS  deviceCheck
         FROM
           pmpf_thailand_mnrh.devicedrugsetting ds
         LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
@@ -804,7 +833,8 @@ WHERE patientID = ` +
             'CDMed2',
             'ตู้ฉร',
             'C',
-            'CATV'
+            'CATV',
+            'Xmed1'
           )
           AND dv.deviceCode NOT LIKE 'INJ%'
         )
@@ -821,9 +851,8 @@ WHERE patientID = ` +
   ) sortDrug ON sortDrug.drugCode = pc.drugCode
    LEFT JOIN center_db.drug_cut dc ON dc.drugCode = pc.drugCode
   WHERE
-    cmp_id = '` +
-      val.id +
-      `'
+    cmp_id IN ${placeholders}
+  AND pc.drugCode not in ('REF','REF2')
   GROUP BY
     pc.drugCode,
     pc.seq,
@@ -833,12 +862,23 @@ WHERE patientID = ` +
 
     `;
 
-    return new Promise(function (resolve, reject) {
-      connection.query(sql, function (err, result, fields) {
-        if (err) throw err;
-        resolve(result);
+        console.log(sqlCheckmed);
+
+        try {
+          connection.query(sqlCheckmed, [ids], (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
+          });
+        } catch (error) {
+          console.error(err);
+        }
       });
-    });
+
+      return checkmedResult;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
   this.deletcheckmed = function fill(val, DATA) {
