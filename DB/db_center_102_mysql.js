@@ -749,12 +749,14 @@ GROUP BY
    IF('${val.site}'<> '',IF(dc.qty_cut IS NOT NULL,IF(pc.qty >  dc.qty_cut, pc.qty-dc.qty_cut, 0),0),0) cur_qty,
    dc.qty_cut,
    pc.qty qty_real,
-   IF (
-    bdg.barCode <> '' OR bdg.barCode = 'null'
-    OR sortDrug.checkAccept <> '',
-    'Y',
-    NULL
-  ) checkAccept,
+   -- IF (
+-- 	bdg.barCode <> ''
+-- 	OR bdg.barCode = 'null'
+-- 	OR sortDrug.checkAccept <> '',
+-- 	'Y',
+-- 	NULL
+-- ) checkAccept,
+dk.drugCode checkAccept,
    deviceCheck,
    IF (
         (
@@ -850,6 +852,7 @@ GROUP BY
       sortDrug.sortOrder
   ) sortDrug ON sortDrug.drugCode = pc.drugCode
    LEFT JOIN center_db.drug_cut dc ON dc.drugCode = pc.drugCode
+   LEFT JOIN center_db.drug_check dk ON dk.drugCode = pc.drugCode
   WHERE
     cmp_id IN ${placeholders}
   AND pc.drugCode not in ('REF','REF2')
