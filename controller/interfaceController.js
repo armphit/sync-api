@@ -535,9 +535,11 @@ exports.managereportgd4Controller = async (req, res, next) => {
 exports.getdatacpoeController = async (req, res, next) => {
   try {
     let datapatient = await homc.getCpoeData(req.body);
-
+    console.log(datapatient);
     if (datapatient.length) {
-      console.log(datapatient.length);
+      let datapatientOld = await homc.getCpoeDataOld(req.body);
+
+      console.log(datapatientOld);
       res.status(200).json(datapatient);
     } else {
       console.log(datapatient.length);

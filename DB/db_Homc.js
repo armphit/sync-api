@@ -903,6 +903,10 @@ WHERE
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
   this.getCpoeData = async function fill(val, DATA) {
+    let hn = String(val.hn);
+    while (hn.length < 7) {
+      hn = " " + hn;
+    }
     var sql = `SELECT
         h.hn,
         Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
@@ -950,9 +954,49 @@ LEFT JOIN Med_inv v ON (
 	AND v.[site] = '1'
 )
 WHERE
-	h.hn = ${val.hn}
+	h.hn = ${hn}
 AND h.reqDate ='${val.date}'
 ORDER BY  d.runNo`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.getCpoeDataOld = async function fill(val, DATA) {
+    let hn = String(val.hn);
+    while (hn.length < 7) {
+      hn = " " + hn;
+    }
+    var sql = `
+SELECT
+        h.hn,
+      
+ h.lastIssTime,
+
+ TRIM(d.invCode)invCode,
+  TRIM (v.name) invName,
+ d.qtyReq,
+ TRIM(d.unit)unit
+
+FROM
+        InvReqH h
+LEFT JOIN InvReqD d ON d.reqNo = h.reqNo
+LEFT JOIN PATIENT pt ON pt.hn = h.hn
+LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
+LEFT JOIN PatSS p ON p.hn = h.hn
+LEFT JOIN Med_inv v ON (
+        v.code = d.invCode
+        AND v.[site] = '1'
+)
+WHERE
+      h.hn = ${hn}
+ AND CAST(registDate AS DATE) BETWEEN CAST(DATEADD(day, -120, '${val.date}') AS DATE) 
+                     AND CAST(DATEADD(day, 0, '${val.date}') AS DATE)
+ORDER BY  h.lastIssTime,d.runNo
+`;
+    console.log(sql);
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

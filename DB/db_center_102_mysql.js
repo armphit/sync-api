@@ -865,8 +865,6 @@ dk.drugCode checkAccept,
 
     `;
 
-        console.log(sqlCheckmed);
-
         try {
           connection.query(sqlCheckmed, [ids], (err, results) => {
             if (err) return reject(err);
@@ -3460,6 +3458,144 @@ FROM
 
 ORDER BY
 	note_num,note_sort
+    `;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.getScan = function fill(val, DATA) {
+    let site = val.select
+      ? val.select == "2"
+        ? `AND (cp.queue LIKE '2%' 
+OR cp.queue LIKE 'P%' 
+OR cp.queue LIKE 'M%' )`
+        : `AND cp.queue LIKE '${val.select}%'`
+      : ``;
+    //     var sql = `SELECT
+    // 	cp.queue,
+    // 	cp.hn,
+    // 	TRIM(cm.patientname) patientname,
+    // 	cm.drugCode,
+    //   cm.drugName,
+    // IF (
+    // 	cl.user <> '',
+    // 	IF (
+    // 		POSITION(
+    // 			'1' IN GROUP_CONCAT(DISTINCT cl.checkAccept)
+    // 		),
+    // 		'QRCode',
+    // 		'OnClick'
+    // 	),
+    // 	''
+    // ) checkAccept,
+    //  cl.user,
+    //  u.name,
+    //  IF (
+    // 	SUBSTRING(cp.queue, 1, 1) = '2'
+    // 	OR SUBSTRING(cp.queue, 1, 1) = '3'
+    // 	OR SUBSTRING(cp.queue, 1, 1) = 'P'
+    // 	OR SUBSTRING(cp.queue, 1, 1) = 'M'
+    // 	,
+    // 	SUBSTRING(cp.queue, 1, 1),
+    // 	cp.queue
+    // )  site,
+    //  	DATE_FORMAT(cp.timestamp, '%Y-%m-%d %H:%i:%s')  createDT
+    // FROM
+    // 	checkmedpatient cp
+    // LEFT JOIN checkmed cm ON cp.id = cm.cmp_id
+    // LEFT JOIN checkmed_log cl ON cm.id = cl.cm_id
+    // LEFT JOIN center_db.users u ON u.user = cl.user
+    // WHERE
+    // 	cp.date BETWEEN '${val.datestart}'
+    // AND '${val.dateend}'
+
+    // AND cp.isDelete IS NULL
+    // -- AND cp.hn = 2024470
+    // -- AND cp.queue LIKE '2%'
+    // GROUP BY
+    // 	cp.date,
+    // 	cp.queue,
+    // 	cm.drugCode
+    // ORDER BY
+    // 	cp.timestamp
+    //     `;
+    var sql = `SELECT
+	cm.drugCode,
+
+IF (
+	cl.user <> '',
+	IF (
+		POSITION(
+			'1' IN GROUP_CONCAT(DISTINCT cl.checkAccept)
+		),
+		'QRCode',
+		'OnClick'
+	),
+	''
+) checkAccept,
+a.chk,
+ cl.user,
+ u.name,
+ IF (
+	SUBSTRING(cp.queue, 1, 1) = '2'
+	OR SUBSTRING(cp.queue, 1, 1) = '3'
+	OR SUBSTRING(cp.queue, 1, 1) = 'P'
+	OR SUBSTRING(cp.queue, 1, 1) = 'M'
+	,
+	SUBSTRING(cp.queue, 1, 1),
+	cp.queue
+)  site,
+ 	DATE_FORMAT(cp.timestamp, '%Y-%m-%d %H:%i:%s')  createDT
+FROM
+	checkmedpatient cp
+LEFT JOIN checkmed cm ON cp.id = cm.cmp_id
+LEFT JOIN checkmed_log cl ON cm.id = cl.cm_id
+LEFT JOIN center_db.users u ON u.user = cl.user
+LEFT JOIN (
+	SELECT
+		dd.drugCode,
+
+	IF (
+		GROUP_CONCAT(dv.deviceCode) LIKE '%Xmed1%'
+		OR GROUP_CONCAT(dv.deviceCode) LIKE '%M2%'
+		OR GROUP_CONCAT(dv.deviceCode) LIKE '%LED%'
+		OR GROUP_CONCAT(dv.deviceCode) LIKE '%CR%'
+		OR GROUP_CONCAT(dv.deviceCode) LIKE '%JV%'
+		OR bd.barCode <> '',
+		1,
+		0
+	) chk
+	FROM
+		pmpf_thailand_mnrh.dictdrug dd
+	LEFT JOIN pmpf_thailand_mnrh.devicedrugsetting ds ON ds.drugID = dd.drugID
+	LEFT JOIN pmpf_thailand_mnrh.device dv ON ds.deviceID = dv.deviceID
+	AND dv.pharmacyCode = 'OPD'
+	LEFT JOIN center.barcode_drug bd ON bd.drugCode = dd.drugCode
+	AND bd.barCode <> ''
+	AND bd.barCode <> 'null'
+	AND bd.barCode REGEXP '^[0-9]+$'
+	GROUP BY
+		dd.drugCode
+) as a on a.drugCode = cm.drugCode
+WHERE
+	cp.date BETWEEN '${val.datestart}'
+AND '${val.dateend}'
+
+AND cp.isDelete IS NULL 
+AND cl.user <> ''
+${site}
+-- AND cp.hn = 2024470
+-- AND cp.queue LIKE '2%'
+GROUP BY
+	cp.date,
+	cp.queue,
+	cm.drugCode
+ORDER BY
+	cl.user
     `;
 
     return new Promise(function (resolve, reject) {

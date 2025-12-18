@@ -24,8 +24,6 @@ var db_yurim = require("../DB/db_yurim_sqlserver");
 var yurim = new db_yurim();
 var db_104_mysql = require("../DB/db_104_mysql");
 var db_104 = new db_104_mysql();
-var db_104_center = require("../DB/db_104_center");
-var db_1042 = new db_104_center();
 const dayMap = {
   M: "จันทร์",
   T: "อังคาร",
@@ -68,8 +66,7 @@ exports.checkpatientController = async (req, res, next) => {
     if (dataPatient.length) {
       dataPatient = dataPatient[0];
 
-      let time = await center102.checkPatientcheckmed(datasend);
-
+      let time = await center102.checkPatientcheckmed(dataPatient.id);
       if (time.length != 0) {
         for (let d of time) {
           allTimeOld = allTimeOld + `'` + d.ordertime + `',`;
@@ -84,6 +81,7 @@ exports.checkpatientController = async (req, res, next) => {
       let x = {};
 
       x = await homc.checkmed(datasend);
+
       let b = x.recordset;
 
       if (b.length) {
@@ -137,6 +135,7 @@ exports.checkpatientController = async (req, res, next) => {
             ? data.lamed_eng.replace("'", "''")
             : "";
           data.drugName = data.drugName ? data.drugName.replace("'", "''") : "";
+
           data.freetext1 = ` ${
             data.lamedDayText
               ? `ทุกวัน ${data.lamedDayText
@@ -166,7 +165,6 @@ exports.checkpatientController = async (req, res, next) => {
       }
       // let datadrugpatient = await center102.selectcheckmed(dataPatient.id);
       let datadrugpatient = await center102.selectcheckmed(datasend);
-
       for (let data of datadrugpatient) {
         data.ordercreatedate = data.ordercreatedate
           ? moment(data.ordercreatedate).format("YYYY-MM-DD HH:mm:ss")
@@ -257,18 +255,18 @@ exports.checkpatientController = async (req, res, next) => {
       //     await gd4unit_101_mysql.updateDrugL(datasend);
       //   }
       // }
-      // datasend.PrescriptionNo =
-      //   datadrugpatient[datadrugpatient.length - 1].prescriptionno;
+      datasend.PrescriptionNo =
+        datadrugpatient[datadrugpatient.length - 1].prescriptionno;
 
-      // try {
-      //   if (datasend.site == "W8") {
-      //     await center104.insertLED(datasend);
-      //   }
-      // } catch (e) {
-      //   console.log("insertLED");
-      //   console.log(datasend);
-      //   console.error(e);
-      // }
+      try {
+        if (datasend.site == "W8") {
+          await center104.insertLED(datasend);
+        }
+      } catch (e) {
+        console.log("insertLED");
+        console.log(datasend);
+        console.error(e);
+      }
     } else {
       res.send({ datadrugpatient: [], patientDrug: [] });
     }
@@ -311,7 +309,7 @@ exports.updatecheckmedController = async (req, res, next) => {
         try {
           if (datadrugpatient.length) {
             if (datadrugpatient[0].departmentcode.trim() == "W8") {
-              // await center104.update_led(req.body);
+              await center104.update_led(req.body);
             } else {
               datadrugpatient[0].queue =
                 datadrugpatient[0].departmentcode.trim();
@@ -375,7 +373,7 @@ exports.updatecheckmedController = async (req, res, next) => {
             patient: req.body.cmp_id,
           };
           await center102.updatePatient(send);
-          await db_1042.updatePre(datadrugpatient[0].hn);
+          await db_104.updatePre(datadrugpatient[0].hn);
         }
       }
     } else {
@@ -499,12 +497,6 @@ exports.getCompilerController = async (req, res, next) => {
   }
   let user_list = await center101.getUser();
   let drug_list = await homc.getDrughomc();
-  res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
-  // let get_compiler = await center102.get_compiler(req.body);
-  // let user_list = await center101.getUser();
-  // let drug_list = await homc.getDrughomc();
-  console.log(get_compiler);
-
   res.send({ get_compiler: get_compiler, user: user_list, drug: drug_list });
 };
 
@@ -661,7 +653,33 @@ exports.cutqtyController = async (req, res, next) => {
   }
   res.send([obj1, obj2, obj3]);
 };
+exports.reportcheckController = async (req, res, next) => {
+  let data = await center102.getScan(req.body);
 
+  const summary = {};
+  data.forEach((item) => {
+    const u = item.user;
+    if (!summary[u]) {
+      summary[u] = {
+        user: u,
+        total: 0,
+        OnClick_1: 0,
+        OnClick_0: 0,
+        QRCode: 0,
+      };
+    }
+    summary[u].total++;
+    summary[u].name = item.name;
+    if (item.checkAccept === "OnClick") {
+      if (item.chk === 1) summary[u].OnClick_1++;
+      else summary[u].OnClick_0++;
+    } else if (item.checkAccept === "QRCode") {
+      summary[u].QRCode++;
+    }
+  });
+
+  res.send(summary);
+};
 function get_time_difference(date1, date2) {
   if (date1 && date2) {
     date1 = new Date(date1);

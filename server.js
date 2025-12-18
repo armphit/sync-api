@@ -37,6 +37,7 @@ var {
   manageerrorController,
   timedispendController,
   cutqtyController,
+  reportcheckController,
 } = require("./controller/checkmedController");
 
 var {
@@ -97,6 +98,7 @@ app.post("/managereportgd4", managereportgd4Controller);
 app.post("/returndrug", returndrugController);
 app.post("/getTimedispenddrug", timedispendController);
 app.post("/getdatacpoe", getdatacpoeController);
+app.post("/reportcheck", reportcheckController);
 // app.post("/getUser", getUserController);
 // app.post("/cutqty", cutqtyController);
 
@@ -136,3 +138,50 @@ app.get("/", (req, res) => {
 app.listen(4000, () => {
   console.log("Web Service Online:4000");
 });
+test();
+function test() {
+  const data = [
+    { drugCode: "F.B.", checkAccept: "QRCode", chk: 1, user: "O16" },
+    { drugCode: "ATENO1", checkAccept: "OnClick", chk: 1, user: "O25" },
+    { drugCode: "MUCOS", checkAccept: "OnClick", chk: 1, user: "O25" },
+    { drugCode: "CILOS2", checkAccept: "OnClick", chk: 1, user: "O45" },
+    { drugCode: "FOLI", checkAccept: "QRCode", chk: 1, user: "O45" },
+    { drugCode: "LOSAR", checkAccept: "QRCode", chk: 0, user: "O45" },
+    { drugCode: "TEAR", checkAccept: "OnClick", chk: 1, user: "O45" },
+    { drugCode: "MADIP1", checkAccept: "QRCode", chk: 1, user: "O53" },
+    { drugCode: "RIVAR1", checkAccept: "QRCode", chk: 1, user: "O53" },
+    { drugCode: "ROSUV2", checkAccept: "QRCode", chk: 1, user: "O53" },
+    { drugCode: "AZILS", checkAccept: "QRCode", chk: 1, user: "O57" },
+  ];
+
+  const result = {};
+
+  data.forEach((item) => {
+    const u = item.user;
+
+    if (!result[u]) {
+      result[u] = {
+        user: u,
+        total: 0,
+        OnClick_1: 0,
+        OnClick_0: 0,
+        QRCode_1: 0,
+        QRCode_0: 0,
+      };
+    }
+
+    result[u].total++;
+
+    if (item.checkAccept === "OnClick") {
+      if (item.chk === 1) result[u].OnClick_1++;
+      else result[u].OnClick_0++;
+    }
+
+    if (item.checkAccept === "QRCode") {
+      if (item.chk === 1) result[u].QRCode_1++;
+      else result[u].QRCode_0++;
+    }
+  });
+
+  console.table(Object.values(result));
+}
