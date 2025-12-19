@@ -172,7 +172,6 @@ ORDER BY
       
       
     `;
-    console.log(sqlgetdrug);
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -1223,6 +1222,16 @@ VALUES
 		'${val.leave_num}',
     '${val.userName}'
 	);
+`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.getdrugdupl = async function fill(val, DATA) {
+    var sql = `SELECT  * FROM [opd].[dbo].[drug_duplication]
 `;
 
     return new Promise(async (resolve, reject) => {

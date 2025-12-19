@@ -534,25 +534,105 @@ exports.managereportgd4Controller = async (req, res, next) => {
 };
 exports.getdatacpoeController = async (req, res, next) => {
   try {
-    let datapatient = await homc.getCpoeData(req.body);
-    console.log(datapatient);
-    if (datapatient.length) {
-      let datapatientOld = await homc.getCpoeDataOld(req.body);
+    let todayDrugs = await homc.getCpoeData(req.body);
 
-      console.log(datapatientOld);
-      res.status(200).json(datapatient);
+    if (todayDrugs.length) {
+      let historyDrugs = await homc.getCpoeDataOld(req.body);
+      let drugMaster = await GD4Unit_101.getdrugdupl();
+      console.log(todayDrugs);
+
+      processDrugCheck(todayDrugs, historyDrugs, drugMaster);
+
+      res.status(200).json(todayDrugs);
     } else {
-      console.log(datapatient.length);
       res.status(404).json({
         message: "No Data",
       });
     }
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       message: error,
     });
   }
 };
+function processDrugCheck(today, history, master) {
+  const todayDate = new Date();
+
+  let cond1Report = [];
+  let cond2Report = [];
+  let cond3Report = [];
+
+  today.forEach((currentDrug) => {
+    const invCode = currentDrug.invCode.trim();
+    const masters = master.filter((m) => m.drugCode === invCode);
+
+    masters.forEach((mInfo) => {
+      // Logic Condition 1: Same Visit
+      const sameGroupToday = today.filter(
+        (t) =>
+          t.invCode.trim() !== invCode &&
+          master.some(
+            (m) =>
+              m.drugCode === t.invCode.trim() && m.groupCode === mInfo.groupCode
+          )
+      );
+      if (sameGroupToday.length > 0) {
+        cond1Report.push({
+          ยาปัจจุบัน: currentDrug.invName,
+          กลุ่มยา: mInfo.groupName,
+          ยาที่ซ้ำในวันนี้: sameGroupToday.map((x) => x.invName).join(", "),
+        });
+      }
+
+      // Logic History Check
+      history.forEach((hDrug) => {
+        const diffDays = Math.floor(
+          (todayDate - new Date(hDrug.lastIssTime)) / (1000 * 60 * 60 * 24)
+        );
+        const isSameGroup = master.some(
+          (m) =>
+            m.drugCode === hDrug.invCode.trim() &&
+            m.groupCode === mInfo.groupCode
+        );
+
+        if (isSameGroup && hDrug.lastIssTime !== currentDrug.lastIssTime) {
+          const row = {
+            ยาปัจจุบัน: currentDrug.invName,
+            ยาในประวัติ: hDrug.invName,
+            วันที่จ่าย: hDrug.lastIssTime,
+            "ระยะเวลา (วัน)": diffDays,
+          };
+
+          if (diffDays <= 10) {
+            cond2Report.push(row);
+          } else if (diffDays <= 120) {
+            cond3Report.push(row);
+          }
+        }
+      });
+    });
+  });
+
+  console.log("=== Condition 1: ซ้ำในกลุ่มเดียวกันวันนี้ ===");
+  console.table(
+    cond1Report.length
+      ? cond1Report
+      : [{ Status: "ไม่พบการซ้ำในกลุ่มเดียวกัน" }]
+  );
+
+  console.log("\n=== Condition 2: ซ้ำย้อนหลัง 0-10 วัน ===");
+  console.table(cond2Report);
+
+  console.log("\n=== Condition 3: ซ้ำย้อนหลัง 11-120 วัน ===");
+  console.table(
+    cond3Report.length
+      ? cond3Report
+      : [{ Status: "ไม่พบการซ้ำในช่วง 11-120 วัน" }]
+  );
+}
+
 // const path = require("path");
 // const chokidar = require("chokidar");
 // const receiveFolder = path.join(__dirname, "receive");
