@@ -954,8 +954,8 @@ LEFT JOIN Med_inv v ON (
 	AND v.[site] = '1'
 )
 WHERE
-	h.hn = ${hn}
-AND h.reqDate ='${val.date}'
+	h.hn = '${hn}'
+AND CAST(registDate AS DATE)  ='${val.date}'
 ORDER BY  d.runNo`;
 
     return new Promise(async (resolve, reject) => {
@@ -991,12 +991,11 @@ LEFT JOIN Med_inv v ON (
         AND v.[site] = '1'
 )
 WHERE
-      h.hn = ${hn}
+      h.hn = '${hn}'
  AND CAST(registDate AS DATE) BETWEEN CAST(DATEADD(day, -120, '${val.date}') AS DATE) 
-                     AND CAST(DATEADD(day, 0, '${val.date}') AS DATE)
+                     AND CAST(DATEADD(day, -1, '${val.date}') AS DATE)
 ORDER BY  h.lastIssTime,d.runNo
 `;
-    console.log(sql);
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
