@@ -534,16 +534,103 @@ exports.managereportgd4Controller = async (req, res, next) => {
 };
 exports.getdatacpoeController = async (req, res, next) => {
   try {
-    let todayDrugs = await homc.getCpoeData(req.body);
+    // let todayDrugs = await homc.getCpoeData(req.body);
 
+    todayDrugs = [
+      {
+        hn: " 328686",
+        patientname: "นาย ศราวุธ พิมพรัตน์",
+        sex: "ชาย",
+        birthDay: "03/02/2529",
+        Age: 39,
+        toSite: "W8",
+        lastIssTime: "2025-12-22 09:33:16",
+        runNo: 1,
+        maxRunNo: 2,
+        invCode: "OFLOX2",
+        invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+        qtyReq: 180,
+        unit: "TAB",
+        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+        CardID: "1461200026858       ",
+      },
+      {
+        hn: " 328686",
+        patientname: "นาย ศราวุธ พิมพรัตน์",
+        sex: "ชาย",
+        birthDay: "03/02/2529",
+        Age: 39,
+        toSite: "W8",
+        lastIssTime: "2025-12-22 09:33:16",
+        runNo: 2,
+        maxRunNo: 2,
+        invCode: "MOXIED",
+        invName: "ISONIAZID + RIFAPENTINE (300/300) โครงการ LT TB",
+        qtyReq: 36,
+        unit: "TAB",
+        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+        CardID: "1461200026858       ",
+      },
+      {
+        hn: " 328686",
+        patientname: "นาย ศราวุธ พิมพรัตน์",
+        sex: "ชาย",
+        birthDay: "03/02/2529",
+        Age: 39,
+        toSite: "W8",
+        lastIssTime: "2025-12-22 09:33:16",
+        runNo: 1,
+        maxRunNo: 2,
+        invCode: "ALEND",
+        invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+        qtyReq: 180,
+        unit: "TAB",
+        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+        CardID: "1461200026858       ",
+      },
+      {
+        hn: " 328686",
+        patientname: "นาย ศราวุธ พิมพรัตน์",
+        sex: "ชาย",
+        birthDay: "03/02/2529",
+        Age: 39,
+        toSite: "W8",
+        lastIssTime: "2025-12-22 09:33:16",
+        runNo: 1,
+        maxRunNo: 2,
+        invCode: "CEFDS",
+        invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+        qtyReq: 180,
+        unit: "TAB",
+        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+        CardID: "1461200026858       ",
+      },
+    ];
     if (todayDrugs.length) {
-      let historyDrugs = await homc.getCpoeDataOld(req.body);
+      // let historyDrugs = await homc.getCpoeDataOld(req.body);
       let drugMaster = await GD4Unit_101.getdrugdupl();
-      console.log(todayDrugs);
 
-      processDrugCheck(todayDrugs, historyDrugs, drugMaster);
+      historyDrugs = [
+        {
+          hn: " 328686",
+          lastIssTime: "2025-09-15 12:47:59",
+          invCode: "ACTO150",
+          invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+          qtyReq: 15,
+          unit: "TAB",
+        },
+        {
+          hn: " 328686",
+          lastIssTime: "2025-12-20 09:57:51",
+          invCode: "CEFDI",
+          invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+          qtyReq: 90,
+          unit: "TAB",
+        },
+      ];
+      const finalResult = checkDrugSafety(todayDrugs, historyDrugs, drugMaster);
 
-      res.status(200).json(todayDrugs);
+      res.status(200).json({ todayDrugs, finalResult });
     } else {
       res.status(404).json({
         message: "No Data",
@@ -557,81 +644,136 @@ exports.getdatacpoeController = async (req, res, next) => {
     });
   }
 };
-function processDrugCheck(today, history, master) {
-  const todayDate = new Date();
 
-  let cond1Report = [];
-  let cond2Report = [];
-  let cond3Report = [];
+function checkDrugSafety(today, history, master) {
+  const todayDate = new Date(); // หรือกำหนด fix วันที่ทดสอบ: new Date("2025-12-22")
+  const resultJson = { condition1: [], condition2: [], condition3: [] };
 
   today.forEach((currentDrug) => {
-    const invCode = currentDrug.invCode.trim();
-    const masters = master.filter((m) => m.drugCode === invCode);
+    // ตัดช่องว่างรหัสยาวันนี้
+    const invCode = currentDrug.invCode ? currentDrug.invCode.trim() : "";
 
-    masters.forEach((mInfo) => {
-      // Logic Condition 1: Same Visit
-      const sameGroupToday = today.filter(
-        (t) =>
-          t.invCode.trim() !== invCode &&
-          master.some(
-            (m) =>
-              m.drugCode === t.invCode.trim() && m.groupCode === mInfo.groupCode
-          )
-      );
-      if (sameGroupToday.length > 0) {
-        cond1Report.push({
-          ยาปัจจุบัน: currentDrug.invName,
-          กลุ่มยา: mInfo.groupName,
-          ยาที่ซ้ำในวันนี้: sameGroupToday.map((x) => x.invName).join(", "),
+    // ค้นหากฎจาก Master (ต้อง trim drugCode จาก master ด้วย)
+    const rules = master.filter((m) => m.drugCode?.trim() === invCode);
+
+    rules.forEach((rule) => {
+      const { groupCode, groupName, conditionCode } = rule;
+
+      // --- Condition 1: Same Visit ---
+      if (conditionCode === 1) {
+        const duplicatesToday = today.filter((t) => {
+          const tCode = t.invCode?.trim();
+          return (
+            tCode !== invCode &&
+            master.some(
+              (m) => m.drugCode?.trim() === tCode && m.groupCode === groupCode
+            )
+          );
         });
+
+        if (duplicatesToday.length > 0) {
+          addTodayResult(
+            resultJson.condition1,
+            currentDrug,
+            groupName,
+            duplicatesToday
+          );
+        }
       }
 
-      // Logic History Check
-      history.forEach((hDrug) => {
-        const diffDays = Math.floor(
-          (todayDate - new Date(hDrug.lastIssTime)) / (1000 * 60 * 60 * 24)
-        );
-        const isSameGroup = master.some(
-          (m) =>
-            m.drugCode === hDrug.invCode.trim() &&
-            m.groupCode === mInfo.groupCode
-        );
+      // --- Condition 2 & 3: History ---
+      else if (conditionCode === 2 || conditionCode === 3) {
+        const maxDays = conditionCode === 2 ? 10 : 120;
+        const targetKey = conditionCode === 2 ? "condition2" : "condition3";
 
-        if (isSameGroup && hDrug.lastIssTime !== currentDrug.lastIssTime) {
-          const row = {
-            ยาปัจจุบัน: currentDrug.invName,
-            ยาในประวัติ: hDrug.invName,
-            วันที่จ่าย: hDrug.lastIssTime,
-            "ระยะเวลา (วัน)": diffDays,
-          };
+        history.forEach((h) => {
+          const hInvCode = h.invCode?.trim();
+          const hDate = new Date(h.lastIssTime);
 
-          if (diffDays <= 10) {
-            cond2Report.push(row);
-          } else if (diffDays <= 120) {
-            cond3Report.push(row);
+          // คำนวณวันที่ต่างกัน
+          const diffDays = Math.floor(
+            (todayDate - hDate) / (1000 * 60 * 60 * 24)
+          );
+
+          // ตรวจสอบว่าเป็นกลุ่มเดียวกัน แต่ไม่ใช่รหัสยาเดียวกัน
+          const isSameGroup = master.some(
+            (m) => m.drugCode?.trim() === hInvCode && m.groupCode === groupCode
+          );
+          const isDifferentDrug = invCode !== hInvCode;
+
+          if (
+            isSameGroup &&
+            isDifferentDrug &&
+            diffDays >= 0 &&
+            diffDays <= maxDays
+          ) {
+            addHistoryResult(
+              resultJson[targetKey],
+              currentDrug,
+              groupName,
+              h,
+              diffDays
+            );
           }
-        }
-      });
+        });
+      }
     });
   });
 
-  console.log("=== Condition 1: ซ้ำในกลุ่มเดียวกันวันนี้ ===");
-  console.table(
-    cond1Report.length
-      ? cond1Report
-      : [{ Status: "ไม่พบการซ้ำในกลุ่มเดียวกัน" }]
-  );
-
-  console.log("\n=== Condition 2: ซ้ำย้อนหลัง 0-10 วัน ===");
-  console.table(cond2Report);
-
-  console.log("\n=== Condition 3: ซ้ำย้อนหลัง 11-120 วัน ===");
-  console.table(
-    cond3Report.length
-      ? cond3Report
-      : [{ Status: "ไม่พบการซ้ำในช่วง 11-120 วัน" }]
-  );
+  return resultJson;
 }
+
+// ปรับปรุง Helper เล็กน้อยให้รองรับการ trim
+function addTodayResult(targetArray, currentDrug, groupName, duplicatesToday) {
+  const currentKey = currentDrug.invCode.trim();
+  if (!targetArray.find((item) => item.currentDrug === currentKey)) {
+    targetArray.push({
+      currentDrug: currentKey,
+      groupName: groupName,
+      foundToday: duplicatesToday.map((d) => ({
+        invCode: d.invCode.trim(),
+        invName: d.invName,
+      })),
+    });
+  }
+}
+
+function addHistoryResult(
+  targetArray,
+  currentDrug,
+  groupName,
+  matchData,
+  diffDays
+) {
+  const currentKey = currentDrug.invCode.trim();
+  let existingEntry = targetArray.find(
+    (item) => item.currentDrug === currentKey
+  );
+
+  const detail = {
+    duplicateDrugCode: matchData.invCode,
+    duplicateDrug: matchData.invName,
+    lastDate: matchData.lastIssTime,
+    daysDiff: diffDays,
+  };
+
+  if (existingEntry) {
+    const isDuplicate = existingEntry.foundHistory.some(
+      (h) =>
+        h.lastDate === detail.lastDate &&
+        h.duplicateDrug === detail.duplicateDrug
+    );
+    if (!isDuplicate) existingEntry.foundHistory.push(detail);
+  } else {
+    targetArray.push({
+      currentDrug: currentKey,
+      groupName: groupName,
+      foundHistory: [detail],
+    });
+  }
+}
+
+// แสดงผลลัพธ์
 
 // const path = require("path");
 // const chokidar = require("chokidar");

@@ -934,7 +934,7 @@ ELSE
         0
 END AS Age,
  TRIM(h.toSite)toSite,
- h.lastIssTime,
+ FORMAT(h.lastIssTime, 'yyyy-MM-dd HH:mm:ss') lastIssTime,
  d.runNo,
  MAX (d.runNo) OVER () maxRunNo,
  TRIM(d.invCode)invCode,
@@ -973,9 +973,9 @@ ORDER BY  d.runNo`;
 SELECT
         h.hn,
       
- h.lastIssTime,
+  FORMAT(h.lastIssTime, 'yyyy-MM-dd HH:mm:ss') lastIssTime,
 
- TRIM(d.invCode)invCode,
+ TRIM(d.invCode) invCode,
   TRIM (v.name) invName,
  d.qtyReq,
  TRIM(d.unit)unit
