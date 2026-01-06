@@ -908,6 +908,7 @@ WHERE
       hn = " " + hn;
     }
     var sql = `SELECT
+        h.reqNo,
         h.hn,
         Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
         CASE
@@ -971,7 +972,7 @@ ORDER BY  d.runNo`;
     }
     var sql = `
 SELECT
-        h.hn,
+        h.reqNo, h.hn,
       
   FORMAT(h.lastIssTime, 'yyyy-MM-dd HH:mm:ss') lastIssTime,
 

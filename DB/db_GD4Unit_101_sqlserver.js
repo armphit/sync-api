@@ -1,5 +1,3 @@
-const { Console } = require("console");
-
 module.exports = function () {
   const sql = require("mssql");
 
@@ -1232,6 +1230,75 @@ VALUES
   };
   this.getdrugdupl = async function fill(val, DATA) {
     var sql = `SELECT  * FROM [opd].[dbo].[drug_duplication]
+`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+
+  this.Inserthn = async function fill(val, DATA) {
+    var sql = `DECLARE @result TABLE (
+    id UNIQUEIDENTIFIER,
+    prescription VARCHAR(50),
+    hn VARCHAR(50),
+    statusCheck INT
+);
+
+MERGE [opd].[dbo].[drug_interaction] AS target
+USING (
+    SELECT
+        '${val.reqNo}' AS prescription,
+        '${val.hn}' AS hn,
+        '${val.lastIssTime}' AS keyCreateDT,
+        '${val.statusCheck}' AS statusCheck
+) AS source
+ON target.prescription = source.prescription
+
+WHEN NOT MATCHED THEN
+    INSERT (
+        id,
+        prescription,
+        hn,
+        keyCreateDT,
+        statusCheck,
+        scanDT
+    )
+    VALUES (
+        NEWID(),
+        source.prescription,
+        source.hn,
+        source.keyCreateDT,
+        source.statusCheck,
+        CURRENT_TIMESTAMP
+    )
+
+OUTPUT
+    inserted.id,
+    inserted.prescription,
+    inserted.hn,
+    inserted.statusCheck
+INTO @result;
+
+SELECT * FROM @result;
+
+`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.getPatient = async function fill(val, DATA) {
+    var sql = `SELECT
+	*
+FROM
+	[opd].[dbo].[drug_interaction]
+WHERE
+	prescription = 	'${val.hn}'
 `;
 
     return new Promise(async (resolve, reject) => {

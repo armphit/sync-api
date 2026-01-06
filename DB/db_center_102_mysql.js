@@ -3605,4 +3605,39 @@ ORDER BY
       });
     });
   };
+  this.hn_moph_patient = function fill(val, DATA) {
+    var sql = `SELECT
+    s.patientID,
+    d.*,
+    c.timestamp
+  FROM
+    moph_sync s
+  LEFT JOIN moph_drugs d ON s.CID = d.cid
+  AND d.hospcode <> '10666'
+  LEFT JOIN (
+    SELECT
+      TIMESTAMP,
+      hn,
+      queue,
+      site
+    FROM
+      moph_confirm
+    WHERE
+      CAST(TIMESTAMP AS Date) = CURDATE()
+    AND site = '${val.site}'
+  ) AS c ON TRIM(c.hn) = TRIM(s.patientID)
+  WHERE
+    CAST(s.updateDT AS Date) = CURDATE()
+  AND patientID = '${val.hn}'
+
+  ORDER BY
+    drugcode DESC`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
 };

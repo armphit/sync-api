@@ -534,103 +534,139 @@ exports.managereportgd4Controller = async (req, res, next) => {
 };
 exports.getdatacpoeController = async (req, res, next) => {
   try {
-    // let todayDrugs = await homc.getCpoeData(req.body);
+    let dataPatient = await GD4Unit_101.getPatient(req.body);
 
-    todayDrugs = [
-      {
-        hn: " 328686",
-        patientname: "นาย ศราวุธ พิมพรัตน์",
-        sex: "ชาย",
-        birthDay: "03/02/2529",
-        Age: 39,
-        toSite: "W8",
-        lastIssTime: "2025-12-22 09:33:16",
-        runNo: 1,
-        maxRunNo: 2,
-        invCode: "OFLOX2",
-        invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-        qtyReq: 180,
-        unit: "TAB",
-        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-        CardID: "1461200026858       ",
-      },
-      {
-        hn: " 328686",
-        patientname: "นาย ศราวุธ พิมพรัตน์",
-        sex: "ชาย",
-        birthDay: "03/02/2529",
-        Age: 39,
-        toSite: "W8",
-        lastIssTime: "2025-12-22 09:33:16",
-        runNo: 2,
-        maxRunNo: 2,
-        invCode: "MOXIED",
-        invName: "ISONIAZID + RIFAPENTINE (300/300) โครงการ LT TB",
-        qtyReq: 36,
-        unit: "TAB",
-        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-        CardID: "1461200026858       ",
-      },
-      {
-        hn: " 328686",
-        patientname: "นาย ศราวุธ พิมพรัตน์",
-        sex: "ชาย",
-        birthDay: "03/02/2529",
-        Age: 39,
-        toSite: "W8",
-        lastIssTime: "2025-12-22 09:33:16",
-        runNo: 1,
-        maxRunNo: 2,
-        invCode: "ALEND",
-        invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-        qtyReq: 180,
-        unit: "TAB",
-        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-        CardID: "1461200026858       ",
-      },
-      {
-        hn: " 328686",
-        patientname: "นาย ศราวุธ พิมพรัตน์",
-        sex: "ชาย",
-        birthDay: "03/02/2529",
-        Age: 39,
-        toSite: "W8",
-        lastIssTime: "2025-12-22 09:33:16",
-        runNo: 1,
-        maxRunNo: 2,
-        invCode: "CEFDS",
-        invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-        qtyReq: 180,
-        unit: "TAB",
-        addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-        CardID: "1461200026858       ",
-      },
-    ];
-    if (todayDrugs.length) {
-      // let historyDrugs = await homc.getCpoeDataOld(req.body);
+    finalResult = {};
+    let todayDrugsHN = await homc.getCpoeData(req.body);
+    console.log(todayDrugsHN);
+    // todayDrugsHN = [
+    //   {
+    //     hn: " 328686",
+    //     reqNo: "681618034",
+    //     patientname: "นาย ศราวุธ พิมพรัตน์",
+    //     sex: "ชาย",
+    //     birthDay: "03/02/2529",
+    //     Age: 39,
+    //     toSite: "W8",
+    //     lastIssTime: "2025-12-24 09:33:16",
+    //     runNo: 1,
+    //     maxRunNo: 2,
+    //     invCode: "OFLOX2",
+    //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+    //     qtyReq: 180,
+    //     unit: "TAB",
+    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+    //     CardID: "1461200026858       ",
+    //   },
+    //   {
+    //     hn: " 328686",
+    //     patientname: "นาย ศราวุธ พิมพรัตน์",
+    //     sex: "ชาย",
+    //     birthDay: "03/02/2529",
+    //     Age: 39,
+    //     toSite: "W8",
+    //     lastIssTime: "2025-12-24 09:33:16",
+    //     runNo: 2,
+    //     maxRunNo: 2,
+    //     invCode: "MOXIED",
+    //     invName: "ISONIAZID + RIFAPENTINE (300/300) โครงการ LT TB",
+    //     qtyReq: 36,
+    //     unit: "TAB",
+    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+    //     CardID: "1461200026858       ",
+    //   },
+    //   {
+    //     hn: " 328686",
+    //     patientname: "นาย ศราวุธ พิมพรัตน์",
+    //     sex: "ชาย",
+    //     birthDay: "03/02/2529",
+    //     Age: 39,
+    //     toSite: "W8",
+    //     lastIssTime: "2025-12-24 09:33:16",
+    //     runNo: 1,
+    //     maxRunNo: 2,
+    //     invCode: "ALEND",
+    //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+    //     qtyReq: 180,
+    //     unit: "TAB",
+    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+    //     CardID: "1461200026858       ",
+    //   },
+    //   {
+    //     hn: " 328686",
+    //     patientname: "นาย ศราวุธ พิมพรัตน์",
+    //     sex: "ชาย",
+    //     birthDay: "03/02/2529",
+    //     Age: 39,
+    //     toSite: "W8",
+    //     lastIssTime: "2025-12-24 09:33:16",
+    //     runNo: 1,
+    //     maxRunNo: 2,
+    //     invCode: "CEFDS",
+    //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+    //     qtyReq: 180,
+    //     unit: "TAB",
+    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
+    //     CardID: "1461200026858       ",
+    //   },
+    // ];
+    if (todayDrugsHN.length) {
+      let historyDrugs = await homc.getCpoeDataOld(req.body);
       let drugMaster = await GD4Unit_101.getdrugdupl();
 
-      historyDrugs = [
-        {
-          hn: " 328686",
-          lastIssTime: "2025-09-15 12:47:59",
-          invCode: "ACTO150",
-          invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-          qtyReq: 15,
-          unit: "TAB",
-        },
-        {
-          hn: " 328686",
-          lastIssTime: "2025-12-20 09:57:51",
-          invCode: "CEFDI",
-          invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-          qtyReq: 90,
-          unit: "TAB",
-        },
-      ];
-      const finalResult = checkDrugSafety(todayDrugs, historyDrugs, drugMaster);
+      // historyDrugs = [
+      //   {
+      //     hn: " 328686",
+      //     lastIssTime: "2025-09-15 12:47:59",
+      //     invCode: "ACTO150",
+      //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+      //     qtyReq: 15,
+      //     unit: "TAB",
+      //   },
+      //   {
+      //     hn: " 328686",
+      //     lastIssTime: "2025-12-20 09:57:51",
+      //     invCode: "CEFDI",
+      //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+      //     qtyReq: 90,
+      //     unit: "TAB",
+      //   },
+      // ];
 
-      res.status(200).json({ todayDrugs, finalResult });
+      let allergys = await listPatientAllergicController({
+        hn: req.body.hn,
+        site: "W8",
+      });
+      console.log(allergys);
+      let checkHn = [];
+
+      finalResult = {
+        allergymed: allergys,
+        Duplicatemed: checkDrugSafety(todayDrugsHN, historyDrugs, drugMaster),
+      };
+
+      if (
+        Object.values(finalResult.Duplicatemed).some(
+          (arr) => Array.isArray(arr) && arr.length > 0
+        ) ||
+        (finalResult.allergymed.length && finalResult.allergymed[0].cid)
+      ) {
+        todayDrugsHN[0].statusCheck = 1;
+        if (finalResult.allergymed.length && finalResult.allergymed[0].cid) {
+          checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
+        } else if (
+          finalResult.Duplicatemed.condition1.length ||
+          finalResult.Duplicatemed.condition2.length ||
+          finalResult.Duplicatemed.condition3.length
+        ) {
+          checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
+        }
+      } else {
+        todayDrugsHN[0].statusCheck = 0;
+        checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
+      }
+
+      res.status(200).json({ todayDrugsHN, finalResult });
     } else {
       res.status(404).json({
         message: "No Data",
@@ -773,38 +809,140 @@ function addHistoryResult(
   }
 }
 
-// แสดงผลลัพธ์
+async function listPatientAllergicController(data) {
+  try {
+    let moph_patient = await center102.hn_moph_patient(data);
 
-// const path = require("path");
-// const chokidar = require("chokidar");
-// const receiveFolder = path.join(__dirname, "receive");
-// let batchQueue = [];
-// let batchTimeout = null;
+    if (!moph_patient.length) {
+      let getCid = await homc.getCid(data.hn);
 
-// const watcher = chokidar.watch(receiveFolder, { persistent: true });
+      if (getCid.length) {
+        if (getCid[0].CardID) {
+          const cid = getCid[0].CardID.trim();
+          let dataAllergic = await getAllergic(cid);
 
-// watcher.on("add", (filePath) => {
-//   batchQueue.push(filePath);
+          let stampDB = {
+            hn: data.hn,
+            cid: cid,
+            check: dataAllergic ? (dataAllergic.length ? "Y" : "N") : "N",
+          };
+          let insertSync = await center102.insertSync(stampDB);
+          if (insertSync.affectedRows) {
+            if (dataAllergic) {
+              if (dataAllergic.length) {
+                await center102.deleteAllgerlic(stampDB.cid);
+                for (let k = 0; k < dataAllergic.length; k++) {
+                  dataAllergic[k].cid = stampDB.cid;
+                  await center102.insertDrugAllergy(dataAllergic[k]);
 
-//   if (batchTimeout) clearTimeout(batchTimeout);
-//   batchTimeout = setTimeout(() => {
-//     console.log(`\nProcessing batch of ${batchQueue.length} files:`);
+                  let hosp = await center102.getHosp(
+                    dataAllergic[k].hospcode ? dataAllergic[k].hospcode : ""
+                  );
+                  let sendata = {
+                    hosp_code: `${
+                      dataAllergic[k].hospcode ? dataAllergic[k].hospcode : ""
+                    }`,
+                    hosp_name: `${hosp[0].hospname ? hosp[0].hospname : ""}`,
+                    pid: Buffer.from(
+                      `${dataAllergic[k].cid ? dataAllergic[k].cid : ""}`
+                    ).toString("base64"),
+                    med_code: `${
+                      dataAllergic[k].drugcode ? dataAllergic[k].drugcode : ""
+                    }`,
+                    med_name: `${
+                      dataAllergic[k].drugname ? dataAllergic[k].drugname : ""
+                    }`,
+                    adr_level: `${
+                      dataAllergic[k].allerglevelcode
+                        ? dataAllergic[k].allerglevelcode
+                        : ""
+                    }`,
+                    data_source: "10666",
+                  };
 
-//     batchQueue.forEach((file) => {
-//       fs.readFile(file, "utf-8", (err, data) => {
-//         if (err) return console.error(err);
-//         console.log(`File "${path.basename(file)}" content:`, data);
+                  const headers = {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  };
 
-//         // ลบไฟล์หลังอ่านเสร็จ
-//         fs.unlink(file, (err) => {
-//           if (err) return console.error(err);
-//           console.log(
-//             `File "${path.basename(file)}" deleted from ${receiveFolder}`
-//           );
-//         });
-//       });
-//     });
+                  let resultapi = await axios.post(
+                    "http://164.115.61.30/post_adr.php",
+                    sendata,
+                    {
+                      headers,
+                    }
+                  );
 
-//     batchQueue = [];
-//   }, 200);
-// });
+                  console.log(
+                    `cid ${
+                      dataAllergic[k].cid ? dataAllergic[k].cid : ""
+                    } send to api `
+                  );
+
+                  resultapi = null;
+                  hosp = null;
+                  sendata = null;
+                }
+                moph_patient = await center102.hn_moph_patient(data);
+                return new Promise((resolve, reject) => {
+                  resolve(moph_patient);
+                });
+              }
+              //  else {
+              //   return new Promise((resolve, reject) => {
+              //     resolve(true);
+              //   });
+              // }
+            }
+            // else {
+            //   return new Promise((resolve, reject) => {
+            //     resolve(true);
+            //   });
+            // }
+          }
+          // else {
+          //   return new Promise((resolve, reject) => {
+          //     resolve(true);
+          //   });
+          // }
+        }
+      }
+    } else {
+      return new Promise((resolve, reject) => {
+        resolve(moph_patient);
+      });
+    }
+  } catch (error) {
+    console.log("error to connect apiAllergy\r\n\r\n\r\n");
+    console.log(error);
+    return new Promise((resolve, reject) => {
+      resolve(false);
+    });
+  }
+}
+
+// async function getAllergic(cid) {
+//   // return [];
+
+//   const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
+//     cid
+//   )}`;
+//   const instance = axios.create({
+//     httpsAgent: new https.Agent({
+//       rejectUnauthorized: false,
+//       keepAlive: true,
+//     }),
+//     baseURL: url,
+//     timeout: 1000, //optional
+//     headers: {
+//       "jwt-token": token, // Add more default headers as needed
+//     },
+//   });
+//   // instance.defaults.headers.get["jwt-token"] =
+//   //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
+//   let dataAllegy = await instance.get(url);
+//   if (dataAllegy.data.data) {
+//     return dataAllegy.data.data;
+//   } else {
+//     return [];
+//   }
+// }
