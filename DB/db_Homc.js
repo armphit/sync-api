@@ -909,7 +909,7 @@ WHERE
     }
     var sql = `SELECT
         h.reqNo,
-        h.hn,
+        TRIM(h.hn) hn,
         Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
         CASE
 WHEN pt.sex = 'ช' THEN
@@ -972,7 +972,7 @@ ORDER BY  d.runNo`;
     }
     var sql = `
 SELECT
-        h.reqNo, h.hn,
+        h.reqNo,TRIM(h.hn) hn,
       
   FORMAT(h.lastIssTime, 'yyyy-MM-dd HH:mm:ss') lastIssTime,
 
@@ -997,6 +997,45 @@ WHERE
                      AND CAST(DATEADD(day, -1, '${val.date}') AS DATE)
 ORDER BY  h.lastIssTime,d.runNo
 `;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.getAllergyMhr = async function fill(val, DATA) {
+    // let hn = String(val.hn);
+    // while (hn.length < 7) {
+    //   hn = " " + hn;
+    // }
+    var sql = `SELECT
+            TRIM(m.hn) hn,
+            TRIM (i.name) AS drugName,
+            MAX(m.ward_id) ward_id,
+	        MAX(m.alergyType) alergyType,
+            MAX(m.causality) causality
+           FROM
+            (
+             SELECT DISTINCT
+              TRIM (hn) AS hn,
+              TRIM (medCode) AS medCode,
+              ward_id,
+			  alergyType,
+              causality
+             FROM
+              medalery
+             WHERE
+              TRIM (hn) IN ('${val}')
+              AND delFlag IS NULL
+            ) AS m
+           LEFT JOIN Med_inv AS i ON TRIM (i.abbr) = m.medCode
+           WHERE
+            TRIM (i.name) IS NOT NULL
+           GROUP BY
+            m.hn,
+            TRIM (i.name)
+            ORDER BY TRIM (i.name)`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

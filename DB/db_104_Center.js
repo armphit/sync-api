@@ -1015,4 +1015,23 @@ AND  date_index = ${val.date}`;
       }
     });
   };
+
+  this.getQueue = function fill(val, DATA) {
+    var sql = `
+    SELECT
+	*
+FROM
+		[queue_phar].[dbo].[prescription]
+WHERE
+	[hn] = '${val}'
+  AND CAST(ordercreate AS Date) = CAST(GETDATE() AS Date)
+    
+ `;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
 };

@@ -3609,11 +3609,13 @@ ORDER BY
     var sql = `SELECT
     s.patientID,
     d.*,
-    c.timestamp
+    c.timestamp,
+		h.NAME hospName
   FROM
     moph_sync s
   LEFT JOIN moph_drugs d ON s.CID = d.cid
   AND d.hospcode <> '10666'
+  LEFT JOIN hospcode h ON h.OFF_ID = d.hospcode
   LEFT JOIN (
     SELECT
       TIMESTAMP,
@@ -3632,6 +3634,33 @@ ORDER BY
 
   ORDER BY
     drugcode DESC`;
+
+    return new Promise(function (resolve, reject) {
+      connection.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        resolve(result);
+      });
+    });
+  };
+  this.addMophConfirm = function fill(val, DATA) {
+    var sql = `INSERT INTO moph_confirm (
+	queue,
+	hn,
+	USER,
+	name,
+	TIMESTAMP,
+	site
+)
+VALUES
+	(
+		'${val.queue}',
+		'${val.hn}',
+		'${val.user}',
+		'${val.username}',
+		CURRENT_TIMESTAMP,
+		'W8'
+	)
+    `;
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {

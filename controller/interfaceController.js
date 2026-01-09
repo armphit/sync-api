@@ -12,7 +12,8 @@ const https = require("https");
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
 const fs = require("fs");
-var token = "test";
+var token =
+  "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTc2Nzg1ODM5MCwiZXhwIjoxNzY3ODkxNTk5fQ.XKqcxn6JhaMmLspbQRtI3lA36gnMNrZjRRkJlCQdt-A";
 
 var db_GD4Unit_101 = require("../DB/db_GD4Unit_101_sqlserver");
 var GD4Unit_101 = new db_GD4Unit_101();
@@ -534,143 +535,102 @@ exports.managereportgd4Controller = async (req, res, next) => {
 };
 exports.getdatacpoeController = async (req, res, next) => {
   try {
-    let dataPatient = await GD4Unit_101.getPatient(req.body);
+    if (req.body.check == 1) {
+      finalResult = {};
+      let todayDrugsHN = await homc.getCpoeData(req.body);
 
-    finalResult = {};
-    let todayDrugsHN = await homc.getCpoeData(req.body);
-    console.log(todayDrugsHN);
-    // todayDrugsHN = [
-    //   {
-    //     hn: " 328686",
-    //     reqNo: "681618034",
-    //     patientname: "นาย ศราวุธ พิมพรัตน์",
-    //     sex: "ชาย",
-    //     birthDay: "03/02/2529",
-    //     Age: 39,
-    //     toSite: "W8",
-    //     lastIssTime: "2025-12-24 09:33:16",
-    //     runNo: 1,
-    //     maxRunNo: 2,
-    //     invCode: "OFLOX2",
-    //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-    //     qtyReq: 180,
-    //     unit: "TAB",
-    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-    //     CardID: "1461200026858       ",
-    //   },
-    //   {
-    //     hn: " 328686",
-    //     patientname: "นาย ศราวุธ พิมพรัตน์",
-    //     sex: "ชาย",
-    //     birthDay: "03/02/2529",
-    //     Age: 39,
-    //     toSite: "W8",
-    //     lastIssTime: "2025-12-24 09:33:16",
-    //     runNo: 2,
-    //     maxRunNo: 2,
-    //     invCode: "MOXIED",
-    //     invName: "ISONIAZID + RIFAPENTINE (300/300) โครงการ LT TB",
-    //     qtyReq: 36,
-    //     unit: "TAB",
-    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-    //     CardID: "1461200026858       ",
-    //   },
-    //   {
-    //     hn: " 328686",
-    //     patientname: "นาย ศราวุธ พิมพรัตน์",
-    //     sex: "ชาย",
-    //     birthDay: "03/02/2529",
-    //     Age: 39,
-    //     toSite: "W8",
-    //     lastIssTime: "2025-12-24 09:33:16",
-    //     runNo: 1,
-    //     maxRunNo: 2,
-    //     invCode: "ALEND",
-    //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-    //     qtyReq: 180,
-    //     unit: "TAB",
-    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-    //     CardID: "1461200026858       ",
-    //   },
-    //   {
-    //     hn: " 328686",
-    //     patientname: "นาย ศราวุธ พิมพรัตน์",
-    //     sex: "ชาย",
-    //     birthDay: "03/02/2529",
-    //     Age: 39,
-    //     toSite: "W8",
-    //     lastIssTime: "2025-12-24 09:33:16",
-    //     runNo: 1,
-    //     maxRunNo: 2,
-    //     invCode: "CEFDS",
-    //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-    //     qtyReq: 180,
-    //     unit: "TAB",
-    //     addr: "28  หมู่.12 ต.เลิงแฝก อ.กิ่งอำเภอกุดรัง จ.มหาสารคาม",
-    //     CardID: "1461200026858       ",
-    //   },
-    // ];
-    if (todayDrugsHN.length) {
-      let historyDrugs = await homc.getCpoeDataOld(req.body);
-      let drugMaster = await GD4Unit_101.getdrugdupl();
+      if (todayDrugsHN.length) {
+        let queue = await center104.getQueue(todayDrugsHN[0].hn);
+        todayDrugsHN = todayDrugsHN.map((val) => {
+          return {
+            ...val,
+            queue: queue.length ? queue[0]?.queue : "",
+          };
+        });
+        let historyDrugs = await homc.getCpoeDataOld(req.body);
+        let drugMaster = await GD4Unit_101.getdrugdupl();
 
-      // historyDrugs = [
-      //   {
-      //     hn: " 328686",
-      //     lastIssTime: "2025-09-15 12:47:59",
-      //     invCode: "ACTO150",
-      //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-      //     qtyReq: 15,
-      //     unit: "TAB",
-      //   },
-      //   {
-      //     hn: " 328686",
-      //     lastIssTime: "2025-12-20 09:57:51",
-      //     invCode: "CEFDI",
-      //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-      //     qtyReq: 90,
-      //     unit: "TAB",
-      //   },
-      // ];
+        // historyDrugs = [
+        //   {
+        //     hn: " 328686",
+        //     lastIssTime: "2025-09-15 12:47:59",
+        //     invCode: "ACTO150",
+        //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+        //     qtyReq: 15,
+        //     unit: "TAB",
+        //   },
+        //   {
+        //     hn: " 328686",
+        //     lastIssTime: "2025-12-20 09:57:51",
+        //     invCode: "CEFDI",
+        //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+        //     qtyReq: 90,
+        //     unit: "TAB",
+        //   },
+        // ];
 
-      let allergys = await listPatientAllergicController({
-        hn: req.body.hn,
-        site: "W8",
-      });
-      console.log(allergys);
-      let checkHn = [];
+        let allergys = await listPatientAllergicController({
+          hn: req.body.hn,
+          site: "W8",
+        });
 
-      finalResult = {
-        allergymed: allergys,
-        Duplicatemed: checkDrugSafety(todayDrugsHN, historyDrugs, drugMaster),
-      };
+        let checkHn = [];
+        let allergymhr = [];
+        finalResult = {
+          allergymed: allergys,
+          Duplicatemed: checkDrugSafety(todayDrugsHN, historyDrugs, drugMaster),
+        };
+        console.log(1);
 
-      if (
-        Object.values(finalResult.Duplicatemed).some(
-          (arr) => Array.isArray(arr) && arr.length > 0
-        ) ||
-        (finalResult.allergymed.length && finalResult.allergymed[0].cid)
-      ) {
-        todayDrugsHN[0].statusCheck = 1;
-        if (finalResult.allergymed.length && finalResult.allergymed[0].cid) {
-          checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
-        } else if (
-          finalResult.Duplicatemed.condition1.length ||
-          finalResult.Duplicatemed.condition2.length ||
-          finalResult.Duplicatemed.condition3.length
+        if (
+          Object.values(finalResult.Duplicatemed).some(
+            (arr) => Array.isArray(arr) && arr.length > 0
+          ) ||
+          allergys[0].cid
         ) {
+          console.log(2);
+          todayDrugsHN[0].statusCheck = 1;
+
+          // if (allergys[0].cid && !allergys[0].timestamp) {
+          if (allergys[0].cid) {
+            console.log(3);
+            checkHn = await GD4Unit_101.Inserthn({
+              ...todayDrugsHN[0],
+              text: "Allergy",
+            });
+            finalResult.allergymhr = await homc.getAllergyMhr(
+              allergys[0]?.patientID.trim()
+            );
+          }
+          if (
+            finalResult.Duplicatemed.condition1.length ||
+            finalResult.Duplicatemed.condition2.length ||
+            finalResult.Duplicatemed.condition3.length
+          ) {
+            console.log(4);
+            checkHn = await GD4Unit_101.Inserthn({
+              ...todayDrugsHN[0],
+              text: "Duplicate",
+            });
+          }
+        } else {
+          console.log(5);
+          todayDrugsHN[0].statusCheck = 0;
           checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
         }
-      } else {
-        todayDrugsHN[0].statusCheck = 0;
-        checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
-      }
 
-      res.status(200).json({ todayDrugsHN, finalResult });
-    } else {
-      res.status(404).json({
-        message: "No Data",
-      });
+        res.status(200).json({ todayDrugsHN, finalResult });
+      } else {
+        res.status(404).json({
+          message: "No Data",
+        });
+      }
+    } else if (req.body.check == 2) {
+      await GD4Unit_101.updateAllergyInteraction(req.body);
+      await center102.addMophConfirm(req.body);
+
+      let moph_patient = await center102.hn_moph_patient(req.body);
+      res.status(200).json({ moph_patient });
     }
   } catch (error) {
     console.log(error);

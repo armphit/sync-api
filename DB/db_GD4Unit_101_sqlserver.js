@@ -1239,72 +1239,125 @@ VALUES
     });
   };
 
-  this.Inserthn = async function fill(val, DATA) {
-    var sql = `DECLARE @result TABLE (
-    id UNIQUEIDENTIFIER,
-    prescription VARCHAR(50),
-    hn VARCHAR(50),
-    statusCheck INT
-);
+  //   this.Inserthn = async function fill(val, DATA) {
+  //     var sql = `DECLARE @result TABLE (
+  //     id UNIQUEIDENTIFIER,
+  //     prescription VARCHAR(50),
+  //     hn VARCHAR(50),
+  //     statusCheck INT
+  // );
 
-MERGE [opd].[dbo].[drug_interaction] AS target
-USING (
-    SELECT
-        '${val.reqNo}' AS prescription,
-        '${val.hn}' AS hn,
-        '${val.lastIssTime}' AS keyCreateDT,
-        '${val.statusCheck}' AS statusCheck
-) AS source
-ON target.prescription = source.prescription
+  // MERGE [opd].[dbo].[drug_interaction] AS target
+  // USING (
+  //     SELECT
+  //         '${val.reqNo}' AS prescription,
+  //         '${val.hn.trim()}' AS hn,
+  //         '${val.lastIssTime}' AS keyCreateDT,
+  //         '${val.statusCheck}' AS statusCheck
+  // ) AS source
+  // ON target.prescription = source.prescription
 
-WHEN NOT MATCHED THEN
-    INSERT (
-        id,
-        prescription,
-        hn,
-        keyCreateDT,
-        statusCheck,
-        scanDT
-    )
-    VALUES (
-        NEWID(),
-        source.prescription,
-        source.hn,
-        source.keyCreateDT,
-        source.statusCheck,
-        CURRENT_TIMESTAMP
-    )
+  // WHEN NOT MATCHED THEN
+  //     INSERT (
+  //         id,
+  //         prescription,
+  //         hn,
+  //         keyCreateDT,
+  //         statusCheck,
+  //         scanDT
+  //     )
+  //     VALUES (
+  //         NEWID(),
+  //         source.prescription,
+  //         source.hn,
+  //         source.keyCreateDT,
+  //         source.statusCheck,
+  //         CURRENT_TIMESTAMP
+  //     )
 
-OUTPUT
-    inserted.id,
-    inserted.prescription,
-    inserted.hn,
-    inserted.statusCheck
-INTO @result;
+  // OUTPUT
+  //     inserted.id,
+  //     inserted.prescription,
+  //     inserted.hn,
+  //     inserted.statusCheck
+  // INTO @result;
 
-SELECT * FROM @result;
+  // SELECT * FROM @result;
 
-`;
+  // `;
 
-    return new Promise(async (resolve, reject) => {
+  //     return new Promise(async (resolve, reject) => {
+  //       const pool = await poolPromise;
+  //       const result = await pool.request().query(sql);
+  //       resolve(result.recordset);
+  //     });
+  //   };
+  this.Inserthn = async function Inserthn(val) {
+    try {
       const pool = await poolPromise;
-      const result = await pool.request().query(sql);
-      resolve(result.recordset);
-    });
-  };
-  this.getPatient = async function fill(val, DATA) {
-    var sql = `SELECT
-	*
-FROM
-	[opd].[dbo].[drug_interaction]
-WHERE
-	prescription = 	'${val.hn}'
-`;
 
-    return new Promise(async (resolve, reject) => {
-      const pool = await poolPromise;
-      const result = await pool.request().query(sql);
-      resolve(result.recordset);
-    });
+      const request = pool.request();
+
+      request.input("prescription", sql.VarChar(50), val.reqNo);
+      request.input("hn", sql.VarChar(50), val.hn.trim());
+      request.input("keyCreateDT", sql.DateTime, val.lastIssTime);
+      request.input("statusCheck", sql.Int, val.statusCheck);
+      request.input("queue", sql.VarChar(50), val.queue);
+      // ส่งเฉพาะตอนมี type
+      if (val.text) {
+        request.input("interactionType", sql.VarChar(50), val.text);
+      } else {
+        request.input("interactionType", sql.VarChar(50), null);
+      }
+
+      const result = await request.execute(
+        "opd.dbo.sp_upsert_drug_interaction"
+      );
+
+      return result.recordset; // ส่งข้อมูลกลับให้ caller
+    } catch (error) {
+      console.error("Inserthn error:", error);
+      throw error;
+    }
   };
+  this.updateAllergyInteraction = async function (val) {
+    try {
+      const pool = await poolPromise;
+
+      const request = pool.request();
+
+      request.input("hn", sql.VarChar(50), val.hn);
+      request.input("queue", sql.VarChar(50), val.queue);
+      request.input("type", sql.VarChar(50), val.text);
+      const result = await request.execute(
+        "opd.dbo.sp_update_allergy_interaction_status"
+      );
+
+      // ค่า 1 = statusCheck ถูก update แล้ว
+      const updated = result.recordset[0].updatedStatusCheck;
+
+      return {
+        success: true,
+        updatedStatusCheck: updated === 1,
+      };
+    } catch (err) {
+      throw err;
+    }
+  };
+  //   this.getPatient = async function fill(val, DATA) {
+  //     var sql = `SELECT
+  // 	*
+  // FROM
+  // 	[opd].[dbo].[drug_interaction]
+  // WHERE
+  // 	hn = 	'${val.hn.trim()}'
+  // AND  CAST(keyCreateDT AS Date) = CAST(CURRENT_TIMESTAMP AS Date)
+  // `;
+
+  //     return new Promise(async (resolve, reject) => {
+  //       const pool = await poolPromise;
+  //       const result = await pool.request().query(sql);
+  //       resolve(result.recordset);
+  //     });
+  //   };
 };
