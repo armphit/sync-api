@@ -1320,7 +1320,7 @@ VALUES
       throw error;
     }
   };
-  this.updateAllergyInteraction = async function (val) {
+  this.updateInteraction = async function (val) {
     try {
       const pool = await poolPromise;
 
@@ -1333,12 +1333,10 @@ VALUES
         "opd.dbo.sp_update_allergy_interaction_status"
       );
 
-      // ค่า 1 = statusCheck ถูก update แล้ว
-      const updated = result.recordset[0].updatedStatusCheck;
+      const updated = result.recordset[0];
 
       return {
-        success: true,
-        updatedStatusCheck: updated === 1,
+        updated,
       };
     } catch (err) {
       throw err;

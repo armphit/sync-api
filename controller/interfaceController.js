@@ -538,6 +538,80 @@ exports.getdatacpoeController = async (req, res, next) => {
     if (req.body.check == 1) {
       finalResult = {};
       let todayDrugsHN = await homc.getCpoeData(req.body);
+      // todayDrugsHN = [
+      //   {
+      //     reqNo: "690038558",
+      //     hn: "2451613",
+      //     patientname: "นาง ธัญยรัตน์ แจ้งดี",
+      //     sex: "หญิง",
+      //     birthDay: "12/11/2516",
+      //     Age: 52,
+      //     toSite: "W8",
+      //     lastIssTime: "2026-01-14 12:27:50",
+      //     runNo: 1,
+      //     maxRunNo: 4,
+      //     invCode: "LEVOF3",
+      //     invName: "LEVOFLOXACIN 500 MG (ยาโครงการ SSF)",
+      //     qtyReq: 30,
+      //     unit: "TAB",
+      //     addr: "119  หมู่.14 ต.คูขาด อ.คง จ.นครราชสีมา",
+      //     CardID: "3301500094465       ",
+      //   },
+      //   {
+      //     reqNo: "690038558",
+      //     hn: "2451613",
+      //     patientname: "นาง ธัญยรัตน์ แจ้งดี",
+      //     sex: "หญิง",
+      //     birthDay: "12/11/2516",
+      //     Age: 52,
+      //     toSite: "W8",
+      //     lastIssTime: "2026-01-14 12:27:50",
+      //     runNo: 2,
+      //     maxRunNo: 4,
+      //     invCode: "TENO6",
+      //     invName: "TENO-EM (TDF300 + FTC200) สปสช",
+      //     qtyReq: 180,
+      //     unit: "TAB",
+      //     addr: "119  หมู่.14 ต.คูขาด อ.คง จ.นครราชสีมา",
+      //     CardID: "3301500094465       ",
+      //   },
+      //   {
+      //     reqNo: "690038558",
+      //     hn: "2451613",
+      //     patientname: "นาง ธัญยรัตน์ แจ้งดี",
+      //     sex: "หญิง",
+      //     birthDay: "12/11/2516",
+      //     Age: 52,
+      //     toSite: "W8",
+      //     lastIssTime: "2026-01-14 12:27:50",
+      //     runNo: 3,
+      //     maxRunNo: 4,
+      //     invCode: "DEX-E",
+      //     invName: "DEX-OPH EAR DROP 5 ML.",
+      //     qtyReq: 1,
+      //     unit: "BOT",
+      //     addr: "119  หมู่.14 ต.คูขาด อ.คง จ.นครราชสีมา",
+      //     CardID: "3301500094465       ",
+      //   },
+      //   {
+      //     reqNo: "690038558",
+      //     hn: "2451613",
+      //     patientname: "นาง ธัญยรัตน์ แจ้งดี",
+      //     sex: "หญิง",
+      //     birthDay: "12/11/2516",
+      //     Age: 52,
+      //     toSite: "W8",
+      //     lastIssTime: "2026-01-14 12:27:50",
+      //     runNo: 4,
+      //     maxRunNo: 4,
+      //     invCode: "DEX-O",
+      //     invName: "DEX-OPH EYE DROP 5 ML.",
+      //     qtyReq: 1,
+      //     unit: "BOT",
+      //     addr: "119  หมู่.14 ต.คูขาด อ.คง จ.นครราชสีมา",
+      //     CardID: "3301500094465       ",
+      //   },
+      // ];
 
       if (todayDrugsHN.length) {
         let queue = await center104.getQueue(todayDrugsHN[0].hn);
@@ -552,18 +626,38 @@ exports.getdatacpoeController = async (req, res, next) => {
 
         // historyDrugs = [
         //   {
-        //     hn: " 328686",
-        //     lastIssTime: "2025-09-15 12:47:59",
-        //     invCode: "ACTO150",
-        //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
-        //     qtyReq: 15,
+        //     reqNo: "681158412",
+        //     hn: "2451613",
+        //     lastIssTime: "2025-11-19 15:02:18",
+        //     invCode: "TDF+1",
+        //     invName: "ยา รพ.Teevir (TDF 300+EFV 600+FTC 200 )",
+        //     qtyReq: 90,
         //     unit: "TAB",
         //   },
         //   {
-        //     hn: " 328686",
-        //     lastIssTime: "2025-12-20 09:57:51",
-        //     invCode: "CEFDI",
-        //     invName: "สปสช TLD (TDF300 + 3TC300 + DTG50 )",
+        //     reqNo: "681158412",
+        //     hn: "2451613",
+        //     lastIssTime: "2026-01-11 15:02:18",
+        //     invCode: "LEVOF1",
+        //     invName: "(ยา รพ.) LEVOFLOXACIN 500 MG/TAB",
+        //     qtyReq: 90,
+        //     unit: "TAB",
+        //   },
+        //   {
+        //     reqNo: "681289644",
+        //     hn: "2451613",
+        //     lastIssTime: "2025-10-17 14:14:59",
+        //     invCode: "FOLI",
+        //     invName: "FOLIC ACID TAB ยาบำรุงโลหิต *",
+        //     qtyReq: 90,
+        //     unit: "TAB",
+        //   },
+        //   {
+        //     reqNo: "681289644",
+        //     hn: "2451613",
+        //     lastIssTime: "2025-10-17 14:14:59",
+        //     invCode: "PHENY4",
+        //     invName: "DILANTIN 100 MGห้ามเคี้ยว/บด*[D][*G*].ยากันชัก",
         //     qtyReq: 90,
         //     unit: "TAB",
         //   },
@@ -575,43 +669,46 @@ exports.getdatacpoeController = async (req, res, next) => {
         });
 
         let checkHn = [];
-        let allergymhr = [];
+        // let allergymhr = [];
+
         finalResult = {
           allergymed: allergys,
-          Duplicatemed: checkDrugSafety(todayDrugsHN, historyDrugs, drugMaster),
+          duplicatemed: checkDrugSafety(todayDrugsHN, historyDrugs, drugMaster),
         };
+        finalResult.duplicatemed.result = {};
         console.log(1);
-
+        // if (allergys[0].cid && !allergys[0].timestamp) {
+        if (allergys[0].cid) {
+          console.log(3);
+          // checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
+          finalResult.allergymhr = await homc.getAllergyMhr(
+            allergys[0]?.patientID.trim()
+          );
+        }
         if (
-          Object.values(finalResult.Duplicatemed).some(
+          Object.values(finalResult.duplicatemed).some(
             (arr) => Array.isArray(arr) && arr.length > 0
-          ) ||
-          allergys[0].cid
+          )
         ) {
-          console.log(2);
           todayDrugsHN[0].statusCheck = 1;
 
-          // if (allergys[0].cid && !allergys[0].timestamp) {
-          if (allergys[0].cid) {
-            console.log(3);
-            checkHn = await GD4Unit_101.Inserthn({
-              ...todayDrugsHN[0],
-              text: "Allergy",
-            });
-            finalResult.allergymhr = await homc.getAllergyMhr(
-              allergys[0]?.patientID.trim()
-            );
-          }
           if (
-            finalResult.Duplicatemed.condition1.length ||
-            finalResult.Duplicatemed.condition2.length ||
-            finalResult.Duplicatemed.condition3.length
+            finalResult.duplicatemed.condition1.length ||
+            finalResult.duplicatemed.condition2.length ||
+            finalResult.duplicatemed.condition3.length
           ) {
-            console.log(4);
+            console.log(checkHn);
             checkHn = await GD4Unit_101.Inserthn({
               ...todayDrugsHN[0],
               text: "Duplicate",
             });
+            let findDupli = checkHn.find(
+              (val) => val.drug_interaction_type == "Duplicate"
+            );
+
+            if (Object.keys(findDupli)?.length !== 0) {
+              finalResult.duplicatemed.result = findDupli;
+            }
           }
         } else {
           console.log(5);
@@ -626,11 +723,15 @@ exports.getdatacpoeController = async (req, res, next) => {
         });
       }
     } else if (req.body.check == 2) {
-      await GD4Unit_101.updateAllergyInteraction(req.body);
-      await center102.addMophConfirm(req.body);
+      if (req.body.text == "allergy") {
+        await center102.addMophConfirm(req.body);
 
-      let moph_patient = await center102.hn_moph_patient(req.body);
-      res.status(200).json({ moph_patient });
+        let moph_patient = await center102.hn_moph_patient(req.body);
+        res.status(200).json({ moph_patient });
+      } else if (req.body.text == "duplicate") {
+        let dataupdate = await GD4Unit_101.updateInteraction(req.body);
+        res.status(200).json(dataupdate);
+      }
     }
   } catch (error) {
     console.log(error);
@@ -725,6 +826,7 @@ function addTodayResult(targetArray, currentDrug, groupName, duplicatesToday) {
   if (!targetArray.find((item) => item.currentDrug === currentKey)) {
     targetArray.push({
       currentDrug: currentKey,
+      currentDrugName: currentDrug.invName?.trim(),
       groupName: groupName,
       foundToday: duplicatesToday.map((d) => ({
         invCode: d.invCode.trim(),
@@ -741,6 +843,7 @@ function addHistoryResult(
   matchData,
   diffDays
 ) {
+  // console.log(currentDrug);
   const currentKey = currentDrug.invCode.trim();
   let existingEntry = targetArray.find(
     (item) => item.currentDrug === currentKey
@@ -763,6 +866,7 @@ function addHistoryResult(
   } else {
     targetArray.push({
       currentDrug: currentKey,
+      currentDrugName: currentDrug.invName?.trim(),
       groupName: groupName,
       foundHistory: [detail],
     });

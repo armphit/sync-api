@@ -3088,7 +3088,6 @@ LEFT JOIN (
 
 ORDER BY
   q.createDT`;
-    console.log(sql);
 
     return new Promise(function (resolve, reject) {
       connection.query(sql, function (err, result, fields) {
