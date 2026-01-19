@@ -907,45 +907,48 @@ WHERE
     while (hn.length < 7) {
       hn = " " + hn;
     }
-    var sql = `SELECT
-        h.reqNo,
-        TRIM(h.hn) hn,
-        Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
-        CASE
+    var sql = `
+SELECT
+	h.reqNo,
+	TRIM (h.hn) hn,
+	Rtrim(ti.titleName) + ' ' + Rtrim(pt.firstName) + ' ' + Rtrim(pt.lastName) AS patientname,
+	CASE
 WHEN pt.sex = 'ช' THEN
-        'ชาย'
+	'ชาย'
 ELSE
-        'หญิง'
+	'หญิง'
 END AS sex,
-RIGHT(pt.birthDay , 2) + '/' +
-    SUBSTRING(pt.birthDay , 5, 2) + '/' +
-    LEFT(pt.birthDay , 4)  AS birthDay,
+ RIGHT (pt.birthDay, 2) + '/' + SUBSTRING (pt.birthDay, 5, 2) + '/' + LEFT (pt.birthDay, 4) AS birthDay,
  DATEDIFF(
-        YEAR,
-        DATEFROMPARTS (
-                SUBSTRING (pt.birthDay, 1, 4) - 543,
-                SUBSTRING (pt.birthDay, 5, 2),
-                SUBSTRING (pt.birthDay, 7, 2)
-        ),
-        GETDATE()
+	YEAR,
+	DATEFROMPARTS (
+		SUBSTRING (pt.birthDay, 1, 4) - 543,
+		SUBSTRING (pt.birthDay, 5, 2),
+		SUBSTRING (pt.birthDay, 7, 2)
+	),
+	GETDATE()
 ) - CASE
 WHEN FORMAT (GETDATE(), 'MMdd') < SUBSTRING (pt.birthDay, 5, 4) THEN
-        1
+	1
 ELSE
-        0
+	0
 END AS Age,
- TRIM(h.toSite)toSite,
- FORMAT(h.lastIssTime, 'yyyy-MM-dd HH:mm:ss') lastIssTime,
+ TRIM (h.toSite) toSite,
+ FORMAT (
+	h.lastIssTime,
+	'yyyy-MM-dd HH:mm:ss'
+) lastIssTime,
  d.runNo,
  MAX (d.runNo) OVER () maxRunNo,
- TRIM(d.invCode)invCode,
-  TRIM (v.name) invName,
+ TRIM (d.invCode) invCode,
+ TRIM (v.name) invName,
  d.qtyReq,
- TRIM(d.unit)unit,
-TRIM(p.relativeAddress) addr,
-CardID
+ TRIM (d.unit) unit,
+ TRIM (p.relativeAddress) addr,
+ CardID,
+ time_docperday
 FROM
-        InvReqH h
+	InvReqH h
 LEFT JOIN InvReqD d ON d.reqNo = h.reqNo
 LEFT JOIN PATIENT pt ON pt.hn = h.hn
 LEFT JOIN PTITLE ti ON (ti.titleCode = pt.titleCode)
@@ -954,10 +957,27 @@ LEFT JOIN Med_inv v ON (
 	v.code = d.invCode
 	AND v.[site] = '1'
 )
+LEFT JOIN Med_logh mh ON h.hn = mh.hn
+AND h.registNo = mh.regNo
+LEFT JOIN Med_log m ON mh.batch_no = m.batch_no
+AND d.invCode = m.inv_code
+LEFT JOIN Patmed pm (NOLOCK) ON (
+	pm.hn = mh.hn
+	AND pm.registNo = mh.regNo
+	AND pm.invCode = m.inv_code
+	AND m.quant_diff = pm.runNo
+)
+LEFT JOIN Lamed la ON pm.lamedTime = la.lamed_code
 WHERE
 	h.hn = '${hn}'
-AND CAST(registDate AS DATE)  ='${val.date}'
-ORDER BY  d.runNo`;
+AND CAST(h.registDate AS DATE)  ='${val.date}'
+AND m.pat_status = 'O'
+AND m.revFlag IS NULL
+AND m.site = '${val.site}'
+ORDER BY
+	d.runNo
+
+`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;
@@ -1036,6 +1056,53 @@ ORDER BY  h.lastIssTime,d.runNo
             m.hn,
             TRIM (i.name)
             ORDER BY TRIM (i.name)`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
+  };
+  this.getLabHomc = async function fill(val, DATA) {
+    let hn = String(val.hn);
+    while (hn.length < 7) {
+      hn = " " + hn;
+    }
+    var sql = `SELECT TOP 1
+	TRIM(hn) hn,
+	TRIM(lab_code) lab_code,
+	TRIM(result_name) result_name,
+	l.res_date,
+	real_res,
+  IIF(${val.checklab}) lab_res,
+  '${val.invCode}' AS invCode,
+  '${val.invName}' AS invName,
+  '${val.parameter}' AS parameter,
+     ${val.labMin} labMin,
+  ${val.labMax} labMax,
+  ${val.time_docperday} dosagePday,
+  ${val.dosagePdayMax} checkDosagePday
+	-- low_normal,
+	-- high_normal,
+	-- resNormal,
+	-- lis_res
+FROM
+	Labres_d l
+WHERE
+	lab_code =  '${val.labCode}'
+AND TRIM (result_name) =  '${val.labName}'
+AND hn =  '${hn}'
+AND res_date BETWEEN FORMAT (
+	DATEADD(MONTH, - 6, GETDATE()), 
+	'yyyyMMdd',
+	'th-TH'
+)
+AND FORMAT (
+	GETDATE(),
+	'yyyyMMdd',
+	'th-TH'
+)
+ORDER BY res_date DESC`;
 
     return new Promise(async (resolve, reject) => {
       const pool = await poolPromise;

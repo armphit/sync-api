@@ -11,7 +11,7 @@ const axios = require("axios");
 const https = require("https");
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-const fs = require("fs");
+
 var token =
   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTc2Nzg1ODM5MCwiZXhwIjoxNzY3ODkxNTk5fQ.XKqcxn6JhaMmLspbQRtI3lA36gnMNrZjRRkJlCQdt-A";
 
@@ -535,6 +535,7 @@ exports.managereportgd4Controller = async (req, res, next) => {
 };
 exports.getdatacpoeController = async (req, res, next) => {
   try {
+    console.log(req.body);
     if (req.body.check == 1) {
       finalResult = {};
       let todayDrugsHN = await homc.getCpoeData(req.body);
@@ -669,18 +670,21 @@ exports.getdatacpoeController = async (req, res, next) => {
         });
 
         let checkHn = [];
-        // let allergymhr = [];
 
         finalResult = {
           allergymed: allergys,
-          duplicatemed: checkDrugSafety(todayDrugsHN, historyDrugs, drugMaster),
+          duplicatemed: await checkDrugSafety(
+            todayDrugsHN,
+            historyDrugs,
+            drugMaster
+          ),
+          lab: { valueLab: await checkLab(todayDrugsHN), result: {} },
         };
+
         finalResult.duplicatemed.result = {};
-        console.log(1);
-        // if (allergys[0].cid && !allergys[0].timestamp) {
+
         if (allergys[0].cid) {
           console.log(3);
-          // checkHn = await GD4Unit_101.Inserthn(todayDrugsHN[0]);
           finalResult.allergymhr = await homc.getAllergyMhr(
             allergys[0]?.patientID.trim()
           );
@@ -688,7 +692,8 @@ exports.getdatacpoeController = async (req, res, next) => {
         if (
           Object.values(finalResult.duplicatemed).some(
             (arr) => Array.isArray(arr) && arr.length > 0
-          )
+          ) ||
+          finalResult.lab?.valueLab.some((x) => x.lab_res === 1)
         ) {
           todayDrugsHN[0].statusCheck = 1;
 
@@ -697,7 +702,7 @@ exports.getdatacpoeController = async (req, res, next) => {
             finalResult.duplicatemed.condition2.length ||
             finalResult.duplicatemed.condition3.length
           ) {
-            console.log(checkHn);
+            console.log(4);
             checkHn = await GD4Unit_101.Inserthn({
               ...todayDrugsHN[0],
               text: "Duplicate",
@@ -708,6 +713,20 @@ exports.getdatacpoeController = async (req, res, next) => {
 
             if (Object.keys(findDupli)?.length !== 0) {
               finalResult.duplicatemed.result = findDupli;
+            }
+          }
+
+          if (finalResult.lab?.valueLab.some((x) => x.lab_res === 1)) {
+            console.log(8);
+            let checkLabInsert = await GD4Unit_101.Inserthn({
+              ...todayDrugsHN[0],
+              text: "Lab",
+            });
+            let findLab = checkLabInsert.find(
+              (val) => val.drug_interaction_type == "Lab"
+            );
+            if (Object.keys(findLab)?.length !== 0) {
+              finalResult.lab.result = findLab;
             }
           }
         } else {
@@ -729,6 +748,9 @@ exports.getdatacpoeController = async (req, res, next) => {
         let moph_patient = await center102.hn_moph_patient(req.body);
         res.status(200).json({ moph_patient });
       } else if (req.body.text == "duplicate") {
+        let dataupdate = await GD4Unit_101.updateInteraction(req.body);
+        res.status(200).json(dataupdate);
+      } else if (req.body.text == "lab") {
         let dataupdate = await GD4Unit_101.updateInteraction(req.body);
         res.status(200).json(dataupdate);
       }
@@ -819,7 +841,134 @@ function checkDrugSafety(today, history, master) {
 
   return resultJson;
 }
+async function checkLab(today) {
+  const inClause = today.map((data) => `'${data.invCode}'`).join(",");
+  let druglab = await GD4Unit_101.checkDrugLab(inClause);
 
+  let checkLab = today.flatMap((t) =>
+    druglab
+      .filter((d) => d.drugCode === t.invCode)
+      .map((d) => ({
+        ...t,
+        ...d,
+      }))
+  );
+
+  let resultLab = [];
+  let dataLab = [];
+  for (let i = 0; i < checkLab.length; i++) {
+    if (!checkLab[i].labMin && checkLab[i].labMax) {
+      console.log(6);
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax}, 1, 0`;
+      dataLab = await homc.getLabHomc(checkLab[i]);
+      resultLab.push(...dataLab);
+    } else if (checkLab[i].labMin && !checkLab[i].labMax) {
+      console.log(7);
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin}, 1, 0`;
+      dataLab = await homc.getLabHomc(checkLab[i]);
+      resultLab.push(...dataLab);
+    } else if (checkLab[i].labMin && checkLab[i].labMax) {
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  >= ${checkLab[i].labMin} AND TRY_CONVERT(INT, real_res)  <= ${checkLab[i].labMin} 
+      AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      console.log(8);
+      dataLab = await homc.getLabHomc(checkLab[i]);
+      resultLab.push(...dataLab);
+    } else if (
+      checkLab[i].labMin &&
+      !checkLab[i].labMax &&
+      checkLab[i].strength
+    ) {
+      console.log(9);
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      dataLab = await homc.getLabHomc(checkLab[i]);
+      resultLab.push(...dataLab);
+    } else if (
+      !checkLab[i].labMin &&
+      checkLab[i].labMax &&
+      checkLab[i].strength
+    ) {
+      console.log(10);
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      dataLab = await homc.getLabHomc(checkLab[i]);
+      resultLab.push(...dataLab);
+    }
+    dataLab = [];
+  }
+  // resultLab = [
+  //   {
+  //     hn: "1497839",
+  //     lab_code: "CC036",
+  //     result_name: "SGPT (ALT)",
+  //     res_date: "25681014",
+  //     real_res: "27",
+  //     lab_res: 0,
+  //     invCode: "ATOR1",
+  //     invName: "(TOVASTIN) ATORVASTATIN 40 MG",
+  //     parameter: "ALT/AST>3X ULN",
+  //     labMin: null,
+  //     labMax: 150,
+  //     checkDosagePday: null,
+  //     dosagePday: null,
+  //   },
+  //   {
+  //     hn: "1497839",
+  //     lab_code: "CC003",
+  //     result_name: "eGFR",
+  //     res_date: "25680718",
+  //     real_res: "20",
+  //     lab_res: 1,
+  //     invCode: "ALEND",
+  //     invName: "( DUE )ALENDRONATE+VIT.D3(FOSAMAX PLUS) ฉรผ.",
+  //     parameter: "CrCl",
+  //     labMin: 35,
+  //     labMax: null,
+  //     checkDosagePday: null,
+  //     dosagePday: null,
+  //   },
+  //   {
+  //     hn: "1497839",
+  //     lab_code: "CC003",
+  //     result_name: "eGFR",
+  //     res_date: "25681226",
+  //     real_res: "59",
+  //     lab_res: 0,
+  //     invCode: "METFO",
+  //     invName: "metformin 500 mg.(เมตฟอร์มิน) ยาเบาหวาน[ร]",
+  //     parameter: "CrCl",
+  //     labMin: 30,
+  //     labMax: 44,
+  //     checkDosagePday: 2,
+  //     dosagePday: 1,
+  //   },
+  //   {
+  //     hn: "1497839",
+  //     lab_code: "CC003",
+  //     result_name: "eGFR",
+  //     res_date: "25681226",
+  //     real_res: "59",
+  //     lab_res: 0,
+  //     invCode: "ALOGL",
+  //     invName: "Alogliptin + Pioglitazone 25/15 mg Tab.(Oseni)",
+  //     parameter: "CrCl",
+  //     labMin: 30,
+  //     labMax: null,
+  //     checkDosagePday: 0.25,
+  //     dosagePday: 0.5,
+  //   },
+  // ];
+
+  return resultLab;
+}
 // ปรับปรุง Helper เล็กน้อยให้รองรับการ trim
 function addTodayResult(targetArray, currentDrug, groupName, duplicatesToday) {
   const currentKey = currentDrug.invCode.trim();

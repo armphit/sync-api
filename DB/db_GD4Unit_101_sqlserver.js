@@ -1334,13 +1334,25 @@ VALUES
       );
 
       const updated = result.recordset[0];
-
+      console.log("updateInteraction result:", updated);
       return {
         updated,
       };
     } catch (err) {
       throw err;
     }
+  };
+  this.checkDrugLab = async function (val, DATA) {
+    var sql = `SELECT *
+FROM opd.dbo.drug_lab
+WHERE drugCode IN (${val})
+`;
+
+    return new Promise(async (resolve, reject) => {
+      const pool = await poolPromise;
+      const result = await pool.request().query(sql);
+      resolve(result.recordset);
+    });
   };
   //   this.getPatient = async function fill(val, DATA) {
   //     var sql = `SELECT

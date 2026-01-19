@@ -36,7 +36,7 @@ module.exports = function () {
           hour: "2-digit",
         }).format(new Date());
         setTimeout(() => {
-          if (Number(thaiTime) >= 8 && Number(thaiTime) < 20) {
+          if (Number(thaiTime) >= 8 && Number(thaiTime) < 20 && num < 6) {
             let todayDate = formatDate(new Date());
             console.log(todayDate + " YULIM Error: " + num);
 
