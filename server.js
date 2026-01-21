@@ -138,3 +138,13 @@ app.get("/", (req, res) => {
 app.listen(4000, () => {
   console.log("Web Service Online:4000");
 });
+const printer = require("pdf-to-printer");
+const { print } = printer;
+
+test();
+async function test() {
+  let getIPprinter = await mysql101.getIPprinter(led);
+  console.log(getIPprinter);
+  let namePrinter = await printer.getPrinters();
+  console.log(namePrinter?.name);
+}

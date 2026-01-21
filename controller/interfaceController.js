@@ -205,7 +205,7 @@ exports.checkallergyController = async (req, res, next) => {
                               let hosp = await center102.getHosp(
                                 dataAllergic[k].hospcode
                                   ? dataAllergic[k].hospcode
-                                  : "",
+                                  : ""
                               );
                               let sendata = {
                                 hosp_code: `${
@@ -221,7 +221,7 @@ exports.checkallergyController = async (req, res, next) => {
                                     dataAllergic[k].cid
                                       ? dataAllergic[k].cid
                                       : ""
-                                  }`,
+                                  }`
                                 ).toString("base64"),
                                 med_code: `${
                                   dataAllergic[k].drugcode
@@ -251,13 +251,13 @@ exports.checkallergyController = async (req, res, next) => {
                                 sendata,
                                 {
                                   headers,
-                                },
+                                }
                               );
 
                               console.log(
                                 `cid ${
                                   dataAllergic[k].cid ? dataAllergic[k].cid : ""
-                                } send to api `,
+                                } send to api `
                               );
 
                               resultapi = null;
@@ -265,7 +265,7 @@ exports.checkallergyController = async (req, res, next) => {
                               sendata = null;
                             } catch (error) {
                               console.log(
-                                "error to connect apiAllergy\r\n\r\n\r\n",
+                                "error to connect apiAllergy\r\n\r\n\r\n"
                               );
                               console.log(error);
                             }
@@ -379,7 +379,7 @@ async function getAllergic(cid) {
 
   try {
     const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
-      cid,
+      cid
     )}`;
     const instance = axios.create({
       httpsAgent: new https.Agent({
@@ -541,12 +541,15 @@ exports.getdatacpoeController = async (req, res, next) => {
 
       if (todayDrugsHN.length) {
         let queue = await center104.getQueue(todayDrugsHN[0].hn);
+
         todayDrugsHN = todayDrugsHN.map((val) => {
           return {
             ...val,
             queue: queue.length ? queue[0]?.queue : "",
           };
         });
+        console.log("----------------------------------");
+
         let historyDrugs = await homc.getCpoeDataOld(req.body);
         let drugMaster = await GD4Unit_101.getdrugdupl();
 
@@ -562,7 +565,7 @@ exports.getdatacpoeController = async (req, res, next) => {
           duplicatemed: await checkDrugSafety(
             todayDrugsHN,
             historyDrugs,
-            drugMaster,
+            drugMaster
           ),
           lab: { valueLab: await checkLab(todayDrugsHN), result: {} },
         };
@@ -572,12 +575,12 @@ exports.getdatacpoeController = async (req, res, next) => {
         if (allergys[0].cid) {
           console.log(3);
           finalResult.allergymhr = await homc.getAllergyMhr(
-            allergys[0]?.patientID.trim(),
+            allergys[0]?.patientID.trim()
           );
         }
         if (
           Object.values(finalResult.duplicatemed).some(
-            (arr) => Array.isArray(arr) && arr.length > 0,
+            (arr) => Array.isArray(arr) && arr.length > 0
           ) ||
           finalResult.lab?.valueLab.some((x) => x.lab_res === 1)
         ) {
@@ -594,7 +597,7 @@ exports.getdatacpoeController = async (req, res, next) => {
               text: "Duplicate",
             });
             let findDupli = checkHn.find(
-              (val) => val.drug_interaction_type == "Duplicate",
+              (val) => val.drug_interaction_type == "Duplicate"
             );
 
             if (Object.keys(findDupli)?.length !== 0) {
@@ -609,7 +612,7 @@ exports.getdatacpoeController = async (req, res, next) => {
               text: "Lab",
             });
             let findLab = checkLabInsert.find(
-              (val) => val.drug_interaction_type == "Lab",
+              (val) => val.drug_interaction_type == "Lab"
             );
             if (Object.keys(findLab)?.length !== 0) {
               finalResult.lab.result = findLab;
@@ -671,7 +674,7 @@ function checkDrugSafety(today, history, master) {
           return (
             tCode !== invCode &&
             master.some(
-              (m) => m.drugCode?.trim() === tCode && m.groupCode === groupCode,
+              (m) => m.drugCode?.trim() === tCode && m.groupCode === groupCode
             )
           );
         });
@@ -681,7 +684,7 @@ function checkDrugSafety(today, history, master) {
             resultJson.condition1,
             currentDrug,
             groupName,
-            duplicatesToday,
+            duplicatesToday
           );
         }
       }
@@ -697,12 +700,12 @@ function checkDrugSafety(today, history, master) {
 
           // คำนวณวันที่ต่างกัน
           const diffDays = Math.floor(
-            (todayDate - hDate) / (1000 * 60 * 60 * 24),
+            (todayDate - hDate) / (1000 * 60 * 60 * 24)
           );
 
           // ตรวจสอบว่าเป็นกลุ่มเดียวกัน แต่ไม่ใช่รหัสยาเดียวกัน
           const isSameGroup = master.some(
-            (m) => m.drugCode?.trim() === hInvCode && m.groupCode === groupCode,
+            (m) => m.drugCode?.trim() === hInvCode && m.groupCode === groupCode
           );
           const isDifferentDrug = invCode !== hInvCode;
 
@@ -717,7 +720,7 @@ function checkDrugSafety(today, history, master) {
               currentDrug,
               groupName,
               h,
-              diffDays,
+              diffDays
             );
           }
         });
@@ -737,7 +740,7 @@ async function checkLab(today) {
       .map((d) => ({
         ...t,
         ...d,
-      })),
+      }))
   );
 
   let resultLab = [];
@@ -745,19 +748,22 @@ async function checkLab(today) {
   for (let i = 0; i < checkLab.length; i++) {
     if (!checkLab[i].labMin && checkLab[i].labMax) {
       console.log(6);
-      checkLab[i].checklab =
-        `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax}, 1, 0`;
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     } else if (checkLab[i].labMin && !checkLab[i].labMax) {
       console.log(7);
-      checkLab[i].checklab =
-        `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin}, 1, 0`;
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     } else if (checkLab[i].labMin && checkLab[i].labMax) {
-      checkLab[i].checklab =
-        `TRY_CONVERT(INT, real_res)  >= ${checkLab[i].labMin} AND TRY_CONVERT(INT, real_res)  <= ${checkLab[i].labMin} 
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  >= ${checkLab[i].labMin} AND TRY_CONVERT(INT, real_res)  <= ${checkLab[i].labMin} 
       AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
       console.log(8);
       dataLab = await homc.getLabHomc(checkLab[i]);
@@ -768,8 +774,9 @@ async function checkLab(today) {
       checkLab[i].strength
     ) {
       console.log(9);
-      checkLab[i].checklab =
-        `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     } else if (
@@ -778,8 +785,9 @@ async function checkLab(today) {
       checkLab[i].strength
     ) {
       console.log(10);
-      checkLab[i].checklab =
-        `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      checkLab[
+        i
+      ].checklab = `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     }
@@ -871,12 +879,12 @@ function addHistoryResult(
   currentDrug,
   groupName,
   matchData,
-  diffDays,
+  diffDays
 ) {
   // console.log(currentDrug);
   const currentKey = currentDrug.invCode.trim();
   let existingEntry = targetArray.find(
-    (item) => item.currentDrug === currentKey,
+    (item) => item.currentDrug === currentKey
   );
 
   const detail = {
@@ -890,7 +898,7 @@ function addHistoryResult(
     const isDuplicate = existingEntry.foundHistory.some(
       (h) =>
         h.lastDate === detail.lastDate &&
-        h.duplicateDrug === detail.duplicateDrug,
+        h.duplicateDrug === detail.duplicateDrug
     );
     if (!isDuplicate) existingEntry.foundHistory.push(detail);
   } else {
@@ -930,7 +938,7 @@ async function listPatientAllergicController(data) {
                   await center102.insertDrugAllergy(dataAllergic[k]);
 
                   let hosp = await center102.getHosp(
-                    dataAllergic[k].hospcode ? dataAllergic[k].hospcode : "",
+                    dataAllergic[k].hospcode ? dataAllergic[k].hospcode : ""
                   );
                   let sendata = {
                     hosp_code: `${
@@ -938,7 +946,7 @@ async function listPatientAllergicController(data) {
                     }`,
                     hosp_name: `${hosp[0].hospname ? hosp[0].hospname : ""}`,
                     pid: Buffer.from(
-                      `${dataAllergic[k].cid ? dataAllergic[k].cid : ""}`,
+                      `${dataAllergic[k].cid ? dataAllergic[k].cid : ""}`
                     ).toString("base64"),
                     med_code: `${
                       dataAllergic[k].drugcode ? dataAllergic[k].drugcode : ""
@@ -963,13 +971,13 @@ async function listPatientAllergicController(data) {
                     sendata,
                     {
                       headers,
-                    },
+                    }
                   );
 
                   console.log(
                     `cid ${
                       dataAllergic[k].cid ? dataAllergic[k].cid : ""
-                    } send to api `,
+                    } send to api `
                   );
 
                   resultapi = null;

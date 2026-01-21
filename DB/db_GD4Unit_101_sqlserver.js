@@ -1297,22 +1297,22 @@ VALUES
       const pool = await poolPromise;
 
       const request = pool.request();
-
-      request.input("prescription", sql.VarChar(50), val.reqNo);
-      request.input("hn", sql.VarChar(50), val.hn.trim());
+      console.log(val);
+      request.input("prescription", sql.NVarChar(50), val.reqNo);
+      request.input("hn", sql.NVarChar(50), val.hn.trim());
+      request.input("queue", sql.NVarChar(50), val.queue);
       request.input("keyCreateDT", sql.DateTime, val.lastIssTime);
       request.input("statusCheck", sql.Int, val.statusCheck);
-      request.input("queue", sql.VarChar(50), val.queue);
-      // ส่งเฉพาะตอนมี type
       if (val.text) {
-        request.input("interactionType", sql.VarChar(50), val.text);
+        request.input("interactionType", sql.NVarChar(50), val.text);
       } else {
-        request.input("interactionType", sql.VarChar(50), null);
+        request.input("interactionType", sql.NVarChar(50), null);
       }
 
       const result = await request.execute(
         "opd.dbo.sp_upsert_drug_interaction"
       );
+      console.log(result.recordset);
 
       return result.recordset; // ส่งข้อมูลกลับให้ caller
     } catch (error) {
