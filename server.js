@@ -56,6 +56,7 @@ var {
   datapatientController,
   managereportgd4Controller,
   getdatacpoeController,
+  testController,
 } = require("./controller/interfaceController");
 
 var {
@@ -99,6 +100,7 @@ app.post("/returndrug", returndrugController);
 app.post("/getTimedispenddrug", timedispendController);
 app.post("/getdatacpoe", getdatacpoeController);
 app.post("/reportcheck", reportcheckController);
+app.post("/test", testController);
 // app.post("/getUser", getUserController);
 // app.post("/cutqty", cutqtyController);
 
@@ -138,13 +140,14 @@ app.get("/", (req, res) => {
 app.listen(4000, () => {
   console.log("Web Service Online:4000");
 });
-const printer = require("pdf-to-printer");
-const { print } = printer;
 
-test();
-async function test() {
-  let getIPprinter = await mysql101.getIPprinter(led);
-  console.log(getIPprinter);
-  let namePrinter = await printer.getPrinters();
-  console.log(namePrinter?.name);
-}
+// const printer = require("pdf-to-printer");
+// const { print } = printer;
+
+// test();
+// async function test() {
+//   let getIPprinter = await mysql101.getIPprinter(led);
+//   console.log(getIPprinter);
+//   let namePrinter = await printer.getPrinters();
+//   console.log(namePrinter?.name);
+// }

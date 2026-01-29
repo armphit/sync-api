@@ -11,7 +11,7 @@ const axios = require("axios");
 const https = require("https");
 var db_center104 = require("../DB/db_104_Center");
 var center104 = new db_center104();
-
+const fs = require("fs");
 var token =
   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTc2Nzg1ODM5MCwiZXhwIjoxNzY3ODkxNTk5fQ.XKqcxn6JhaMmLspbQRtI3lA36gnMNrZjRRkJlCQdt-A";
 
@@ -205,7 +205,7 @@ exports.checkallergyController = async (req, res, next) => {
                               let hosp = await center102.getHosp(
                                 dataAllergic[k].hospcode
                                   ? dataAllergic[k].hospcode
-                                  : ""
+                                  : "",
                               );
                               let sendata = {
                                 hosp_code: `${
@@ -221,7 +221,7 @@ exports.checkallergyController = async (req, res, next) => {
                                     dataAllergic[k].cid
                                       ? dataAllergic[k].cid
                                       : ""
-                                  }`
+                                  }`,
                                 ).toString("base64"),
                                 med_code: `${
                                   dataAllergic[k].drugcode
@@ -251,13 +251,13 @@ exports.checkallergyController = async (req, res, next) => {
                                 sendata,
                                 {
                                   headers,
-                                }
+                                },
                               );
 
                               console.log(
                                 `cid ${
                                   dataAllergic[k].cid ? dataAllergic[k].cid : ""
-                                } send to api `
+                                } send to api `,
                               );
 
                               resultapi = null;
@@ -265,7 +265,7 @@ exports.checkallergyController = async (req, res, next) => {
                               sendata = null;
                             } catch (error) {
                               console.log(
-                                "error to connect apiAllergy\r\n\r\n\r\n"
+                                "error to connect apiAllergy\r\n\r\n\r\n",
                               );
                               console.log(error);
                             }
@@ -373,43 +373,11 @@ exports.checkallergyController = async (req, res, next) => {
 //     return [];
 //   }
 // }
-
-async function getAllergic(cid) {
-  // return [];
-
-  try {
-    const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
-      cid
-    )}`;
-    const instance = axios.create({
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-        keepAlive: true,
-      }),
-      baseURL: url,
-      timeout: 1000, //optional
-      headers: {
-        "jwt-token": token, // Add more default headers as needed
-      },
-    });
-    // axiosRetry(instance, { retries: 3 });
-    // instance.defaults.headers.get["jwt-token"] =
-    //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
-    let dataAllegy = await instance.get(url);
-    console.log("-----------------------------------------");
-    console.log(`${cid}`);
-    console.log(dataAllegy.data);
-    console.log("-----------------------------------------");
-    if (dataAllegy.data.data) {
-      return dataAllegy.data.data;
-    } else {
-      return [];
-    }
-  } catch (error) {
-    console.log("getallegic");
-    console.log(error);
-  }
-}
+exports.testController = async (req, res, next) => {
+  console.log(req.body.cid);
+  await getAllergic(req.body.cid);
+  res.send({ message: "ok" });
+};
 
 exports.drugQueuePController = async (req, res, next) => {
   // let data = req.body;
@@ -565,7 +533,7 @@ exports.getdatacpoeController = async (req, res, next) => {
           duplicatemed: await checkDrugSafety(
             todayDrugsHN,
             historyDrugs,
-            drugMaster
+            drugMaster,
           ),
           lab: { valueLab: await checkLab(todayDrugsHN), result: {} },
         };
@@ -575,12 +543,12 @@ exports.getdatacpoeController = async (req, res, next) => {
         if (allergys[0].cid) {
           console.log(3);
           finalResult.allergymhr = await homc.getAllergyMhr(
-            allergys[0]?.patientID.trim()
+            allergys[0]?.patientID.trim(),
           );
         }
         if (
           Object.values(finalResult.duplicatemed).some(
-            (arr) => Array.isArray(arr) && arr.length > 0
+            (arr) => Array.isArray(arr) && arr.length > 0,
           ) ||
           finalResult.lab?.valueLab.some((x) => x.lab_res === 1)
         ) {
@@ -597,7 +565,7 @@ exports.getdatacpoeController = async (req, res, next) => {
               text: "Duplicate",
             });
             let findDupli = checkHn.find(
-              (val) => val.drug_interaction_type == "Duplicate"
+              (val) => val.drug_interaction_type == "Duplicate",
             );
 
             if (Object.keys(findDupli)?.length !== 0) {
@@ -612,7 +580,7 @@ exports.getdatacpoeController = async (req, res, next) => {
               text: "Lab",
             });
             let findLab = checkLabInsert.find(
-              (val) => val.drug_interaction_type == "Lab"
+              (val) => val.drug_interaction_type == "Lab",
             );
             if (Object.keys(findLab)?.length !== 0) {
               finalResult.lab.result = findLab;
@@ -674,7 +642,7 @@ function checkDrugSafety(today, history, master) {
           return (
             tCode !== invCode &&
             master.some(
-              (m) => m.drugCode?.trim() === tCode && m.groupCode === groupCode
+              (m) => m.drugCode?.trim() === tCode && m.groupCode === groupCode,
             )
           );
         });
@@ -684,7 +652,7 @@ function checkDrugSafety(today, history, master) {
             resultJson.condition1,
             currentDrug,
             groupName,
-            duplicatesToday
+            duplicatesToday,
           );
         }
       }
@@ -700,12 +668,12 @@ function checkDrugSafety(today, history, master) {
 
           // คำนวณวันที่ต่างกัน
           const diffDays = Math.floor(
-            (todayDate - hDate) / (1000 * 60 * 60 * 24)
+            (todayDate - hDate) / (1000 * 60 * 60 * 24),
           );
 
           // ตรวจสอบว่าเป็นกลุ่มเดียวกัน แต่ไม่ใช่รหัสยาเดียวกัน
           const isSameGroup = master.some(
-            (m) => m.drugCode?.trim() === hInvCode && m.groupCode === groupCode
+            (m) => m.drugCode?.trim() === hInvCode && m.groupCode === groupCode,
           );
           const isDifferentDrug = invCode !== hInvCode;
 
@@ -720,7 +688,7 @@ function checkDrugSafety(today, history, master) {
               currentDrug,
               groupName,
               h,
-              diffDays
+              diffDays,
             );
           }
         });
@@ -740,7 +708,7 @@ async function checkLab(today) {
       .map((d) => ({
         ...t,
         ...d,
-      }))
+      })),
   );
 
   let resultLab = [];
@@ -748,22 +716,19 @@ async function checkLab(today) {
   for (let i = 0; i < checkLab.length; i++) {
     if (!checkLab[i].labMin && checkLab[i].labMax) {
       console.log(6);
-      checkLab[
-        i
-      ].checklab = `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax}, 1, 0`;
+      checkLab[i].checklab =
+        `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     } else if (checkLab[i].labMin && !checkLab[i].labMax) {
       console.log(7);
-      checkLab[
-        i
-      ].checklab = `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin}, 1, 0`;
+      checkLab[i].checklab =
+        `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     } else if (checkLab[i].labMin && checkLab[i].labMax) {
-      checkLab[
-        i
-      ].checklab = `TRY_CONVERT(INT, real_res)  >= ${checkLab[i].labMin} AND TRY_CONVERT(INT, real_res)  <= ${checkLab[i].labMin} 
+      checkLab[i].checklab =
+        `TRY_CONVERT(INT, real_res)  >= ${checkLab[i].labMin} AND TRY_CONVERT(INT, real_res)  <= ${checkLab[i].labMin} 
       AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
       console.log(8);
       dataLab = await homc.getLabHomc(checkLab[i]);
@@ -774,9 +739,8 @@ async function checkLab(today) {
       checkLab[i].strength
     ) {
       console.log(9);
-      checkLab[
-        i
-      ].checklab = `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      checkLab[i].checklab =
+        `TRY_CONVERT(INT, real_res)  < ${checkLab[i].labMin} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     } else if (
@@ -785,9 +749,8 @@ async function checkLab(today) {
       checkLab[i].strength
     ) {
       console.log(10);
-      checkLab[
-        i
-      ].checklab = `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
+      checkLab[i].checklab =
+        `TRY_CONVERT(INT, real_res)  > ${checkLab[i].labMax} AND ${checkLab[i].time_docperday} > ${checkLab[i].dosagePdayMax}, 1, 0`;
       dataLab = await homc.getLabHomc(checkLab[i]);
       resultLab.push(...dataLab);
     }
@@ -879,12 +842,12 @@ function addHistoryResult(
   currentDrug,
   groupName,
   matchData,
-  diffDays
+  diffDays,
 ) {
   // console.log(currentDrug);
   const currentKey = currentDrug.invCode.trim();
   let existingEntry = targetArray.find(
-    (item) => item.currentDrug === currentKey
+    (item) => item.currentDrug === currentKey,
   );
 
   const detail = {
@@ -898,7 +861,7 @@ function addHistoryResult(
     const isDuplicate = existingEntry.foundHistory.some(
       (h) =>
         h.lastDate === detail.lastDate &&
-        h.duplicateDrug === detail.duplicateDrug
+        h.duplicateDrug === detail.duplicateDrug,
     );
     if (!isDuplicate) existingEntry.foundHistory.push(detail);
   } else {
@@ -938,7 +901,7 @@ async function listPatientAllergicController(data) {
                   await center102.insertDrugAllergy(dataAllergic[k]);
 
                   let hosp = await center102.getHosp(
-                    dataAllergic[k].hospcode ? dataAllergic[k].hospcode : ""
+                    dataAllergic[k].hospcode ? dataAllergic[k].hospcode : "",
                   );
                   let sendata = {
                     hosp_code: `${
@@ -946,7 +909,7 @@ async function listPatientAllergicController(data) {
                     }`,
                     hosp_name: `${hosp[0].hospname ? hosp[0].hospname : ""}`,
                     pid: Buffer.from(
-                      `${dataAllergic[k].cid ? dataAllergic[k].cid : ""}`
+                      `${dataAllergic[k].cid ? dataAllergic[k].cid : ""}`,
                     ).toString("base64"),
                     med_code: `${
                       dataAllergic[k].drugcode ? dataAllergic[k].drugcode : ""
@@ -971,13 +934,13 @@ async function listPatientAllergicController(data) {
                     sendata,
                     {
                       headers,
-                    }
+                    },
                   );
 
                   console.log(
                     `cid ${
                       dataAllergic[k].cid ? dataAllergic[k].cid : ""
-                    } send to api `
+                    } send to api `,
                   );
 
                   resultapi = null;
@@ -1021,7 +984,102 @@ async function listPatientAllergicController(data) {
     });
   }
 }
+async function getAllergic(cid) {
+  // return [];
 
+  try {
+    const url = `https://smarthealth.service.moph.go.th/phps/api/drugallergy/v1/find_by_cid?cid=${Number(
+      cid,
+    )}`;
+    const instance = axios.create({
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+        keepAlive: true,
+      }),
+      baseURL: url,
+      timeout: 1000, //optional
+      headers: {
+        "jwt-token": token, // Add more default headers as needed
+      },
+    });
+    // axiosRetry(instance, { retries: 3 });
+    // instance.defaults.headers.get["jwt-token"] =
+    //   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtMjAwMGthQGdtYWlsLmNvbSIsInJvbGVzIjpbIkxLXzAwMDIzXzAzNF8wMSIsIkxLXzAwMDIzXzAwOF8wMSIsIk5IU08iLCJQRVJTT04iLCJEUlVHQUxMRVJHWSIsIklNTUlHUkFUSU9OIiwiTEtfMDAwMjNfMDI3XzAxIiwiQUREUkVTUyIsIkxLXzAwMDIzXzAwM18wMSIsIkxLXzAwMDIzXzAwMV8wMSIsIkFERFJFU1NfV0lUSF9UWVBFIiwiTEtfMDAyMjZfMDAxXzAxIl0sImlhdCI6MTcyNDIwMDQwMiwiZXhwIjoxNzI0MjU5NTk5fQ.B4aUytFhi4rTay1hIYHoH7-9Y0QJWw25wcu97XVfmIE";
+    let dataAllegy = await instance.get(url);
+    console.log("-----------------------------------------");
+    console.log(`${cid}`);
+    console.log(dataAllegy.data);
+    console.log("-----------------------------------------");
+    // if (dataAllegy.data.status === "403") {
+    //   let a = await getToken(cid);
+    // } else {
+    //   if (dataAllegy.data.data) {
+    //     return dataAllegy.data.data;
+    //   } else {
+    //     return [];
+    //   }
+    // }
+    if (dataAllegy.data.status === "403") {
+      await getToken(cid);
+    }
+    if (dataAllegy.data.data) {
+      return dataAllegy.data.data;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.log("getallegic");
+    console.log(error);
+  }
+}
+
+async function getToken(cid) {
+  try {
+    console.log("Get to ken");
+    const data = {
+      username: "m2000ka@gmail.com",
+      password: "123456",
+    };
+    const url = `https://smarthealth.service.moph.go.th/phps/public/api/v3/gettoken`;
+    const instance = axios.create({
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+        keepAlive: true,
+      }),
+      baseURL: url,
+      timeout: 1000,
+    });
+
+    let dataAllegy = await instance.post(url, data);
+    if (dataAllegy.data.jwt_token) {
+      // return dataAllegy.data.jwt_token;
+      await fs.writeFile(
+        "D:\\Github\\MHRdashboard\\node\\model\\token.txt",
+        dataAllegy.data.jwt_token,
+
+        async (err) => {
+          console.log("await write file");
+          token = dataAllegy.data.jwt_token;
+          await getAllergic(cid);
+          if (err) throw err;
+          console.log("----------------------------------");
+          console.log(
+            `GET TOKEN SUCCESS : ${new Date().toLocaleTimeString("en-US", {
+              hour12: false,
+              hour: "numeric",
+              minute: "numeric",
+              second: "numeric",
+            })}`,
+          );
+          console.log("----------------------------------");
+        },
+      );
+    }
+  } catch (error) {
+    console.error("Error fetching token:", error);
+    return;
+  }
+}
 // async function getAllergic(cid) {
 //   // return [];
 

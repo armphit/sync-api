@@ -30,7 +30,7 @@ module.exports = function () {
         console.log(
           `Connected to Homc ${new Date().toLocaleString("en-GB", {
             hour12: false,
-          })}`
+          })}`,
         );
         return pool;
       })
@@ -974,6 +974,7 @@ AND CAST(h.registDate AS DATE)  ='${val.date}'
 AND m.pat_status = 'O'
 AND m.revFlag IS NULL
 AND m.site = '${val.site}'
+ AND h.toSite IN ('W8','W9','W18','W19')
 ORDER BY
 	d.runNo
 
@@ -1015,6 +1016,7 @@ WHERE
       h.hn = '${hn}'
  AND CAST(registDate AS DATE) BETWEEN CAST(DATEADD(day, -120, '${val.date}') AS DATE) 
                      AND CAST(DATEADD(day, -1, '${val.date}') AS DATE)
+                     AND h.toSite IN ('W8','W9','W18','W19')
 ORDER BY  h.lastIssTime,d.runNo
 `;
 
